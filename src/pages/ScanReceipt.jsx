@@ -107,9 +107,12 @@ export default function ScanReceipt() {
     try { setOcrResult(JSON.parse(doc.extracted_data || "{}")); } catch (e) { setOcrResult(null); }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (doc) => {
     try {
-      await base44.entities.Document.delete(id);
+      if (doc.file_url) {
+        await base44.integrations.Core.DeleteFile({ file_uri: doc.file_url });
+      }
+      await base44.entities.Document.delete(doc.id);
       await loadDocs();
       toast({ title: "Receipt deleted" });
     } catch (e) {}
@@ -239,7 +242,7 @@ export default function ScanReceipt() {
                       <Eye size={14} />
                     </button>
                   )}
-                  <button onClick={() => handleDelete(doc.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-[#5C7263] hover:text-red-500">
+                  <button onClick={() => handleDelete(doc)} className="p-1.5 rounded-lg hover:bg-red-50 text-[#5C7263] hover:text-red-500">
                     <Trash2 size={14} />
                   </button>
                 </div>

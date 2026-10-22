@@ -252,6 +252,10 @@ const integrations = {
     async CreateFileSignedUrl({ file_uri, expires_in = 600 }) {
       return { signed_url: await createSignedUrl(file_uri, expires_in) };
     },
+    async DeleteFile({ file_uri }) {
+      await deleteUpload(file_uri);
+      return { deleted: true };
+    },
     // Wired to the "ai" Edge Function once the Together AI key is set.
     InvokeLLM: aiNotConfigured,
     ExtractDataFromUploadedFile: aiNotConfigured,

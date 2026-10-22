@@ -81,9 +81,12 @@ export default function Documents() {
     try { setOcrResult(JSON.parse(doc.extracted_data || "{}")); } catch (e) { setOcrResult(null); }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (doc) => {
     try {
-      await base44.entities.Document.delete(id);
+      if (doc.file_url) {
+        await base44.integrations.Core.DeleteFile({ file_uri: doc.file_url });
+      }
+      await base44.entities.Document.delete(doc.id);
       await loadDocs();
       toast({ title: "Document deleted" });
     } catch (e) {}
@@ -158,7 +161,7 @@ export default function Documents() {
                     <Eye size={12} /> View Data
                   </button>
                 )}
-                <button onClick={() => handleDelete(doc.id)} className="text-[11px] text-[#6B6B72] hover:text-red-500 font-medium flex items-center gap-1 ml-auto">
+                <button onClick={() => handleDelete(doc)} className="text-[11px] text-[#6B6B72] hover:text-red-500 font-medium flex items-center gap-1 ml-auto">
                   <Trash2 size={12} /> Delete
                 </button>
               </div>
