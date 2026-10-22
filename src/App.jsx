@@ -26,6 +26,11 @@ import AIAssistant from '@/pages/AIAssistant';
 import Settings from '@/pages/Settings';
 import AllocationRules from '@/pages/AllocationRules';
 import ScanReceipt from '@/pages/ScanReceipt';
+import BankRules from '@/pages/BankRules';
+import VAT201Report from '@/pages/VAT201Report';
+import Inventory from '@/pages/Inventory';
+import Invoices from '@/pages/Invoices';
+import AgingReports from '@/pages/AgingReports';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -64,6 +69,11 @@ const AuthenticatedApp = () => {
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/upload" element={<UploadStatement />} />
           <Route path="/rules" element={<AllocationRules />} />
+          <Route path="/bank-rules" element={<BankRules />} />
+          <Route path="/vat201" element={<VAT201Report />} />
+          <Route path="/inventory" element={<Inventory />} />
+          <Route path="/invoices" element={<Invoices />} />
+          <Route path="/aging" element={<AgingReports />} />
           <Route path="/scan-receipt" element={<ScanReceipt />} />
           <Route path="/accounts" element={<ChartOfAccounts />} />
           <Route path="/reports" element={<Reports />} />

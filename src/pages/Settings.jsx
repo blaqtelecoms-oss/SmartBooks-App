@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { useOutletContext } from "react-router-dom";
 import { db } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings as SettingsIcon, User, Shield, Trash2, AlertTriangle } from "lucide-react";
+import { User, Shield, Trash2, AlertTriangle, CreditCard } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import {
   AlertDialog,
@@ -18,11 +19,14 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function Settings() {
+  const { currentCompany } = useOutletContext();
   const { toast } = useToast();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [yocoKey, setYocoKey] = useState("");
+  const [savingGateway, setSavingGateway] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -96,6 +100,50 @@ export default function Settings() {
           </div>
         </div>
       </div>
+      {/* Payment Gateway — Yoco */}
+      {currentCompany && (
+        <div className="bg-white rounded-xl border border-[#E5E5E8] p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <CreditCard size={16} className="text-[#6B6B72]" />
+            <h3 className="text-[15px] font-medium text-[#0F0F0F]">Payment Gateway — Yoco</h3>
+          </div>
+          <p className="text-[12px] text-[#6B6B72]">Configure your Yoco API key to generate payment links on customer invoices. The key is stored securely and never exposed in the browser.</p>
+          <div>
+            <Label className="text-[12px] text-[#6B6B72]">Yoco Secret Key</Label>
+            <Input
+              type="password"
+              value={yocoKey}
+              onChange={e => setYocoKey(e.target.value)}
+              placeholder="sk_live_... or sk_test_..."
+              className="mt-1 text-[13px]"
+            />
+          </div>
+          <Button
+            onClick={async () => {
+              if (!yocoKey) { toast({ title: "Enter your Yoco API key", variant: "destructive" }); return; }
+              setSavingGateway(true);
+              try {
+                const existing = await db.entities.PaymentGatewaySetting.filter({ company_id: currentCompany.id, provider: "yoco" });
+                if (existing.length > 0) {
+                  await db.entities.PaymentGatewaySetting.update(existing[0].id, { api_key: yocoKey, is_active: true });
+                } else {
+                  await db.entities.PaymentGatewaySetting.create({ company_id: currentCompany.id, provider: "yoco", api_key: yocoKey, is_active: true });
+                }
+                setYocoKey("");
+                toast({ title: "Yoco credentials saved" });
+              } catch (e) {
+                toast({ title: "Error saving credentials", description: e.message, variant: "destructive" });
+              }
+              setSavingGateway(false);
+            }}
+            disabled={savingGateway}
+            className="bg-[#0F0F0F] hover:bg-[#2D2D2D] text-white rounded-lg text-[13px] h-9"
+          >
+            {savingGateway ? "Saving..." : "Save Yoco Key"}
+          </Button>
+        </div>
+      )}
+
       {/* Danger Zone */}
       <div className="bg-white rounded-xl border border-red-200 p-5 space-y-4">
         <div className="flex items-center gap-2">

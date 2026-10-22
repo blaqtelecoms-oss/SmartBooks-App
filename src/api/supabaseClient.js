@@ -18,11 +18,19 @@ const TABLES = {
   Account: 'accounts',
   AllocationRule: 'allocation_rules',
   AuditLog: 'audit_logs',
+  BankRule: 'bank_rules',
   Company: 'companies',
   CompanyUser: 'company_users',
+  Contact: 'contacts',
   Document: 'documents',
+  InventoryItem: 'inventory_items',
+  Invoice: 'invoices',
+  PaymentGatewaySetting: 'payment_gateway_settings',
+  StockMovement: 'stock_movements',
   TaxReturn: 'tax_returns',
   Transaction: 'transactions',
+  Warehouse: 'warehouses',
+  WarehouseStock: 'warehouse_stock',
 };
 
 const fail = (error) => {

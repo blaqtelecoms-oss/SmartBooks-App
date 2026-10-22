@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Building2, Upload, BookOpen, FileText, Calculator,
   Shield, Settings, MessageSquare, Users, ArrowLeftRight, Receipt,
   Wand2, ScanLine, LogOut, PanelLeftClose, PanelLeftOpen, ChevronRight,
+  Landmark, Warehouse, CreditCard, Clock, FileBarChart,
 } from "lucide-react";
 import { db } from "@/api/supabaseClient";
 import Logo from "@/components/Logo";
@@ -14,8 +15,13 @@ const accountantNav = [
   { label: "Transactions", icon: ArrowLeftRight, path: "/transactions" },
   { label: "Upload", icon: Upload, path: "/upload" },
   { label: "Allocation Rules", icon: Wand2, path: "/rules" },
+  { label: "Bank Rules", icon: Landmark, path: "/bank-rules" },
+  { label: "Invoices", icon: CreditCard, path: "/invoices" },
+  { label: "Inventory", icon: Warehouse, path: "/inventory" },
   { label: "Chart of Accounts", icon: BookOpen, path: "/accounts" },
   { label: "Reports", icon: FileText, path: "/reports" },
+  { label: "Aging Reports", icon: Clock, path: "/aging" },
+  { label: "VAT 201", icon: FileBarChart, path: "/vat201" },
   { label: "Tax", icon: Calculator, path: "/tax" },
   { label: "Documents", icon: Receipt, path: "/documents" },
   { label: "Team", icon: Users, path: "/team" },
@@ -29,6 +35,8 @@ const businessNav = [
   { label: "Scan Receipt", icon: ScanLine, path: "/scan-receipt" },
   { label: "Transactions", icon: ArrowLeftRight, path: "/transactions" },
   { label: "Upload Statement", icon: Upload, path: "/upload" },
+  { label: "Invoices", icon: CreditCard, path: "/invoices" },
+  { label: "Inventory", icon: Warehouse, path: "/inventory" },
   { label: "Tax", icon: Calculator, path: "/tax" },
   { label: "Receipts", icon: Receipt, path: "/documents" },
   { label: "Reports", icon: FileText, path: "/reports" },

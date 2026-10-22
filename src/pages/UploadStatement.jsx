@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { db } from "@/api/supabaseClient";
 import { extractBankTransactions, categorizeTransaction } from "@/lib/bankStatementExtraction";
+import { autoAllocate } from "@/lib/bankRuleEngine";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Check, Loader2, AlertCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -47,7 +48,14 @@ export default function UploadStatement() {
       const { transactions: txs, bank_name } = await extractBankTransactions(file);
 
       if (txs.length > 0) {
-        const created = txs.slice(0, 100).map((tx) => {
+        // Load bank rules for auto-allocation
+        let bankRules = [];
+        try {
+          bankRules = await db.entities.BankRule.filter({ company_id: currentCompany.id, is_active: true });
+        } catch (e) {}
+
+        // Apply categorization first
+        let categorized = txs.slice(0, 100).map((tx) => {
           const cat = categorizeTransaction(tx.description, tx.amount);
           return {
             company_id: currentCompany.id,
@@ -65,6 +73,17 @@ export default function UploadStatement() {
             bank_name: bank_name || ""
           };
         });
+
+        // Then apply bank rules auto-allocation (overrides categorization for matched transactions)
+        if (bankRules.length > 0) {
+          categorized = autoAllocate(categorized, bankRules);
+          const matched = categorized.filter(t => t.status === "allocated" && t.ai_reasoning?.startsWith("Auto-matched"));
+          if (matched.length > 0) {
+            toast({ title: `${matched.length} transactions auto-matched by bank rules` });
+          }
+        }
+
+        const created = categorized;
 
         if (created.length > 0) {
           await db.entities.Transaction.bulkCreate(created);
