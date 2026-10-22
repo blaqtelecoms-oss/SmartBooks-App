@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { db } from "@/api/supabaseClient";
+import { extractBankTransactions, categorizeTransaction } from "@/lib/bankStatementExtraction";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Check, Loader2, AlertCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -42,92 +43,39 @@ export default function UploadStatement() {
       setUploading(false);
       setProcessing(true);
 
-      const extracted = await db.integrations.Core.ExtractDataFromUploadedFile({
-        file_url,
-        json_schema: {
-          type: "object",
-          properties: {
-            transactions: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  date: { type: "string", description: "Transaction date in YYYY-MM-DD format" },
-                  description: { type: "string", description: "Transaction description" },
-                  amount: { type: "number", description: "Transaction amount (positive for credits, negative for debits)" },
-                  reference: { type: "string", description: "Bank reference number" },
-                  balance: { type: "number", description: "Running balance if available" }
-                }
-              }
-            },
-            bank_name: { type: "string", description: "Name of the bank" },
-            account_number: { type: "string", description: "Account number" }
-          }
-        }
-      });
+      // Client-side extraction — no AI needed
+      const { transactions: txs, bank_name } = await extractBankTransactions(file);
 
-      if (extracted.status === "success" && extracted.output?.transactions) {
-        const txs = extracted.output.transactions;
-
-        const aiCategorized = await db.integrations.Core.InvokeLLM({
-          prompt: `You are a South African bookkeeper. Categorize these bank transactions according to SA accounting standards.
-For each transaction, provide:
-- category: the account category (e.g. "Sales Revenue", "Cost of Sales", "Operating Expenses", "Bank Charges", "Salaries & Wages", "Rent", "Utilities", "Motor Vehicle Expenses", "Office Supplies", "Professional Fees", "Insurance", "Telephone & Internet", "Travel & Entertainment", "VAT Input", "VAT Output", "Owner Drawings", "Capital", "Loan Repayment", "Other Income", "Other Expenses")
-- type: "debit" or "credit"
-- vat_amount: calculated VAT at 15% if applicable (0 if exempt)
-- confidence: 0-100 confidence score
-- reasoning: brief explanation
-
-Transactions:
-${JSON.stringify(txs.slice(0, 50))}`,
-          response_json_schema: {
-            type: "object",
-            properties: {
-              categorized: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    index: { type: "number" },
-                    category: { type: "string" },
-                    type: { type: "string" },
-                    vat_amount: { type: "number" },
-                    confidence: { type: "number" },
-                    reasoning: { type: "string" }
-                  }
-                }
-              }
-            }
-          },
-          model: "claude_sonnet_4_6"
-        });
-
-        const created = [];
-        for (let i = 0; i < txs.length && i < 50; i++) {
-          const tx = txs[i];
-          const cat = aiCategorized?.categorized?.[i] || {};
-          created.push({
+      if (txs.length > 0) {
+        const created = txs.slice(0, 100).map((tx) => {
+          const cat = categorizeTransaction(tx.description, tx.amount);
+          return {
             company_id: currentCompany.id,
             date: tx.date || new Date().toISOString().split("T")[0],
             description: tx.description || "Unknown",
             amount: Math.abs(tx.amount || 0),
-            type: cat.type || (tx.amount >= 0 ? "credit" : "debit"),
-            category: cat.category || "Uncategorized",
-            vat_amount: cat.vat_amount || 0,
+            type: cat.type,
+            category: cat.category,
+            vat_amount: cat.vat_amount,
             reference: tx.reference || "",
             source: "bank_statement",
             status: cat.confidence > 80 ? "allocated" : "unallocated",
-            ai_confidence: cat.confidence || 0,
-            ai_reasoning: cat.reasoning || "",
-            bank_name: extracted.output.bank_name || ""
-          });
-        }
+            ai_confidence: cat.confidence,
+            ai_reasoning: "",
+            bank_name: bank_name || ""
+          };
+        });
 
         if (created.length > 0) {
           await db.entities.Transaction.bulkCreate(created);
         }
 
-        setResults({ total: txs.length, imported: created.length, bank: extracted.output.bank_name });
+        await db.entities.Document.update(
+          (await db.entities.Document.filter({ company_id: currentCompany.id, name: file.name }, "-created_date"))[0]?.id,
+          { status: "processed" }
+        );
+
+        setResults({ total: txs.length, imported: created.length, bank: bank_name });
         toast({ title: `${created.length} transactions imported and categorized` });
       } else {
         toast({ title: "Could not extract transactions", description: "Please check the file format", variant: "destructive" });
@@ -152,7 +100,7 @@ ${JSON.stringify(txs.slice(0, 50))}`,
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
         <h1 className="text-[24px] font-medium text-[#0F0F0F] tracking-tight">Upload Bank Statement</h1>
-        <p className="text-[13px] text-[#6B6B72] mt-1">Upload PDF, CSV, or Excel bank statements for AI-powered extraction and categorization</p>
+        <p className="text-[13px] text-[#6B6B72] mt-1">Upload PDF, CSV, or Excel bank statements for automatic extraction and categorization</p>
       </div>
 
       {/* Drop zone */}
@@ -186,7 +134,7 @@ ${JSON.stringify(txs.slice(0, 50))}`,
           <Button onClick={handleUpload} disabled={uploading || processing}
             className="bg-[#2D5A43] hover:bg-[#1F4030] text-white rounded-lg text-[13px] h-9 shadow-sm shadow-[#2D5A43]/20">
             {uploading ? <><Loader2 size={14} className="mr-2 animate-spin" /> Uploading...</> :
-             processing ? <><Loader2 size={14} className="mr-2 animate-spin" /> AI Processing...</> :
+             processing ? <><Loader2 size={14} className="mr-2 animate-spin" /> Processing...</> :
              "Process Statement"}
           </Button>
         </div>
