@@ -120,11 +120,11 @@
 .sb-nav-scroll {
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #e4ebe5 transparent;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
   overscroll-behavior: contain;
 }
 .sb-nav-scroll::-webkit-scrollbar { width: 5px; }
-.sb-nav-scroll::-webkit-scrollbar-thumb { background: #e4ebe5; border-radius: 99px; }
+.sb-nav-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 99px; }
 .sb-nav-scroll::-webkit-scrollbar-track { background: transparent; }
 
 .sb-content-scroll {

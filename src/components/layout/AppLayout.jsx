@@ -100,12 +100,12 @@ export default function AppLayout() {
     : [];
 
   return (
-    <div className="fixed inset-0 overflow-hidden sb-frame-body p-2.5 flex justify-center">
+    <div className="fixed inset-0 overflow-hidden sb-frame-body flex justify-center" style={{ padding: "10px", background: "#eef2ee" }}>
       <div
-        className="w-full max-w-[1400px] flex flex-col bg-[rgba(255,255,255,0.45)] rounded-[28px] p-[14px]"
-        style={{ boxShadow: "0 20px 60px rgba(45,90,67,0.12)" }}
+        className="w-full max-w-[1440px] flex flex-col bg-white rounded-[24px] overflow-hidden flex-1"
+        style={{ boxShadow: "0 8px 40px rgba(26,46,34,0.10)" }}
       >
-        <div className="grid grid-rows-[minmax(0,1fr)] bg-[#fbfdfb] rounded-[18px] overflow-hidden flex-1 min-h-0" style={{ gridTemplateColumns: `${sidebarCollapsed ? 68 : 218}px 1fr`, transition: 'grid-template-columns 0.3s ease-in-out' }}>
+        <div className="flex flex-1 min-h-0">
           <Sidebar
             currentCompany={currentCompany}
             companies={companies}
@@ -117,15 +117,15 @@ export default function AppLayout() {
           />
 
           {/* Main */}
-          <div className="flex flex-col min-w-0 min-h-0 overflow-hidden">
+          <div className="flex flex-col min-w-0 flex-1 min-h-0 overflow-hidden">
             {/* Header */}
-            <header className="h-[68px] border-b border-[#e4ebe5] flex items-center gap-[18px] px-6 flex-none bg-[#fbfdfb]">
-              <h1 className="text-[19px] font-semibold min-w-[150px] text-[#1A2E22] tracking-tight">{pageTitle}</h1>
+            <header className="h-[68px] border-b border-[#eaeef0] flex items-center gap-4 px-6 flex-none bg-white">
+              <h1 className="text-[20px] font-bold text-[#1A2E22] tracking-tight min-w-[140px]">{pageTitle}</h1>
 
               {/* Search */}
-              <div className="flex-[0_1_460px] mx-auto relative">
-                <div className="flex items-center gap-[9px] border border-[#e4ebe5] bg-white rounded-full px-[15px] py-2.5 text-[#7A8E7E] transition-colors focus-within:border-[#4A7C5E] focus-within:bg-white">
-                  <Search size={18} strokeWidth={1.6} />
+              <div className="flex-[0_1_420px] mx-auto relative">
+                <div className="flex items-center gap-2.5 bg-[#f4f7f5] rounded-[12px] px-4 py-2.5 transition-all duration-200 focus-within:bg-white focus-within:shadow-[0_0_0_2px_#4A7C5E33]">
+                  <Search size={17} strokeWidth={1.8} className="text-[#9aa8a0]" />
                   <input
                     type="text"
                     placeholder="Search transactions, companies, reports"
@@ -133,38 +133,38 @@ export default function AppLayout() {
                     onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true); }}
                     onFocus={() => setSearchOpen(true)}
                     onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
-                    className="border-0 outline-0 bg-transparent w-full text-[14px] text-[#1A2E22] font-inherit"
+                    className="border-0 outline-0 bg-transparent w-full text-[14px] text-[#1A2E22] font-medium placeholder:text-[#9aa8a0]"
                   />
                 </div>
                 {searchOpen && searchQuery && (
-                  <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-[#e4ebe5] rounded-[10px] z-50 overflow-hidden" style={{ boxShadow: "0 6px 20px rgba(0,0,0,0.08)" }}>
+                  <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-[#eaeef0] rounded-[12px] z-50 overflow-hidden" style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.10)" }}>
                     {matchingCompanies.length > 0 && (
                       <div className="py-1.5">
-                        <p className="text-[12px] font-semibold text-[#7A8E7E] px-3 py-1 uppercase">Companies</p>
+                        <p className="text-[11px] font-semibold text-[#9aa8a0] px-3 py-1 uppercase tracking-wide">Companies</p>
                         {matchingCompanies.map(c => (
                           <button
                             key={c.id}
                             type="button"
                             onMouseDown={() => { handleCompanyChange(c.id); navigate("/"); setSearchOpen(false); setSearchQuery(""); }}
-                            className="block w-full text-left px-3 py-2.5 text-[14px] text-[#1A2E22] hover:bg-[#e9f3ea] border-0 bg-transparent cursor-pointer"
+                            className="block w-full text-left px-3 py-2.5 text-[14px] text-[#1A2E22] hover:bg-[#f0f7f1] border-0 bg-transparent cursor-pointer font-medium"
                           >
                             {c.name}
                           </button>
                         ))}
                       </div>
                     )}
-                    <div className="py-1.5" style={{ borderTop: matchingCompanies.length ? "1px solid #e4ebe5" : 0 }}>
+                    <div className="py-1.5" style={{ borderTop: matchingCompanies.length ? "1px solid #eaeef0" : 0 }}>
                       <button
                         type="button"
                         onMouseDown={() => { navigate("/transactions"); setSearchOpen(false); setSearchQuery(""); }}
-                        className="block w-full text-left px-3 py-2.5 text-[14px] text-[#1A2E22] hover:bg-[#e9f3ea] border-0 bg-transparent cursor-pointer"
+                        className="block w-full text-left px-3 py-2.5 text-[14px] text-[#1A2E22] hover:bg-[#f0f7f1] border-0 bg-transparent cursor-pointer font-medium"
                       >
                         Search transactions for &ldquo;{searchQuery}&rdquo;
                       </button>
                       <button
                         type="button"
                         onMouseDown={() => { navigate("/reports"); setSearchOpen(false); setSearchQuery(""); }}
-                        className="block w-full text-left px-3 py-2.5 text-[14px] text-[#1A2E22] hover:bg-[#e9f3ea] border-0 bg-transparent cursor-pointer"
+                        className="block w-full text-left px-3 py-2.5 text-[14px] text-[#1A2E22] hover:bg-[#f0f7f1] border-0 bg-transparent cursor-pointer font-medium"
                       >
                         Search reports for &ldquo;{searchQuery}&rdquo;
                       </button>
@@ -174,28 +174,28 @@ export default function AppLayout() {
               </div>
 
               {/* Icon buttons */}
-              <button className="w-[38px] h-[38px] border border-[#e4ebe5] bg-white rounded-[10px] grid place-items-center text-[#1A2E22] hover:border-[#4A7C5E] hover:bg-[#f0f7f1] transition-colors relative cursor-pointer">
-                <Bell size={18} strokeWidth={1.6} />
-                <span className="absolute top-[8px] right-2.5 w-1.5 h-1.5 rounded-full bg-[#C25B5B]" />
+              <button className="w-[40px] h-[40px] bg-[#f4f7f5] rounded-[12px] grid place-items-center text-[#5C7263] hover:bg-[#e9f3ea] hover:text-[#2D5A43] transition-colors relative cursor-pointer border-0">
+                <Bell size={18} strokeWidth={1.7} />
+                <span className="absolute top-2.5 right-2.5 w-[7px] h-[7px] rounded-full bg-[#C25B5B] ring-2 ring-white" />
               </button>
-              <button className="w-[38px] h-[38px] border border-[#e4ebe5] bg-white rounded-[10px] grid place-items-center text-[#1A2E22] hover:border-[#4A7C5E] hover:bg-[#f0f7f1] transition-colors cursor-pointer">
-                <Mail size={18} strokeWidth={1.6} />
+              <button className="w-[40px] h-[40px] bg-[#f4f7f5] rounded-[12px] grid place-items-center text-[#5C7263] hover:bg-[#e9f3ea] hover:text-[#2D5A43] transition-colors cursor-pointer border-0">
+                <Mail size={18} strokeWidth={1.7} />
               </button>
 
               {/* User chip */}
-              <div className="flex items-center gap-[9px] pl-2 border-l border-[#e4ebe5]">
-                <div className="w-[34px] h-[34px] rounded-full grid place-items-center text-white font-semibold text-[13px]" style={{ background: "linear-gradient(135deg, #6BA17E, #2D5A43)" }}>
+              <div className="flex items-center gap-2.5 pl-3 ml-1 border-l border-[#eaeef0]">
+                <div className="w-[36px] h-[36px] rounded-full grid place-items-center text-white font-bold text-[13px]" style={{ background: "linear-gradient(135deg, #6BA17E, #2D5A43)" }}>
                   {initials}
                 </div>
-                <div>
+                <div className="leading-tight">
                   <b className="block text-[14px] font-semibold text-[#1A2E22]">{user?.full_name || "User"}</b>
-                  <small className="text-[#7A8E7E] text-[12px]">{roleLabel}</small>
+                  <small className="text-[#9aa8a0] text-[12px]">{roleLabel}</small>
                 </div>
               </div>
             </header>
 
             {/* Content scroll area */}
-            <div className="sb-content-scroll overflow-y-auto flex-1 min-h-0" style={{ padding: "16px" }}>
+            <div className="sb-content-scroll overflow-y-auto flex-1 min-h-0" style={{ padding: "20px", background: "#f9fbf9" }}>
               <Outlet context={{ currentCompany, companies, refreshCompanies: loadCompanies, user, portal, scale: 1 }} />
             </div>
           </div>
