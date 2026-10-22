@@ -28,7 +28,7 @@ export default function UploadStatement() {
     if (!file || !currentCompany) return;
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file, companyId: currentCompany.id });
+      const { file_url } = await base44.integrations.Core.UploadFile({ file, companyId: currentCompany.id, kind: "bank_statement" });
 
       await base44.entities.Document.create({
         company_id: currentCompany.id,

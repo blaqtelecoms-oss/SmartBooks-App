@@ -38,7 +38,7 @@ export default function ScanReceipt() {
     if (!file) return;
     setUploading(true);
     try {
-      const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file, companyId: currentCompany.id });
+      const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file, companyId: currentCompany.id, kind: "receipt" });
 
       const doc = await base44.entities.Document.create({
         company_id: currentCompany.id,

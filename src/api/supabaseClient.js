@@ -212,9 +212,10 @@ const users = {
 // ---------------------------------------------------------------- storage + integrations
 const safeName = (name) => name.replace(/[^a-zA-Z0-9._-]/g, '_');
 
-const uploadPrivate = async (file, companyId) => {
+const uploadPrivate = async (file, companyId, kind) => {
   if (!companyId) throw new Error('Select a company before uploading');
-  const path = `${companyId}/${crypto.randomUUID()}-${safeName(file.name)}`;
+  const folder = kind ? kind.replace(/[^a-zA-Z0-9._-]/g, '_') : 'misc';
+  const path = `${companyId}/${folder}/${crypto.randomUUID()}-${safeName(file.name)}`;
   const { error } = await supabase.storage.from(UPLOAD_BUCKET).upload(path, file, {
     contentType: file.type || undefined,
     upsert: false,
@@ -243,11 +244,11 @@ const aiNotConfigured = () => {
 const integrations = {
   Core: {
     // `file_url` keeps its name for compatibility; it now holds the private storage path.
-    async UploadFile({ file, companyId }) {
-      return { file_url: await uploadPrivate(file, companyId) };
+    async UploadFile({ file, companyId, kind }) {
+      return { file_url: await uploadPrivate(file, companyId, kind) };
     },
-    async UploadPrivateFile({ file, companyId }) {
-      return { file_uri: await uploadPrivate(file, companyId) };
+    async UploadPrivateFile({ file, companyId, kind }) {
+      return { file_uri: await uploadPrivate(file, companyId, kind) };
     },
     async CreateFileSignedUrl({ file_uri, expires_in = 600 }) {
       return { signed_url: await createSignedUrl(file_uri, expires_in) };
