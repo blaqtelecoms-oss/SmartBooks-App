@@ -12,12 +12,12 @@ export default function CompanyCard({ company, bankBalance, formatR, portal }) {
 
   return (
     <div className="bg-white rounded-[14px] border border-[#e4ebe5] p-5" style={{ boxShadow: "0 1px 2px rgba(45,90,67,0.04)" }}>
-      <div className="flex justify-between items-start gap-2.5">
+      <div className="flex justify-between items-center gap-2.5">
         <h3 className="text-[17px] font-semibold">Active Company</h3>
         {portal !== "business" && (
           <Link
             to="/companies"
-            className="bg-[#2D5A43] text-white rounded-[9px] px-3 py-1.5 text-[13px] font-semibold flex items-center gap-1 hover:bg-[#1F4030] transition-colors"
+            className="bg-[#2D5A43] text-white rounded-[9px] px-3 py-1.5 text-[13px] font-semibold flex items-center gap-1 hover:bg-[#1F4030] transition-colors flex-none"
           >
             <Plus size={14} strokeWidth={2} /> Add Company
           </Link>
@@ -25,25 +25,38 @@ export default function CompanyCard({ company, bankBalance, formatR, portal }) {
       </div>
 
       <div
-        className="rounded-[14px] p-4 h-[160px] relative overflow-hidden mt-3.5"
+        className="rounded-[14px] p-4 relative overflow-hidden mt-3.5 flex flex-col"
         style={{
           background: "linear-gradient(135deg, #bfe0c5, #8fbf98 60%, #7fb08a)",
           boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.4)",
         }}
       >
-        <Building2 size={24} className="text-[#12301f]" strokeWidth={1.6} />
-        <h4 className="text-[19px] font-semibold mt-5 text-[#12301f]">{company.name}</h4>
-        <div className="absolute left-4 bottom-4 text-[#12301f]">
-          <small className="block text-[12px] opacity-70">Bank Balance</small>
-          <b className="text-[22px]">{formatR(bankBalance)}</b>
+        <div className="flex items-start justify-between">
+          <Building2 size={24} className="text-[#12301f] flex-none" strokeWidth={1.6} />
+          {company.vat_number && (
+            <span className="text-[11px] text-[#12301f] opacity-70 font-medium">
+              VAT {company.vat_number}
+            </span>
+          )}
         </div>
-        <div className="absolute right-4 bottom-4 text-[12px] text-[#12301f] text-right leading-[1.6]">
-          {company.vat_number ? `VAT ${company.vat_number}` : ""}<br />
-          {company.financial_year_end ? `FY ends ${company.financial_year_end.slice(0, 3)}` : ""}
+
+        <h4 className="text-[15px] font-semibold mt-2.5 text-[#12301f] leading-snug truncate">
+          {company.name}
+        </h4>
+        {company.financial_year_end && (
+          <p className="text-[11px] text-[#12301f] opacity-60 mt-0.5">
+            FY ends {company.financial_year_end.slice(0, 3)}
+          </p>
+        )}
+
+        <div className="mt-auto pt-3">
+          <small className="block text-[11px] text-[#12301f] opacity-70">Bank Balance</small>
+          <b className="text-[20px] text-[#12301f]">{formatR(bankBalance)}</b>
         </div>
+
         <div
-          className="absolute -right-[30px] -top-[40px] w-[160px] h-[160px] rounded-full"
-          style={{ background: "rgba(255,255,255,0.18)" }}
+          className="absolute -right-[30px] -top-[40px] w-[140px] h-[140px] rounded-full pointer-events-none"
+          style={{ background: "rgba(255,255,255,0.15)" }}
         />
       </div>
 

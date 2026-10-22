@@ -117,18 +117,18 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="grid grid-cols-[1fr_300px] gap-4 items-start">
+    <div className="grid grid-cols-[1fr_280px] gap-4 items-start">
       {/* Left column */}
       <div className="flex flex-col gap-4 min-w-0">
         {/* Stats */}
         {loading ? (
-          <div className="grid grid-cols-4 gap-[14px]">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-[14px]">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="bg-white rounded-[14px] border border-[#e4ebe5] p-4 animate-pulse h-[120px]" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-4 gap-[14px]">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-[14px]">
             <StatCard
               label="Bank Balance"
               value={formatR(bankBalance)}
