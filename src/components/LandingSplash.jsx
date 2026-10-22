@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 
-const LOGO_URL = "/favicon.svg";
+const LOGO_URL = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/media/site/favicon.svg`;
 
 export default function LandingSplash({ onComplete }) {
   useEffect(() => {
