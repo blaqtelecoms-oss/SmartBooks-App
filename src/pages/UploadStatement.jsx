@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Check, Loader2, AlertCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -28,9 +28,9 @@ export default function UploadStatement() {
     if (!file || !currentCompany) return;
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file, companyId: currentCompany.id, kind: "bank_statement" });
+      const { file_url } = await db.integrations.Core.UploadFile({ file, companyId: currentCompany.id, kind: "bank_statement" });
 
-      await base44.entities.Document.create({
+      await db.entities.Document.create({
         company_id: currentCompany.id,
         name: file.name,
         type: "bank_statement",
@@ -42,7 +42,7 @@ export default function UploadStatement() {
       setUploading(false);
       setProcessing(true);
 
-      const extracted = await base44.integrations.Core.ExtractDataFromUploadedFile({
+      const extracted = await db.integrations.Core.ExtractDataFromUploadedFile({
         file_url,
         json_schema: {
           type: "object",
@@ -69,7 +69,7 @@ export default function UploadStatement() {
       if (extracted.status === "success" && extracted.output?.transactions) {
         const txs = extracted.output.transactions;
 
-        const aiCategorized = await base44.integrations.Core.InvokeLLM({
+        const aiCategorized = await db.integrations.Core.InvokeLLM({
           prompt: `You are a South African bookkeeper. Categorize these bank transactions according to SA accounting standards.
 For each transaction, provide:
 - category: the account category (e.g. "Sales Revenue", "Cost of Sales", "Operating Expenses", "Bank Charges", "Salaries & Wages", "Rent", "Utilities", "Motor Vehicle Expenses", "Office Supplies", "Professional Fees", "Insurance", "Telephone & Internet", "Travel & Entertainment", "VAT Input", "VAT Output", "Owner Drawings", "Capital", "Loan Repayment", "Other Income", "Other Expenses")
@@ -124,7 +124,7 @@ ${JSON.stringify(txs.slice(0, 50))}`,
         }
 
         if (created.length > 0) {
-          await base44.entities.Transaction.bulkCreate(created);
+          await db.entities.Transaction.bulkCreate(created);
         }
 
         setResults({ total: txs.length, imported: created.length, bank: extracted.output.bank_name });

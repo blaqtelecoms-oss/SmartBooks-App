@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,8 +29,8 @@ export default function TaxModule() {
     setLoading(true);
     try {
       const [txs, returns] = await Promise.all([
-        base44.entities.Transaction.filter({ company_id: currentCompany.id }, "-date", 50),
-        base44.entities.TaxReturn.filter({ company_id: currentCompany.id }, "-created_date")
+        db.entities.Transaction.filter({ company_id: currentCompany.id }, "-date", 50),
+        db.entities.TaxReturn.filter({ company_id: currentCompany.id }, "-created_date")
       ]);
       setTransactions(txs);
       setTaxReturns(returns);
@@ -46,7 +46,7 @@ export default function TaxModule() {
     try {
       const periodTxs = transactions.filter(t => t.date >= periodStart && t.date <= periodEnd);
 
-      const result = await base44.integrations.Core.InvokeLLM({
+      const result = await db.integrations.Core.InvokeLLM({
         prompt: `You are a South African tax specialist. Generate a ${selectedType} tax return calculation for company "${currentCompany.name}".
 
 Company details:
@@ -90,7 +90,7 @@ For IRP5: calculate employee tax certificate details.`,
         model: "claude_sonnet_4_6"
       });
 
-      await base44.entities.TaxReturn.create({
+      await db.entities.TaxReturn.create({
         company_id: currentCompany.id,
         type: selectedType,
         period_start: periodStart,

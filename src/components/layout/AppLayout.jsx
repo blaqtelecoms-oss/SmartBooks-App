@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import Sidebar from "./Sidebar";
 import { Bell, Mail, Search } from "lucide-react";
 
@@ -44,7 +44,7 @@ export default function AppLayout() {
 
   const loadCompanies = async () => {
     try {
-      const list = await base44.entities.Company.list();
+      const list = await db.entities.Company.list();
       setCompanies(list);
       if (list.length > 0) {
         const saved = localStorage.getItem("smartbooks_company_id");
@@ -56,7 +56,7 @@ export default function AppLayout() {
 
   const loadUnallocatedCount = async () => {
     try {
-      const count = await base44.entities.Transaction.count({
+      const count = await db.entities.Transaction.count({
         company_id: currentCompany.id,
         status: "unallocated",
       });
@@ -65,7 +65,7 @@ export default function AppLayout() {
   };
 
   const loadUser = async () => {
-    try { setUser(await base44.auth.me()); } catch (e) {}
+    try { setUser(await db.auth.me()); } catch (e) {}
   };
 
   const handleCompanyChange = (companyId) => {

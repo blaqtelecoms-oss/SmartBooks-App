@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -27,8 +27,8 @@ export default function AllocationRules() {
     setLoading(true);
     try {
       const [r, a] = await Promise.all([
-        base44.entities.AllocationRule.filter({ company_id: currentCompany.id }, '-times_applied'),
-        base44.entities.Account.filter({ company_id: currentCompany.id, is_active: true })
+        db.entities.AllocationRule.filter({ company_id: currentCompany.id }, '-times_applied'),
+        db.entities.Account.filter({ company_id: currentCompany.id, is_active: true })
       ]);
       setRules(r);
       setAccounts(a);
@@ -39,7 +39,7 @@ export default function AllocationRules() {
   const handleLearn = async () => {
     setLearning(true);
     try {
-      const res = await base44.functions.invoke('learnAllocationRules', { company_id: currentCompany.id });
+      const res = await db.functions.invoke('learnAllocationRules', { company_id: currentCompany.id });
       toast({ title: res.data.message || `${res.data.rules_created} rules learned` });
       await loadData();
     } catch (e) {
@@ -51,7 +51,7 @@ export default function AllocationRules() {
   const handleApply = async () => {
     setApplying(true);
     try {
-      const res = await base44.functions.invoke('applyAllocationRules', { company_id: currentCompany.id });
+      const res = await db.functions.invoke('applyAllocationRules', { company_id: currentCompany.id });
       toast({ title: res.data.message || `${res.data.allocated} transactions allocated` });
     } catch (e) {
       toast({ title: "Failed to apply rules", description: e.message, variant: "destructive" });
@@ -61,7 +61,7 @@ export default function AllocationRules() {
 
   const handleToggle = async (ruleId, current) => {
     try {
-      await base44.entities.AllocationRule.update(ruleId, { is_active: !current });
+      await db.entities.AllocationRule.update(ruleId, { is_active: !current });
       setRules(rules.map(r => r.id === ruleId ? { ...r, is_active: !current } : r));
     } catch (e) {
       toast({ title: "Error updating rule", variant: "destructive" });
@@ -70,7 +70,7 @@ export default function AllocationRules() {
 
   const handleDelete = async (ruleId) => {
     try {
-      await base44.entities.AllocationRule.delete(ruleId);
+      await db.entities.AllocationRule.delete(ruleId);
       setRules(rules.filter(r => r.id !== ruleId));
       toast({ title: "Rule deleted" });
     } catch (e) {
@@ -85,7 +85,7 @@ export default function AllocationRules() {
     }
     const account = accounts.find(a => a.id === newRule.account_id);
     try {
-      await base44.entities.AllocationRule.create({
+      await db.entities.AllocationRule.create({
         company_id: currentCompany.id,
         match_field: newRule.match_field,
         match_type: newRule.match_type,

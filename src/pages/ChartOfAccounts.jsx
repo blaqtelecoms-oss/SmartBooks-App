@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -66,7 +66,7 @@ export default function ChartOfAccounts() {
   const loadAccounts = async () => {
     setLoading(true);
     try {
-      const accts = await base44.entities.Account.filter({ company_id: currentCompany.id });
+      const accts = await db.entities.Account.filter({ company_id: currentCompany.id });
       setAccounts(accts);
     } catch (e) {}
     setLoading(false);
@@ -75,7 +75,7 @@ export default function ChartOfAccounts() {
   const handleSetupDefaults = async () => {
     try {
       const toCreate = defaultAccounts.map(a => ({ ...a, company_id: currentCompany.id, is_system: true, is_active: true, balance: 0 }));
-      await base44.entities.Account.bulkCreate(toCreate);
+      await db.entities.Account.bulkCreate(toCreate);
       await loadAccounts();
       toast({ title: "Default chart of accounts created" });
     } catch (e) {
@@ -87,8 +87,8 @@ export default function ChartOfAccounts() {
     if (!form.code || !form.name) { toast({ title: "Code and name are required", variant: "destructive" }); return; }
     try {
       const data = { ...form, company_id: currentCompany.id, is_active: true };
-      if (editingId) await base44.entities.Account.update(editingId, data);
-      else await base44.entities.Account.create(data);
+      if (editingId) await db.entities.Account.update(editingId, data);
+      else await db.entities.Account.create(data);
       setDialogOpen(false);
       setForm(emptyForm);
       setEditingId(null);
@@ -102,7 +102,7 @@ export default function ChartOfAccounts() {
   const handleDelete = async (id) => {
     if (!confirm("Delete this account?")) return;
     try {
-      await base44.entities.Account.delete(id);
+      await db.entities.Account.delete(id);
       await loadAccounts();
       toast({ title: "Account deleted" });
     } catch (e) {}

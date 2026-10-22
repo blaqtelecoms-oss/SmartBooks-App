@@ -1,5 +1,5 @@
--- SmartBooks SA: schema migrated from Base44 entities.
--- Column names are kept identical to the Base44 entities (incl. created_date / updated_date)
+-- SmartBooks SA: database schema.
+-- Column names kept for app compatibility (incl. created_date / updated_date)
 -- so the frontend can keep using the same field names.
 
 create extension if not exists "pgcrypto";
@@ -12,7 +12,7 @@ begin
   return new;
 end $$;
 
--- ---------------------------------------------------------------- profiles (Base44 "User")
+-- ---------------------------------------------------------------- profiles
 create table public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,

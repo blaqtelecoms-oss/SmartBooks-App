@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -34,8 +34,8 @@ export default function Transactions() {
     setLoading(true);
     try {
       const [txs, accts] = await Promise.all([
-        base44.entities.Transaction.filter({ company_id: currentCompany.id }, "-date", 50),
-        base44.entities.Account.filter({ company_id: currentCompany.id })
+        db.entities.Transaction.filter({ company_id: currentCompany.id }, "-date", 50),
+        db.entities.Account.filter({ company_id: currentCompany.id })
       ]);
       setTransactions(txs);
       setAccounts(accts);
@@ -48,7 +48,7 @@ export default function Transactions() {
     if (!account) return;
     setAllocating(true);
     try {
-      await base44.entities.Transaction.update(txId, {
+      await db.entities.Transaction.update(txId, {
         account_id: accountId,
         account_name: account.name,
         status: "allocated"
@@ -60,7 +60,7 @@ export default function Transactions() {
         const keyword = tx.description.split(" ").slice(0, 3).join(" ").trim();
         if (keyword.length > 2) {
           try {
-            await base44.entities.AllocationRule.create({
+            await db.entities.AllocationRule.create({
               company_id: currentCompany.id,
               match_field: "description",
               match_type: "contains",
@@ -86,7 +86,7 @@ export default function Transactions() {
   const handleLearnRules = async () => {
     setAllocating(true);
     try {
-      const res = await base44.functions.invoke("learnAllocationRules", { company_id: currentCompany.id });
+      const res = await db.functions.invoke("learnAllocationRules", { company_id: currentCompany.id });
       toast({ title: res.data.message || `${res.data.rules_created} rules learned` });
       await loadData();
     } catch (e) {
@@ -100,7 +100,7 @@ export default function Transactions() {
     setAiExplaining(true);
     setAiExplanation("");
     try {
-      const result = await base44.integrations.Core.InvokeLLM({
+      const result = await db.integrations.Core.InvokeLLM({
         prompt: `You are a South African chartered accountant. Explain why this transaction was categorized as "${tx.category}" and allocated to "${tx.account_name || "unallocated"}".
 
 Transaction details:
@@ -129,7 +129,7 @@ Provide a clear, professional explanation. Include:
   const handleBulkAllocate = async () => {
     setAllocating(true);
     try {
-      const res = await base44.functions.invoke("applyAllocationRules", { company_id: currentCompany.id });
+      const res = await db.functions.invoke("applyAllocationRules", { company_id: currentCompany.id });
       toast({ title: res.data.message || `${res.data.allocated} transactions auto-allocated` });
       await loadData();
     } catch (e) {

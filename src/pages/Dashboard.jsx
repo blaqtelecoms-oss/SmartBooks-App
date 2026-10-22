@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext, Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Building2, Wallet, TrendingUp, Calculator, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StatCard from "@/components/dashboard/StatCard";
@@ -24,11 +24,11 @@ export default function Dashboard() {
     setLoading(true);
     try {
       const [txs, logs] = await Promise.all([
-        base44.entities.Transaction.filter(
+        db.entities.Transaction.filter(
           { company_id: currentCompany.id },
           { sort: "-date", limit: 200 }
         ),
-        base44.entities.AuditLog.filter(
+        db.entities.AuditLog.filter(
           { company_id: currentCompany.id },
           { sort: "-created_date", limit: 5 }
         ),

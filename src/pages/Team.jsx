@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,7 +34,7 @@ export default function Team() {
   const loadMembers = async () => {
     setLoading(true);
     try {
-      setMembers(await base44.entities.CompanyUser.filter({ company_id: currentCompany.id }));
+      setMembers(await db.entities.CompanyUser.filter({ company_id: currentCompany.id }));
     } catch (e) {}
     setLoading(false);
   };
@@ -43,8 +43,8 @@ export default function Team() {
     if (!email) { toast({ title: "Email is required", variant: "destructive" }); return; }
     setInviting(true);
     try {
-      await base44.users.inviteUser(email, "user");
-      await base44.entities.CompanyUser.create({
+      await db.users.inviteUser(email, "user");
+      await db.entities.CompanyUser.create({
         company_id: currentCompany.id,
         user_id: email,
         role,
@@ -63,7 +63,7 @@ export default function Team() {
   const handleRemove = async (id) => {
     if (!confirm("Remove this team member?")) return;
     try {
-      await base44.entities.CompanyUser.delete(id);
+      await db.entities.CompanyUser.delete(id);
       await loadMembers();
       toast({ title: "Member removed" });
     } catch (e) {}

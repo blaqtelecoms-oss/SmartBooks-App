@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useOutletContext } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Camera, Upload, Loader2, ScanLine, Send, CheckCircle2, Eye, Trash2, Receipt } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -25,7 +25,7 @@ export default function ScanReceipt() {
   const loadDocs = async () => {
     setLoading(true);
     try {
-      const result = await base44.entities.Document.filter(
+      const result = await db.entities.Document.filter(
         { company_id: currentCompany.id, type: "receipt" },
         { sort: "-created_date", limit: 50 }
       );
@@ -38,9 +38,9 @@ export default function ScanReceipt() {
     if (!file) return;
     setUploading(true);
     try {
-      const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file, companyId: currentCompany.id, kind: "receipt" });
+      const { file_uri } = await db.integrations.Core.UploadPrivateFile({ file, companyId: currentCompany.id, kind: "receipt" });
 
-      const doc = await base44.entities.Document.create({
+      const doc = await db.entities.Document.create({
         company_id: currentCompany.id,
         name: file.name,
         type: "receipt",
@@ -50,9 +50,9 @@ export default function ScanReceipt() {
         submitted: false
       });
 
-      const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 600 });
+      const { signed_url } = await db.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 600 });
 
-      const extracted = await base44.integrations.Core.InvokeLLM({
+      const extracted = await db.integrations.Core.InvokeLLM({
         prompt: `Extract all data from this receipt/slip. Identify: supplier name, VAT number, date, receipt number, line items with descriptions and amounts, subtotal, VAT amount (15%), total. Format clearly.`,
         file_urls: [signed_url],
         response_json_schema: {
@@ -70,7 +70,7 @@ export default function ScanReceipt() {
         }
       });
 
-      await base44.entities.Document.update(doc.id, {
+      await db.entities.Document.update(doc.id, {
         status: "processed",
         extracted_data: JSON.stringify(extracted)
       });
@@ -91,7 +91,7 @@ export default function ScanReceipt() {
 
   const handleSubmit = async (doc) => {
     try {
-      await base44.entities.Document.update(doc.id, {
+      await db.entities.Document.update(doc.id, {
         submitted: true,
         submitted_date: moment().format("YYYY-MM-DD")
       });
@@ -110,9 +110,9 @@ export default function ScanReceipt() {
   const handleDelete = async (doc) => {
     try {
       if (doc.file_url) {
-        await base44.integrations.Core.DeleteFile({ file_uri: doc.file_url });
+        await db.integrations.Core.DeleteFile({ file_uri: doc.file_url });
       }
-      await base44.entities.Document.delete(doc.id);
+      await db.entities.Document.delete(doc.id);
       await loadDocs();
       toast({ title: "Receipt deleted" });
     } catch (e) {}

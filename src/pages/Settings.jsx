@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,7 +30,7 @@ export default function Settings() {
 
   const loadUser = async () => {
     try {
-      setUser(await base44.auth.me());
+      setUser(await db.auth.me());
     } catch (e) {}
     setLoading(false);
   };
@@ -129,7 +129,7 @@ export default function Settings() {
                   onClick={async () => {
                     setDeleting(true);
                     try {
-                      await base44.auth.logout();
+                      await db.auth.logout();
                       window.location.href = "/login";
                     } catch (e) {
                       toast({

@@ -5,7 +5,7 @@ import {
   Shield, Settings, MessageSquare, Users, ArrowLeftRight, Receipt,
   Wand2, ScanLine, LogOut,
 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import Logo from "@/components/Logo";
 
 const accountantNav = [
@@ -101,7 +101,7 @@ export default function Sidebar({ currentCompany, companies, onCompanyChange, po
       {/* Sign out */}
       <div className="mx-3 mt-2 flex-none">
         <button
-          onClick={() => base44.auth.logout("/")}
+          onClick={() => db.auth.logout("/")}
           className="flex items-center gap-2 w-full px-3 py-2.5 rounded-[9px] text-[14px] font-medium text-[#5C7263] hover:text-[#C25B5B] hover:bg-[#fbe9e9] transition-colors border-0 bg-transparent cursor-pointer"
         >
           <LogOut size={18} strokeWidth={1.6} />

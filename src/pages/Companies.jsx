@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,7 +29,7 @@ export default function Companies() {
 
   const loadCompanies = async () => {
     setLoading(true);
-    try { setCompanies(await base44.entities.Company.list()); } catch (e) {}
+    try { setCompanies(await db.entities.Company.list()); } catch (e) {}
     setLoading(false);
   };
 
@@ -38,9 +38,9 @@ export default function Companies() {
     setSaving(true);
     try {
       if (editingId) {
-        await base44.entities.Company.update(editingId, form);
+        await db.entities.Company.update(editingId, form);
       } else {
-        await base44.entities.Company.create(form);
+        await db.entities.Company.create(form);
       }
       setDialogOpen(false);
       setEditingId(null);
@@ -70,7 +70,7 @@ export default function Companies() {
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this company?")) return;
     try {
-      await base44.entities.Company.delete(id);
+      await db.entities.Company.delete(id);
       await loadCompanies();
       refreshCompanies();
       toast({ title: "Company deleted" });

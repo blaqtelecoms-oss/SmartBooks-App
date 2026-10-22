@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Shield, Loader2 } from "lucide-react";
 import moment from "moment";
 
@@ -16,7 +16,7 @@ export default function AuditLog() {
   const loadLogs = async () => {
     setLoading(true);
     try {
-      setLogs(await base44.entities.AuditLog.filter({ company_id: currentCompany.id }, "-created_date", 50));
+      setLogs(await db.entities.AuditLog.filter({ company_id: currentCompany.id }, "-created_date", 50));
     } catch (e) {}
     setLoading(false);
   };

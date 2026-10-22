@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sparkles, Send, Loader2, User } from "lucide-react";
@@ -29,7 +29,7 @@ export default function AIAssistant() {
     try {
       const context = currentCompany ? `The user is working with company "${currentCompany.name}" (VAT: ${currentCompany.vat_number || "N/A"}, Tax: ${currentCompany.tax_number || "N/A"}, FYE: ${currentCompany.financial_year_end || "N/A"}).` : "";
 
-      const response = await base44.integrations.Core.InvokeLLM({
+      const response = await db.integrations.Core.InvokeLLM({
         prompt: `You are a highly knowledgeable South African chartered accountant AI assistant for SmartBooks SA. You specialize in:
 - SA GAAP and IFRS accounting standards
 - SARS tax legislation (Income Tax Act, VAT Act)

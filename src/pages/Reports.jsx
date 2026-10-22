@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,8 +20,8 @@ export default function Reports() {
     setLoading(true);
     try {
       const [txs, accts] = await Promise.all([
-        base44.entities.Transaction.filter({ company_id: currentCompany.id }, "-date", 50),
-        base44.entities.Account.filter({ company_id: currentCompany.id })
+        db.entities.Transaction.filter({ company_id: currentCompany.id }, "-date", 50),
+        db.entities.Account.filter({ company_id: currentCompany.id })
       ]);
       setTransactions(txs);
       setAccounts(accts);

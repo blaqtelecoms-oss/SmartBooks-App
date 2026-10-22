@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Image, Loader2, Eye, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -23,7 +23,7 @@ export default function Documents() {
   const loadDocs = async () => {
     setLoading(true);
     try {
-      setDocuments(await base44.entities.Document.filter({ company_id: currentCompany.id }, "-created_date"));
+      setDocuments(await db.entities.Document.filter({ company_id: currentCompany.id }, "-created_date"));
     } catch (e) {}
     setLoading(false);
   };
@@ -33,9 +33,9 @@ export default function Documents() {
     if (!file) return;
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file, companyId: currentCompany.id, kind: type });
+      const { file_url } = await db.integrations.Core.UploadFile({ file, companyId: currentCompany.id, kind: type });
 
-      const doc = await base44.entities.Document.create({
+      const doc = await db.entities.Document.create({
         company_id: currentCompany.id,
         name: file.name,
         type,
@@ -45,7 +45,7 @@ export default function Documents() {
       });
 
       // OCR extraction
-      const extracted = await base44.integrations.Core.InvokeLLM({
+      const extracted = await db.integrations.Core.InvokeLLM({
         prompt: `Extract all data from this ${type}. Identify: supplier name, VAT number, date, invoice/receipt number, line items with descriptions and amounts, subtotal, VAT amount (15%), total. Format clearly.`,
         file_urls: [file_url],
         response_json_schema: {
@@ -63,7 +63,7 @@ export default function Documents() {
         }
       });
 
-      await base44.entities.Document.update(doc.id, {
+      await db.entities.Document.update(doc.id, {
         status: "processed",
         extracted_data: JSON.stringify(extracted)
       });
@@ -84,9 +84,9 @@ export default function Documents() {
   const handleDelete = async (doc) => {
     try {
       if (doc.file_url) {
-        await base44.integrations.Core.DeleteFile({ file_uri: doc.file_url });
+        await db.integrations.Core.DeleteFile({ file_uri: doc.file_url });
       }
-      await base44.entities.Document.delete(doc.id);
+      await db.entities.Document.delete(doc.id);
       await loadDocs();
       toast({ title: "Document deleted" });
     } catch (e) {}

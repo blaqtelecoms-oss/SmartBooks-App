@@ -2,16 +2,15 @@
 
 ## Project Context
 
-This is a Supabase-backed React application (SmartBooks SA). The app was migrated from Base44 to Supabase. Treat it as user-owned application code, keep changes focused on the user's request, and preserve existing project conventions.
+This is a Supabase-backed React application (SmartBooks SA). Treat it as user-owned application code, keep changes focused on the user's request, and preserve existing project conventions.
 
 Start with `README.md` for local setup, environment variables, and deployment workflow.
 
 ## Key Files
 
 - `src/`: frontend application source.
-- `src/api/supabaseClient.js`: Supabase client — exports `supabase` (raw client) and `db` (compatibility shim with the old Base44 SDK call shapes: `db.entities.*`, `db.auth.*`, `db.integrations.*`, `db.users.*`).
-- `src/api/base44Client.js`: thin re-export of `db` from `supabaseClient.js`, kept so existing imports (`@/api/base44Client`) continue to work.
-- `vite.config.js`: Vite config (plain React plugin, no Base44 plugin).
+- `src/api/supabaseClient.js`: Supabase client — exports `supabase` (raw client) and `db` (the app's API layer: `db.entities.*`, `db.auth.*`, `db.integrations.*`, `db.users.*`).
+- `vite.config.js`: Vite config (plain React plugin).
 - `.env.local`: local-only environment values (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`); never commit secrets.
 - `supabase/`: Supabase project config, migrations, and Edge Functions.
 
