@@ -60,10 +60,10 @@ export default function Sidebar({ currentCompany, companies, onCompanyChange, po
             <span className="text-[17px] font-bold text-[#2D5A43] tracking-tight">SmartBooks</span>
             <button
               onClick={onToggleCollapse}
-              className="ml-auto w-[28px] h-[28px] rounded-[8px] grid place-items-center text-[#7A8E7E] hover:text-[#2D5A43] hover:bg-[#e9f3ea] transition-colors border-0 bg-transparent cursor-pointer"
+              className="ml-auto w-[34px] h-[34px] rounded-[9px] grid place-items-center text-[#5C7263] bg-[#e9f3ea] hover:bg-[#d6ebd9] hover:text-[#2D5A43] transition-colors border border-[#e4ebe5] cursor-pointer"
               title="Collapse menu"
             >
-              <PanelLeftClose size={16} strokeWidth={1.8} />
+              <PanelLeftClose size={18} strokeWidth={1.8} />
             </button>
           </>
         )}
@@ -73,10 +73,10 @@ export default function Sidebar({ currentCompany, companies, onCompanyChange, po
       {collapsed && (
         <button
           onClick={onToggleCollapse}
-          className="mx-auto mt-2 w-[36px] h-[36px] rounded-[10px] grid place-items-center text-[#7A8E7E] hover:text-[#2D5A43] hover:bg-[#e9f3ea] transition-colors border-0 bg-transparent cursor-pointer"
+          className="mx-auto mt-2 w-[40px] h-[40px] rounded-[10px] grid place-items-center text-[#5C7263] bg-[#e9f3ea] hover:bg-[#d6ebd9] hover:text-[#2D5A43] transition-colors border border-[#e4ebe5] cursor-pointer"
           title="Expand menu"
         >
-          <PanelLeftOpen size={18} strokeWidth={1.8} />
+          <PanelLeftOpen size={20} strokeWidth={1.8} />
         </button>
       )}
 
