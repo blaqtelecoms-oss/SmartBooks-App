@@ -1,0 +1,46 @@
+{
+  "name": "CompanyUser",
+  "type": "object",
+  "properties": {
+    "company_id": {
+      "type": "string",
+      "description": "Company ID"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "User ID"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "super_admin",
+        "accountant",
+        "bookkeeper",
+        "business_owner",
+        "employee"
+      ],
+      "description": "User role in this company"
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Specific permissions"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "invited",
+        "inactive"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "company_id",
+    "user_id",
+    "role"
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "name": "Document",
+  "type": "object",
+  "properties": {
+    "company_id": {
+      "type": "string",
+      "description": "Company ID"
+    },
+    "name": {
+      "type": "string",
+      "description": "Document name"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "bank_statement",
+        "receipt",
+        "invoice",
+        "tax_return",
+        "report",
+        "other"
+      ],
+      "description": "Document type"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "File URL"
+    },
+    "file_type": {
+      "type": "string",
+      "description": "File extension"
+    },
+    "extracted_data": {
+      "type": "string",
+      "description": "JSON string of OCR extracted data"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "uploaded",
+        "processing",
+        "processed",
+        "error"
+      ],
+      "default": "uploaded"
+    },
+    "submitted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this receipt has been submitted to the accountant"
+    },
+    "submitted_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date submitted to accountant"
+    },
+    "transaction_id": {
+      "type": "string",
+      "description": "Linked transaction ID"
+    }
+  },
+  "required": [
+    "company_id",
+    "name",
+    "type",
+    "file_url"
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "name": "Transaction",
+  "type": "object",
+  "properties": {
+    "company_id": {
+      "type": "string",
+      "description": "Company ID"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Transaction date"
+    },
+    "description": {
+      "type": "string",
+      "description": "Transaction description"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Transaction amount in rands"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "debit",
+        "credit"
+      ],
+      "description": "Debit or Credit"
+    },
+    "account_id": {
+      "type": "string",
+      "description": "Allocated account ID"
+    },
+    "account_name": {
+      "type": "string",
+      "description": "Allocated account name"
+    },
+    "contra_account_id": {
+      "type": "string",
+      "description": "Contra account ID"
+    },
+    "contra_account_name": {
+      "type": "string",
+      "description": "Contra account name"
+    },
+    "category": {
+      "type": "string",
+      "description": "AI-suggested category"
+    },
+    "vat_amount": {
+      "type": "number",
+      "default": 0,
+      "description": "VAT portion"
+    },
+    "vat_inclusive": {
+      "type": "boolean",
+      "default": true
+    },
+    "reference": {
+      "type": "string",
+      "description": "Bank reference"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "bank_statement",
+        "manual",
+        "invoice",
+        "receipt"
+      ],
+      "default": "manual"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "unallocated",
+        "allocated",
+        "reviewed",
+        "locked"
+      ],
+      "default": "unallocated"
+    },
+    "ai_confidence": {
+      "type": "number",
+      "description": "AI allocation confidence 0-100"
+    },
+    "ai_reasoning": {
+      "type": "string",
+      "description": "AI explanation for allocation"
+    },
+    "is_duplicate": {
+      "type": "boolean",
+      "default": false
+    },
+    "duplicate_of": {
+      "type": "string",
+      "description": "ID of potential duplicate transaction"
+    },
+    "receipt_url": {
+      "type": "string",
+      "description": "Attached receipt file URL"
+    },
+    "invoice_url": {
+      "type": "string",
+      "description": "Attached invoice file URL"
+    },
+    "supplier_name": {
+      "type": "string"
+    },
+    "bank_name": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "company_id",
+    "date",
+    "description",
+    "amount"
+  ]
+}

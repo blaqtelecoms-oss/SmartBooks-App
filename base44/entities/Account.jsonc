@@ -1,0 +1,66 @@
+{
+  "name": "Account",
+  "type": "object",
+  "properties": {
+    "company_id": {
+      "type": "string",
+      "description": "Company ID"
+    },
+    "code": {
+      "type": "string",
+      "description": "Account code e.g. 1000"
+    },
+    "name": {
+      "type": "string",
+      "description": "Account name"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "asset",
+        "liability",
+        "equity",
+        "income",
+        "expense",
+        "vat",
+        "paye"
+      ],
+      "description": "Account type"
+    },
+    "sub_type": {
+      "type": "string",
+      "description": "Sub-category e.g. current_asset, fixed_asset"
+    },
+    "description": {
+      "type": "string"
+    },
+    "is_system": {
+      "type": "boolean",
+      "default": false,
+      "description": "System-generated account"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "balance": {
+      "type": "number",
+      "default": 0,
+      "description": "Current balance in cents"
+    },
+    "normal_side": {
+      "type": "string",
+      "enum": [
+        "debit",
+        "credit"
+      ],
+      "description": "Normal balance side"
+    }
+  },
+  "required": [
+    "company_id",
+    "code",
+    "name",
+    "type"
+  ]
+}
