@@ -246,41 +246,105 @@ async function parsePdf(file) {
 function parseTextLines(text) {
   const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
   const transactions = [];
-  // Date at start of line followed by description and amount
-  const dateAmountRe = /^(\d{1,2}[\s\/-]\d{1,2}[\s\/-]\d{2,4}|\d{4}-\d{2}-\d{2}|\d{1,2}\s+\w{3}\s+\d{2,4})\s+(.+?)\s+R?\s*([\d,]+\.\d{2})\s*$/i;
 
-  for (const line of lines) {
-    const m = line.match(dateAmountRe);
-    if (m) {
-      transactions.push({
-        date: normalizeDate(m[1]),
-        description: m[2].trim(),
-        amount: parseFloat(m[3].replace(/,/g, "")),
-        reference: "",
-        balance: null,
-      });
+  // Date patterns that can appear at the start of a line
+  const datePatterns = [
+    /^(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4})\s+/,       // 03/09/2026, 03-09-26
+    /^(\d{4}[\/\-.]\d{2}[\/\-.]\d{2})\s+/,              // 2026-09-03
+    /^(\d{1,2}\s+\w{3,9}\s+\d{2,4})\s+/,                // 03 Sep 2026
+    /^(\d{1,2}\s+\w{3,9}['']\d{2})\s+/,                // 03 Sep'26
+  ];
+
+  // Amount pattern: optional R prefix, digits with optional commas, optional decimals, optional CR/DR/+/- 
+  const amountRe = /R?\s*([\d][\d,]*\.?\d{0,2})\s*(CR|DR|\+|-)?\b/gi;
+
+  // Skip lines that look like headers, footers, or non-transaction data
+  const skipKeywords = /^(page|statement|account|opening|closing|balance|summary|total|period|available|branch|held|overdraft|limit|interest\s+rate|card|client|reference\s+no|dated|generated|printed)\b/i;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (skipKeywords.test(line)) continue;
+
+    // Try each date pattern at the start of the line
+    let dateMatch = null;
+    for (const dp of datePatterns) {
+      const m = line.match(dp);
+      if (m) { dateMatch = m; break; }
     }
+    if (!dateMatch) continue;
+
+    const dateStr = dateMatch[1];
+    const rest = line.slice(dateMatch[0].length).trim();
+
+    // Extract all amounts from the rest of the line
+    const amounts = [];
+    let am;
+    const amtRe = /R?\s*(\d[\d,]*\.?\d{0,2})\s*(CR|DR|\+|\-)?/gi;
+    while ((am = amtRe.exec(rest)) !== null) {
+      const val = parseFloat(am[1].replace(/,/g, ""));
+      if (!isNaN(val) && val > 0) {
+        const suffix = (am[2] || "").toUpperCase();
+        amounts.push({ value: val, suffix });
+      }
+    }
+
+    if (amounts.length === 0) continue;
+
+    // The transaction amount is typically the first or last amount (before balance)
+    // If there are 2+ amounts, the last is usually the balance and the second-to-last is the transaction
+    let txAmount, balance;
+    if (amounts.length >= 2) {
+      txAmount = amounts[amounts.length - 2];
+      balance = amounts[amounts.length - 1].value;
+    } else {
+      txAmount = amounts[0];
+      balance = null;
+    }
+
+    // Determine sign: DR/- means debit (negative), CR/+ means credit (positive)
+    let signedAmount = txAmount.value;
+    if (txAmount.suffix === "DR" || txAmount.suffix === "-") {
+      signedAmount = -signedAmount;
+    } else if (txAmount.suffix === "CR" || txAmount.suffix === "+") {
+      signedAmount = Math.abs(signedAmount);
+    }
+
+    // Description: everything in `rest` except the amounts
+    let description = rest;
+    // Remove the trailing amounts and suffixes
+    description = description.replace(/R?\s*\d[\d,]*\.?\d{0,2}\s*(CR|DR|\+|-)?/gi, " ").replace(/\s+/g, " ").trim();
+    if (!description) description = "Transaction";
+
+    transactions.push({
+      date: normalizeDate(dateStr),
+      description,
+      amount: signedAmount,
+      reference: "",
+      balance,
+    });
   }
+
   return transactions;
 }
 
 // ─── Helpers ───
 function normalizeDate(str) {
   if (!str) return "";
-  str = str.trim();
+  str = str.trim().replace(/['']/g, "'");
   // YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
-  // DD/MM/YYYY or DD-MM-YYYY
-  let m = str.match(/^(\d{1,2})[\/\s-](\d{1,2})[\/\s-](\d{2,4})$/);
+  // DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY
+  let m = str.match(/^(\d{1,2})[\/.\s-](\d{1,2})[\/.\s-](\d{2,4})$/);
   if (m) {
-    const [_, d, mo, y] = m;
+    const d = m[1], mo = m[2], y = m[3];
     return `${y.length === 2 ? "20" + y : y}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
   }
-  // DD MMM YYYY
-  m = str.match(/^(\d{1,2})\s+(\w{3})\s+(\d{2,4})$/i);
+  // DD MMM YYYY or DD MMM'YY or DD MMMMM YYYY (full month name)
+  m = str.match(/^(\d{1,2})\s+([A-Za-z]{3,9})'?(\d{2,4})$/i);
   if (m) {
-    const months = { jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06", jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12" };
-    const mo = months[m[2].toLowerCase()];
+    const months = { jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06", jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12",
+      january: "01", february: "02", march: "03", april: "04", june: "06", july: "07", august: "08", september: "09", october: "10", november: "11", december: "12" };
+    const mo = months[m[2].toLowerCase().slice(0, 9)];
     if (mo) {
       const y = m[3].length === 2 ? "20" + m[3] : m[3];
       return `${y}-${mo}-${m[1].padStart(2, "0")}`;

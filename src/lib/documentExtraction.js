@@ -39,7 +39,6 @@ export async function extractTextFromFile(file) {
 async function extractTextFromPdf(file) {
   const arrayBuffer = await file.arrayBuffer();
   const pdfjsLib = await import("pdfjs-dist");
-  // Use the bundled worker via Vite's ?url import
   pdfjsLib.GlobalWorkerOptions.workerSrc = (await import("pdfjs-dist/build/pdf.worker.mjs?url")).default;
 
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -47,8 +46,46 @@ async function extractTextFromPdf(file) {
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const textContent = await page.getTextContent();
-    const pageText = textContent.items.map((item) => item.str).join(" ");
+    // Reconstruct lines using hasEOL (pdfjs v4+) or Y-position grouping
+    let pageText = "";
+    for (const item of textContent.items) {
+      if (item.str !== undefined) {
+        pageText += item.str;
+        if (item.hasEOL) pageText += "\n";
+        else pageText += " ";
+      }
+    }
     fullText += pageText + "\n";
+  }
+
+  // If very little text was found, the PDF is likely scanned — fall back to OCR
+  if (fullText.trim().length < 20) {
+    fullText = await ocrPdf(file, pdfjsLib);
+  }
+
+  return fullText.trim();
+}
+
+async function ocrPdf(file, pdfjsLib) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const { createWorker } = await import("tesseract.js");
+  const worker = await createWorker("eng");
+  let fullText = "";
+  try {
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 2 });
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext("2d");
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      const { data: { text } } = await worker.recognize(canvas);
+      fullText += text + "\n";
+    }
+  } finally {
+    await worker.terminate();
   }
   return fullText.trim();
 }
