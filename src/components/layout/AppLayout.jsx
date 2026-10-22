@@ -29,8 +29,19 @@ export default function AppLayout() {
   const [user, setUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return localStorage.getItem("smartbooks_sidebar_collapsed") === "true";
+  });
   const location = useLocation();
   const navigate = useNavigate();
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem("smartbooks_sidebar_collapsed", String(next));
+      return next;
+    });
+  };
 
   useEffect(() => {
     setPortal(localStorage.getItem("smartbooks_portal") || "accountant");
@@ -94,24 +105,26 @@ export default function AppLayout() {
         className="w-full max-w-[1400px] flex flex-col bg-[rgba(255,255,255,0.45)] rounded-[28px] p-[14px]"
         style={{ boxShadow: "0 20px 60px rgba(45,90,67,0.12)" }}
       >
-        <div className="grid grid-cols-[218px_1fr] grid-rows-[minmax(0,1fr)] bg-[#fbfdfb] rounded-[18px] overflow-hidden flex-1 min-h-0">
+        <div className="grid grid-rows-[minmax(0,1fr)] bg-[#fbfdfb] rounded-[18px] overflow-hidden flex-1 min-h-0" style={{ gridTemplateColumns: `${sidebarCollapsed ? 68 : 218}px 1fr`, transition: 'grid-template-columns 0.3s ease-in-out' }}>
           <Sidebar
             currentCompany={currentCompany}
             companies={companies}
             onCompanyChange={handleCompanyChange}
             portal={portal}
             unallocatedCount={unallocatedCount}
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={toggleSidebar}
           />
 
           {/* Main */}
           <div className="flex flex-col min-w-0 min-h-0 overflow-hidden">
             {/* Header */}
-            <header className="h-[68px] border-b border-[#e4ebe5] flex items-center gap-[18px] px-6 flex-none">
-              <h1 className="text-[19px] font-semibold min-w-[150px]">{pageTitle}</h1>
+            <header className="h-[68px] border-b border-[#e4ebe5] flex items-center gap-[18px] px-6 flex-none bg-[#fbfdfb]">
+              <h1 className="text-[19px] font-semibold min-w-[150px] text-[#1A2E22] tracking-tight">{pageTitle}</h1>
 
               {/* Search */}
               <div className="flex-[0_1_460px] mx-auto relative">
-                <div className="flex items-center gap-[9px] border border-[#e4ebe5] bg-white rounded-full px-[15px] py-2.5 text-[#7A8E7E]">
+                <div className="flex items-center gap-[9px] border border-[#e4ebe5] bg-white rounded-full px-[15px] py-2.5 text-[#7A8E7E] transition-colors focus-within:border-[#4A7C5E] focus-within:bg-white">
                   <Search size={18} strokeWidth={1.6} />
                   <input
                     type="text"
@@ -120,7 +133,7 @@ export default function AppLayout() {
                     onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true); }}
                     onFocus={() => setSearchOpen(true)}
                     onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
-                    className="border-0 outline-0 bg-transparent w-full text-[15px] text-[#1A2E22] font-inherit"
+                    className="border-0 outline-0 bg-transparent w-full text-[14px] text-[#1A2E22] font-inherit"
                   />
                 </div>
                 {searchOpen && searchQuery && (
@@ -161,22 +174,22 @@ export default function AppLayout() {
               </div>
 
               {/* Icon buttons */}
-              <button className="w-[38px] h-[38px] border border-[#e4ebe5] bg-white rounded-[10px] grid place-items-center text-[#1A2E22] relative cursor-pointer">
+              <button className="w-[38px] h-[38px] border border-[#e4ebe5] bg-white rounded-[10px] grid place-items-center text-[#1A2E22] hover:border-[#4A7C5E] hover:bg-[#f0f7f1] transition-colors relative cursor-pointer">
                 <Bell size={18} strokeWidth={1.6} />
                 <span className="absolute top-[8px] right-2.5 w-1.5 h-1.5 rounded-full bg-[#C25B5B]" />
               </button>
-              <button className="w-[38px] h-[38px] border border-[#e4ebe5] bg-white rounded-[10px] grid place-items-center text-[#1A2E22] cursor-pointer">
+              <button className="w-[38px] h-[38px] border border-[#e4ebe5] bg-white rounded-[10px] grid place-items-center text-[#1A2E22] hover:border-[#4A7C5E] hover:bg-[#f0f7f1] transition-colors cursor-pointer">
                 <Mail size={18} strokeWidth={1.6} />
               </button>
 
               {/* User chip */}
-              <div className="flex items-center gap-[9px]">
+              <div className="flex items-center gap-[9px] pl-2 border-l border-[#e4ebe5]">
                 <div className="w-[34px] h-[34px] rounded-full grid place-items-center text-white font-semibold text-[13px]" style={{ background: "linear-gradient(135deg, #6BA17E, #2D5A43)" }}>
                   {initials}
                 </div>
                 <div>
-                  <b className="block text-[14px] font-semibold">{user?.full_name || "User"}</b>
-                  <small className="text-[#7A8E7E] text-[13px]">{roleLabel}</small>
+                  <b className="block text-[14px] font-semibold text-[#1A2E22]">{user?.full_name || "User"}</b>
+                  <small className="text-[#7A8E7E] text-[12px]">{roleLabel}</small>
                 </div>
               </div>
             </header>

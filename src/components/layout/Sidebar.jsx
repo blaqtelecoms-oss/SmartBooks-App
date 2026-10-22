@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Building2, Upload, BookOpen, FileText, Calculator,
   Shield, Settings, MessageSquare, Users, ArrowLeftRight, Receipt,
-  Wand2, ScanLine, LogOut,
+  Wand2, ScanLine, LogOut, PanelLeftClose, PanelLeftOpen, ChevronRight,
 } from "lucide-react";
 import { db } from "@/api/supabaseClient";
 import Logo from "@/components/Logo";
@@ -36,61 +36,128 @@ const businessNav = [
   { label: "Settings", icon: Settings, path: "/settings" },
 ];
 
-export default function Sidebar({ currentCompany, companies, onCompanyChange, portal, unallocatedCount }) {
+export default function Sidebar({ currentCompany, companies, onCompanyChange, portal, unallocatedCount, collapsed, onToggleCollapse }) {
   const location = useLocation();
   const isBusiness = portal === "business";
   const navItems = isBusiness ? businessNav : accountantNav;
 
   return (
-    <aside className="border-r border-[#e4ebe5] flex flex-col pb-3.5 bg-[#fbfdfb] min-h-0 overflow-hidden">
-      {/* Brand */}
-      <div className="flex items-center gap-[9px] px-5 pt-5 pb-[18px] border-b border-[#e4ebe5] h-[64px] flex-none">
-        <Logo size={32} />
+    <aside
+      className="border-r border-[#e4ebe5] flex flex-col bg-[#fbfdfb] min-h-0 overflow-hidden transition-[width] duration-300 ease-in-out relative"
+      style={{ width: collapsed ? 68 : 218 }}
+    >
+      {/* Brand + collapse toggle */}
+      <div className="flex items-center gap-[9px] px-4 pt-4 pb-3 border-b border-[#e4ebe5] h-[64px] flex-none">
+        {collapsed ? (
+          <div className="flex items-center justify-center w-full">
+            <Logo size={32} />
+          </div>
+        ) : (
+          <>
+            <Logo size={32} />
+            <span className="text-[17px] font-bold text-[#2D5A43] tracking-tight">SmartBooks</span>
+          </>
+        )}
+        {!collapsed && (
+          <button
+            onClick={onToggleCollapse}
+            className="ml-auto w-[28px] h-[28px] rounded-[8px] grid place-items-center text-[#7A8E7E] hover:text-[#2D5A43] hover:bg-[#e9f3ea] transition-colors border-0 bg-transparent cursor-pointer"
+            title="Collapse menu"
+          >
+            <PanelLeftClose size={16} strokeWidth={1.8} />
+          </button>
+        )}
       </div>
 
+      {/* Expand button when collapsed */}
+      {collapsed && (
+        <button
+          onClick={onToggleCollapse}
+          className="mx-auto mt-2 w-[36px] h-[36px] rounded-[10px] grid place-items-center text-[#7A8E7E] hover:text-[#2D5A43] hover:bg-[#e9f3ea] transition-colors border-0 bg-transparent cursor-pointer"
+          title="Expand menu"
+        >
+          <PanelLeftOpen size={18} strokeWidth={1.8} />
+        </button>
+      )}
+
       {/* Company selector — accountant portal only */}
-      {!isBusiness && companies?.length > 0 && (
+      {!isBusiness && companies?.length > 0 && !collapsed && (
         <div className="px-3 pt-3 flex-none">
-          <select
-            value={currentCompany?.id || ""}
-            onChange={(e) => onCompanyChange(e.target.value)}
-            className="w-full text-[14px] px-3 py-2.5 rounded-[9px] border border-[#e4ebe5] bg-[#f4f7f3] text-[#1A2E22] focus:outline-none focus:border-[#4A7C5E] cursor-pointer"
-          >
-            {companies.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={currentCompany?.id || ""}
+              onChange={(e) => onCompanyChange(e.target.value)}
+              className="w-full text-[13px] px-3 py-2.5 rounded-[10px] border border-[#e4ebe5] bg-[#f4f7f3] text-[#1A2E22] focus:outline-none focus:border-[#4A7C5E] cursor-pointer appearance-none font-medium pr-8"
+            >
+              {companies.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            <ChevronRight size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 rotate-90 text-[#7A8E7E] pointer-events-none" />
+          </div>
+        </div>
+      )}
+
+      {/* Collapsed company icon */}
+      {!isBusiness && companies?.length > 0 && collapsed && (
+        <div className="px-2 pt-3 flex justify-center flex-none">
+          <div className="w-[36px] h-[36px] rounded-[10px] bg-[#d6ebd9] grid place-items-center text-[#2D5A43] font-bold text-[13px]" title={currentCompany?.name}>
+            {(currentCompany?.name || "C").charAt(0).toUpperCase()}
+          </div>
         </div>
       )}
 
       {/* Business name — single business */}
-      {isBusiness && currentCompany && (
+      {isBusiness && currentCompany && !collapsed && (
         <div className="px-3 pt-3 flex-none">
-          <div className="w-full text-[14px] px-3 py-2.5 rounded-[9px] border border-[#e4ebe5] bg-[#f4f7f3] text-[#1A2E22] font-medium truncate">
+          <div className="w-full text-[13px] px-3 py-2.5 rounded-[10px] border border-[#e4ebe5] bg-[#f4f7f3] text-[#1A2E22] font-medium truncate">
             {currentCompany.name}
           </div>
         </div>
       )}
 
+      {isBusiness && currentCompany && collapsed && (
+        <div className="px-2 pt-3 flex justify-center flex-none">
+          <div className="w-[36px] h-[36px] rounded-[10px] bg-[#d6ebd9] grid place-items-center text-[#2D5A43] font-bold text-[13px]" title={currentCompany.name}>
+            {currentCompany.name.charAt(0).toUpperCase()}
+          </div>
+        </div>
+      )}
+
       {/* Nav — scrollable */}
-      <nav className="sb-nav-scroll min-h-0 flex-1 py-3 px-2.5 flex flex-col gap-0.5">
+      <nav className="sb-nav-scroll min-h-0 flex-1 py-3 px-2 flex flex-col gap-0.5 mt-1">
         {navItems.map(item => {
           const isActive = location.pathname === item.path;
           return (
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center gap-[11px] px-[11px] py-2.5 rounded-[9px] text-[15px] font-medium flex-none transition-colors ${
+              title={collapsed ? item.label : undefined}
+              className={`group flex items-center rounded-[10px] text-[14px] font-medium flex-none transition-all duration-200 relative ${
+                collapsed ? "justify-center px-0 py-2.5 mx-auto w-[40px] h-[40px]" : "gap-[11px] px-[11px] py-2.5"
+              } ${
                 isActive
-                  ? "bg-[#d6ebd9] text-[#2D5A43] font-semibold"
-                  : "text-[#5C7263] hover:bg-[#e9f3ea]"
+                  ? "bg-gradient-to-r from-[#d6ebd9] to-[#e9f3ea] text-[#2D5A43] font-semibold"
+                  : "text-[#5C7263] hover:bg-[#f0f7f1] hover:text-[#2D5A43]"
               }`}
             >
-              <item.icon size={20} strokeWidth={1.6} className="flex-none" />
-              <span>{item.label}</span>
-              {item.label === "Transactions" && unallocatedCount > 0 && (
-                <span className="ml-auto text-[12px] bg-[#d6ebd9] text-[#2D5A43] rounded-full px-[7px] py-0.5 font-semibold">
+              {isActive && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[20px] rounded-r-full bg-[#4A7C5E]" />
+              )}
+              <item.icon
+                size={20}
+                strokeWidth={1.6}
+                className={`flex-none transition-transform duration-200 group-hover:scale-110 ${isActive ? "text-[#4A7C5E]" : ""}`}
+              />
+              {!collapsed && <span className="truncate">{item.label}</span>}
+              {!collapsed && item.label === "Transactions" && unallocatedCount > 0 && (
+                <span className="ml-auto text-[11px] bg-[#4A7C5E] text-white rounded-full px-[7px] py-0.5 font-semibold min-w-[20px] text-center">
                   {unallocatedCount}
+                </span>
+              )}
+              {collapsed && item.label === "Transactions" && unallocatedCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-[16px] h-[16px] bg-[#4A7C5E] text-white rounded-full text-[10px] font-semibold grid place-items-center">
+                  {unallocatedCount > 9 ? "9+" : unallocatedCount}
                 </span>
               )}
             </Link>
@@ -99,13 +166,16 @@ export default function Sidebar({ currentCompany, companies, onCompanyChange, po
       </nav>
 
       {/* Sign out */}
-      <div className="mx-3 mt-2 flex-none">
+      <div className={`flex-none ${collapsed ? "px-2 flex justify-center" : "mx-3 mt-2"}`}>
         <button
           onClick={() => db.auth.logout("/")}
-          className="flex items-center gap-2 w-full px-3 py-2.5 rounded-[9px] text-[14px] font-medium text-[#5C7263] hover:text-[#C25B5B] hover:bg-[#fbe9e9] transition-colors border-0 bg-transparent cursor-pointer"
+          title={collapsed ? "Sign Out" : undefined}
+          className={`flex items-center rounded-[10px] text-[14px] font-medium text-[#5C7263] hover:text-[#C25B5B] hover:bg-[#fbe9e9] transition-colors border-0 bg-transparent cursor-pointer ${
+            collapsed ? "justify-center w-[40px] h-[40px] mx-auto" : "gap-2 w-full px-3 py-2.5"
+          }`}
         >
           <LogOut size={18} strokeWidth={1.6} />
-          Sign Out
+          {!collapsed && <span>Sign Out</span>}
         </button>
       </div>
     </aside>
