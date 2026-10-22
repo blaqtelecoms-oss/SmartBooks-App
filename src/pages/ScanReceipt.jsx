@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useOutletContext } from "react-router-dom";
 import { db } from "@/api/supabaseClient";
+import { extractTextFromFile, parseDocumentData } from "@/lib/documentExtraction";
 import { Button } from "@/components/ui/button";
 import { Camera, Upload, Loader2, ScanLine, Send, CheckCircle2, Eye, Trash2, Receipt } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -50,25 +51,9 @@ export default function ScanReceipt() {
         submitted: false
       });
 
-      const { signed_url } = await db.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 600 });
-
-      const extracted = await db.integrations.Core.InvokeLLM({
-        prompt: `Extract all data from this receipt/slip. Identify: supplier name, VAT number, date, receipt number, line items with descriptions and amounts, subtotal, VAT amount (15%), total. Format clearly.`,
-        file_urls: [signed_url],
-        response_json_schema: {
-          type: "object",
-          properties: {
-            supplier_name: { type: "string" },
-            vat_number: { type: "string" },
-            date: { type: "string" },
-            document_number: { type: "string" },
-            line_items: { type: "array", items: { type: "object", properties: { description: { type: "string" }, amount: { type: "number" } } } },
-            subtotal: { type: "number" },
-            vat_amount: { type: "number" },
-            total: { type: "number" }
-          }
-        }
-      });
+      // Client-side extraction (OCR for images, text extraction for PDFs) — no AI needed
+      const rawText = await extractTextFromFile(file);
+      const extracted = parseDocumentData(rawText, "receipt");
 
       await db.entities.Document.update(doc.id, {
         status: "processed",
@@ -178,7 +163,7 @@ export default function ScanReceipt() {
       {uploading && (
         <div className="bg-blue-50 rounded-xl border border-blue-200 p-4 flex items-center gap-3">
           <Loader2 size={16} className="animate-spin text-[#3B82F6]" />
-          <span className="text-[13px] text-[#1A2E22]">Scanning receipt with OCR and extracting data...</span>
+          <span className="text-[13px] text-[#1A2E22]">Extracting receipt data...</span>
         </div>
       )}
 

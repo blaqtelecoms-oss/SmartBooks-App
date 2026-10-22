@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import { db } from "@/api/supabaseClient";
+import { extractTextFromFile, parseDocumentData } from "@/lib/documentExtraction";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Image, Loader2, Eye, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -44,24 +45,9 @@ export default function Documents() {
         status: "processing"
       });
 
-      // OCR extraction
-      const extracted = await db.integrations.Core.InvokeLLM({
-        prompt: `Extract all data from this ${type}. Identify: supplier name, VAT number, date, invoice/receipt number, line items with descriptions and amounts, subtotal, VAT amount (15%), total. Format clearly.`,
-        file_urls: [file_url],
-        response_json_schema: {
-          type: "object",
-          properties: {
-            supplier_name: { type: "string" },
-            vat_number: { type: "string" },
-            date: { type: "string" },
-            document_number: { type: "string" },
-            line_items: { type: "array", items: { type: "object", properties: { description: { type: "string" }, amount: { type: "number" } } } },
-            subtotal: { type: "number" },
-            vat_amount: { type: "number" },
-            total: { type: "number" }
-          }
-        }
-      });
+      // Client-side extraction (OCR for images, text extraction for PDFs) — no AI needed
+      const rawText = await extractTextFromFile(file);
+      const extracted = parseDocumentData(rawText, type);
 
       await db.entities.Document.update(doc.id, {
         status: "processed",
@@ -69,7 +55,7 @@ export default function Documents() {
       });
 
       await loadDocs();
-      toast({ title: `${type === "receipt" ? "Receipt" : "Invoice"} processed with OCR` });
+      toast({ title: `${type === "receipt" ? "Receipt" : "Invoice"} processed` });
     } catch (e) {
       toast({ title: "Upload failed", variant: "destructive" });
     }
@@ -122,7 +108,7 @@ export default function Documents() {
       {uploading && (
         <div className="bg-blue-50 rounded-xl border border-blue-200 p-4 flex items-center gap-3">
           <Loader2 size={16} className="animate-spin text-[#3B82F6]" />
-          <span className="text-[13px] text-[#0F0F0F]">Processing document with OCR...</span>
+          <span className="text-[13px] text-[#0F0F0F]">Extracting document content...</span>
         </div>
       )}
 
