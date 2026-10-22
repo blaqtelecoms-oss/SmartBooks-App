@@ -56,11 +56,10 @@ export default function Sidebar({ currentCompany, companies, onCompanyChange, po
           </div>
         ) : (
           <>
-            <Logo size={32} />
-            <span className="text-[17px] font-bold text-[#2D5A43] tracking-tight">SmartBooks</span>
+            <Logo size={30} />
             <button
               onClick={onToggleCollapse}
-              className="ml-auto w-[34px] h-[34px] rounded-[9px] grid place-items-center text-[#5C7263] bg-[#e9f3ea] hover:bg-[#d6ebd9] hover:text-[#2D5A43] transition-colors border border-[#e4ebe5] cursor-pointer"
+              className="ml-auto w-[34px] h-[34px] rounded-[9px] grid place-items-center text-[#5C7263] bg-[#e9f3ea] hover:bg-[#d6ebd9] hover:text-[#2D5A43] transition-colors border border-[#e4ebe5] cursor-pointer flex-none"
               title="Collapse menu"
             >
               <PanelLeftClose size={18} strokeWidth={1.8} />
