@@ -52,7 +52,7 @@ export default function Sidebar({ currentCompany, companies, onCompanyChange, po
       <div className="flex items-center gap-[9px] px-4 pt-4 pb-3 border-b border-[#e4ebe5] h-[64px] flex-none">
         {collapsed ? (
           <div className="flex items-center justify-center w-full">
-            <Logo size={32} />
+            <Logo size={30} collapsed />
           </div>
         ) : (
           <>
