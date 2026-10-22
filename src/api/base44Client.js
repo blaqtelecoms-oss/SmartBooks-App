@@ -1,14 +1,6 @@
-import { createClient } from '@base44/sdk';
-import { appParams } from '@/lib/app-params';
+// Backend client. The app was migrated from Base44 to Supabase; this module keeps the
+// original import path (`@/api/base44Client`) and call shapes so pages are unchanged.
+// See src/api/supabaseClient.js for the implementation.
+import { db } from '@/api/supabaseClient';
 
-const { appId, token, functionsVersion, appBaseUrl } = appParams;
-
-//Create a client with authentication required
-export const base44 = createClient({
-  appId,
-  token,
-  functionsVersion,
-  serverUrl: '',
-  requiresAuth: false,
-  appBaseUrl
-});
+export const base44 = db;

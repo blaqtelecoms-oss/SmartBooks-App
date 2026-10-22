@@ -33,7 +33,7 @@ export default function Documents() {
     if (!file) return;
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await base44.integrations.Core.UploadFile({ file, companyId: currentCompany.id });
 
       const doc = await base44.entities.Document.create({
         company_id: currentCompany.id,

@@ -1,0 +1,7 @@
+project_id = "tfjhjjmztpqngwrcwmvr"
+
+[functions.applyAllocationRules]
+verify_jwt = true
+
+[functions.learnAllocationRules]
+verify_jwt = true
