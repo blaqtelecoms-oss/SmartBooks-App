@@ -2,33 +2,24 @@
 
 ## Project Context
 
-This is a Base44 app repository. Treat it as user-owned application code, keep changes focused on the user's request, and preserve existing project conventions.
+This is a Supabase-backed React application (SmartBooks SA). The app was migrated from Base44 to Supabase. Treat it as user-owned application code, keep changes focused on the user's request, and preserve existing project conventions.
 
-Start with `README.md` for local setup, environment variables, and publish workflow.
-
-## Base44 References
-
-- CLI overview: https://docs.base44.com/developers/references/cli/get-started/overview.md
-- Agent skills: https://docs.base44.com/developers/backend/overview/skills.md
-
-If your agent supports Agent Skills, install or update Base44 skills before Base44-specific work:
-
-```bash
-npx skills add base44/skills
-```
+Start with `README.md` for local setup, environment variables, and deployment workflow.
 
 ## Key Files
 
 - `src/`: frontend application source.
-- `src/api/base44Client.js`: frontend Base44 SDK client.
-- `vite.config.js`: Vite config and Base44 Vite plugin setup.
-- `.env.local`: local-only environment values; never commit secrets.
+- `src/api/supabaseClient.js`: Supabase client — exports `supabase` (raw client) and `db` (compatibility shim with the old Base44 SDK call shapes: `db.entities.*`, `db.auth.*`, `db.integrations.*`, `db.users.*`).
+- `src/api/base44Client.js`: thin re-export of `db` from `supabaseClient.js`, kept so existing imports (`@/api/base44Client`) continue to work.
+- `vite.config.js`: Vite config (plain React plugin, no Base44 plugin).
+- `.env.local`: local-only environment values (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`); never commit secrets.
+- `supabase/`: Supabase project config, migrations, and Edge Functions.
 
 ## Working Notes
 
-- Use `base44 dev` as the default local development command when you need the local Base44 backend. It can run the backend and frontend together.
-- When docs or code mention the frontend being started automatically, that usually means the Base44 project config includes `site.serveCommand`, for example `"serveCommand": "npm run dev"` in `base44/config.jsonc`.
-- Use `npm run dev` only for frontend-only work against the hosted Base44 backend.
-- Prefer the existing Base44 CLI workflow over adding new npm scripts for Base44-specific tasks.
-- Reuse the existing SDK client and Vite plugin patterns before adding new Base44 integration paths.
-- Run the relevant checks from `package.json` before finishing code changes.
+- Run `npm run dev` for local development (Vite dev server).
+- The Supabase project is linked; project ref is in `supabase/config.toml`.
+- Database schema, RLS policies, and storage bucket are defined in `supabase/migrations/`.
+- Edge Functions live in `supabase/functions/` and are deployed via `supabase functions deploy`.
+- AI features (InvokeLLM, ExtractDataFromUploadedFile) require a Together AI API key configured in Supabase Edge Functions.
+- Run the relevant checks from `package.json` before finishing code changes (`npm run lint`, `npm run build`).

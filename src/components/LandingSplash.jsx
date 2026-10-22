@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 
-const LOGO_URL = "https://media.base44.com/images/public/6a3c67997aeed99647a6d554/797c44698_093aa55a-8113-42fa-a159-d69bfa09baad-removebg-preview.png";
+const LOGO_URL = "/favicon.svg";
 
 export default function LandingSplash({ onComplete }) {
   useEffect(() => {
