@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calculator, FileText, Loader2, Check, AlertTriangle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { Progress } from "@/components/ui/progress";
+import { calculateTaxReturn } from "@/lib/taxCalculation";
 
 export default function TaxModule() {
   const { currentCompany } = useOutletContext();
@@ -44,51 +44,7 @@ export default function TaxModule() {
     if (!periodStart || !periodEnd) { toast({ title: "Select period dates", variant: "destructive" }); return; }
     setGenerating(true);
     try {
-      const periodTxs = transactions.filter(t => t.date >= periodStart && t.date <= periodEnd);
-
-      const result = await db.integrations.Core.InvokeLLM({
-        prompt: `You are a South African tax specialist. Generate a ${selectedType} tax return calculation for company "${currentCompany.name}".
-
-Company details:
-- VAT Number: ${currentCompany.vat_number || "N/A"}
-- Tax Number: ${currentCompany.tax_number || "N/A"}
-- PAYE Number: ${currentCompany.paye_number || "N/A"}
-
-Period: ${periodStart} to ${periodEnd}
-
-Transactions in this period:
-${JSON.stringify(periodTxs.slice(0, 30).map(t => ({ date: t.date, description: t.description, amount: t.amount, type: t.type, category: t.category, vat_amount: t.vat_amount })))}
-
-Calculate the ${selectedType} return with all applicable fields. Use current SA tax rates (VAT 15%, company tax 27%, PAYE brackets as per current legislation).
-
-For VAT201: calculate output VAT, input VAT, net VAT payable/refundable.
-For ITR14: calculate taxable income, deductions, tax payable.
-For EMP201: calculate PAYE, UIF (1% employer + 1% employee), SDL (1% of payroll).
-For ITR12: calculate individual tax per brackets.
-For IRP5: calculate employee tax certificate details.`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            return_type: { type: "string" },
-            total_amount: { type: "number" },
-            summary: { type: "string" },
-            line_items: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  label: { type: "string" },
-                  amount: { type: "number" },
-                  description: { type: "string" }
-                }
-              }
-            },
-            compliance_notes: { type: "string" },
-            due_date: { type: "string" }
-          }
-        },
-        model: "claude_sonnet_4_6"
-      });
+      const result = calculateTaxReturn(selectedType, transactions, currentCompany, periodStart, periodEnd);
 
       await db.entities.TaxReturn.create({
         company_id: currentCompany.id,
