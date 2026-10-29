@@ -113,7 +113,9 @@ export default function MobileNav({
                     data-active={isActive ? "true" : "false"}
                     className="sb-drawer-link"
                   >
-                    <item.icon size={18} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" className="flex-none" />
+                    <span className="sb-nav-icon">
+                      <item.icon size={17} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+                    </span>
                     <span className="truncate">{item.label}</span>
                     {item.path === "/transactions" && unallocatedCount > 0 && (
                       <span className="sb-drawer-badge">{unallocatedCount}</span>

@@ -820,6 +820,29 @@
     color: var(--sb-ink);
     box-shadow: 0 8px 20px -12px rgba(200, 241, 105, 0.8);
   }
+  .sb-drawer-link .sb-nav-icon {
+    width: 30px;
+    height: 30px;
+  }
+  .sb-drawer-link:hover .sb-nav-icon {
+    transform: translateY(-1.5px);
+    background: linear-gradient(155deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(0, 0, 0, 0.18) 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.32),
+      inset 0 -1px 1px rgba(0, 0, 0, 0.4),
+      0 6px 12px -6px rgba(0, 0, 0, 0.65);
+  }
+  .sb-drawer-link[data-active="true"] .sb-nav-icon {
+    background: linear-gradient(160deg, #1B4234 0%, #0B1F1A 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      inset 0 -2px 3px rgba(0, 0, 0, 0.5),
+      0 2px 5px rgba(0, 0, 0, 0.26);
+  }
+  .sb-drawer-link[data-active="true"] .sb-nav-icon svg {
+    color: var(--sb-lime);
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+  }
   .sb-drawer-badge {
     margin-left: auto;
     border-radius: 999px;
