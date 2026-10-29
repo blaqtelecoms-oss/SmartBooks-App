@@ -4,7 +4,7 @@ import { db } from "@/api/supabaseClient";
 import Sidebar from "./Sidebar";
 import MobileNav from "./MobileNav";
 import BottomNav from "./BottomNav";
-import ProfileMenu from "./ProfileMenu";
+import ProfileAvatar from "./ProfileAvatar";
 import { Bell, Mail, Menu, Search } from "lucide-react";
 
 const PAGE_TITLES = {
@@ -27,6 +27,7 @@ const PAGE_TITLES = {
   "/audit": "Audit Log",
   "/assistant": "AI Assistant",
   "/settings": "Settings",
+  "/profile": "Profile",
 };
 
 const readCollapsed = () => {
@@ -241,21 +242,21 @@ export default function AppLayout() {
               <Mail size={17} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
             </button>
             <div className="ml-1 hidden items-center gap-2.5 md:flex">
-              <ProfileMenu user={user} onUpdated={setUser} />
+              <ProfileAvatar user={user} />
               <div className="leading-tight hidden xl:block">
                 <b className="block text-[13px] font-bold" style={{ color: "var(--sb-ink)" }}>{user?.full_name || "User"}</b>
                 <small className="text-[11px]" style={{ color: "var(--sb-muted)" }}>{roleLabel}</small>
               </div>
             </div>
             <div className="md:hidden">
-              <ProfileMenu user={user} onUpdated={setUser} />
+              <ProfileAvatar user={user} />
             </div>
           </div>
         </header>
 
         {/* Content */}
         <div className="sb-page flex-1 min-w-0">
-          <Outlet context={{ currentCompany, companies, refreshCompanies: loadCompanies, user, portal, scale: 1 }} />
+          <Outlet context={{ currentCompany, companies, refreshCompanies: loadCompanies, user, refreshUser: loadUser, portal, scale: 1 }} />
         </div>
       </div>
 

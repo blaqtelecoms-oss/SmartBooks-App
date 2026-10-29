@@ -24,6 +24,7 @@ import Team from '@/pages/Team';
 import AuditLog from '@/pages/AuditLog';
 import AIAssistant from '@/pages/AIAssistant';
 import Settings from '@/pages/Settings';
+import Profile from '@/pages/Profile';
 import AllocationRules from '@/pages/AllocationRules';
 import ScanReceipt from '@/pages/ScanReceipt';
 import BankRules from '@/pages/BankRules';
@@ -83,6 +84,7 @@ const AuthenticatedApp = () => {
           <Route path="/audit" element={<AuditLog />} />
           <Route path="/assistant" element={<AIAssistant />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/profile" element={<Profile />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

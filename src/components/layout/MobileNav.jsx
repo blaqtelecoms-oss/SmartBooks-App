@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { X, LogOut, ChevronDown } from "lucide-react";
 import { db } from "@/api/supabaseClient";
 import Logo from "@/components/Logo";
+import { initialOf, roleLabelOf } from "@/lib/avatar";
 import { navGroupsFor } from "./navConfig";
 
 /**
@@ -26,12 +27,8 @@ export default function MobileNav({
   const vat = currentCompany?.vat_number;
   const fyEnd = currentCompany?.financial_year_end;
 
-  const initials = user?.full_name
-    ? user.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()
-    : "U";
-  const roleLabel = user?.role
-    ? user.role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-    : portal === "business" ? "Business" : "Accountant";
+  const initial = initialOf(user);
+  const roleLabel = roleLabelOf(user) || (portal === "business" ? "Business" : "Accountant");
 
   useEffect(() => {
     if (!open) return undefined;
@@ -130,7 +127,7 @@ export default function MobileNav({
         <div className="sb-drawer-foot">
           <div className="sb-drawer-account">
             <span className="sb-avatar" aria-hidden="true">
-              {user?.avatar_url ? <img src={user.avatar_url} alt="" /> : initials}
+              {user?.avatar_url ? <img src={user.avatar_url} alt="" /> : initial}
             </span>
             <div className="min-w-0 leading-tight">
               <b className="block truncate text-[13px] font-bold text-white">{user?.full_name || "Signed in"}</b>
