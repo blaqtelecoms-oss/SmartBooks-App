@@ -1,8 +1,9 @@
 // Inspired by react-hot-toast library
 import { useState, useEffect } from "react";
 
-const TOAST_LIMIT = 20;
-const TOAST_REMOVE_DELAY = 1000000;
+const TOAST_LIMIT = 4;
+const TOAST_REMOVE_DELAY = 300;
+const TOAST_DURATION = 4000;
 
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
@@ -19,11 +20,37 @@ function genId() {
 }
 
 const toastTimeouts = new Map();
+const autoDismissTimers = new Map();
+
+const clearAutoDismiss = (toastId) => {
+  const timeout = autoDismissTimers.get(toastId);
+  if (timeout) {
+    clearTimeout(timeout);
+    autoDismissTimers.delete(toastId);
+  }
+};
+
+const scheduleAutoDismiss = (toastId, duration) => {
+  clearAutoDismiss(toastId);
+  if (!Number.isFinite(duration) || duration <= 0) return;
+
+  const timeout = setTimeout(() => {
+    autoDismissTimers.delete(toastId);
+    dispatch({
+      type: actionTypes.DISMISS_TOAST,
+      toastId,
+    });
+  }, duration);
+
+  autoDismissTimers.set(toastId, timeout);
+};
 
 const addToRemoveQueue = (toastId) => {
   if (toastTimeouts.has(toastId)) {
     return;
   }
+
+  clearAutoDismiss(toastId);
 
   const timeout = setTimeout(() => {
     toastTimeouts.delete(toastId);
@@ -113,14 +140,20 @@ function dispatch(action) {
 function toast({ ...props }) {
   const id = genId();
 
-  const update = (props) =>
+  const update = (props) => {
     dispatch({
       type: actionTypes.UPDATE_TOAST,
       toast: { ...props, id },
     });
+    if (props.duration !== undefined) {
+      scheduleAutoDismiss(id, props.duration);
+    }
+  };
 
-  const dismiss = () =>
+  const dismiss = () => {
+    clearAutoDismiss(id);
     dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id });
+  };
 
   dispatch({
     type: actionTypes.ADD_TOAST,
@@ -133,6 +166,9 @@ function toast({ ...props }) {
       },
     },
   });
+
+  // Every toast clears itself automatically instead of lingering on screen.
+  scheduleAutoDismiss(id, props.duration ?? TOAST_DURATION);
 
   return {
     id,
@@ -157,8 +193,11 @@ function useToast() {
   return {
     ...state,
     toast,
-    dismiss: (toastId) => dispatch({ type: actionTypes.DISMISS_TOAST, toastId }),
+    dismiss: (toastId) => {
+      clearAutoDismiss(toastId);
+      dispatch({ type: actionTypes.DISMISS_TOAST, toastId });
+    },
   };
 }
 
-export { useToast, toast }; 
+export { useToast, toast };

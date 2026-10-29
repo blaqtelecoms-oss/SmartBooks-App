@@ -3,11 +3,14 @@ import { Link } from "react-router-dom";
 import { db } from "@/api/supabaseClient";
 import GoogleIcon from "@/components/GoogleIcon";
 import LandingSplash from "@/components/LandingSplash";
-import { Loader2, Mail, Lock, ArrowLeft, Building2, Calculator, Check } from "lucide-react";
+import AuthBrandPanel, { AUTH_FEATURES } from "@/components/auth/AuthBrandPanel";
+import AuthMobileHero from "@/components/auth/AuthMobileHero";
+import PortalPicker from "@/components/auth/PortalPicker";
+import { Loader2, Mail, Lock, Check } from "lucide-react";
 
 export default function Login() {
   const [showSplash, setShowSplash] = useState(true);
-  const [portal, setPortal] = useState(null);
+  const [portal, setPortal] = useState("business");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -38,251 +41,156 @@ export default function Login() {
     return <LandingSplash onComplete={() => setShowSplash(false)} />;
   }
 
-  const portalLabel = portal === "business" ? "Business Portal" : "Accountant / Bookkeeper";
-
   return (
-    <div className="min-h-screen flex bg-white">
-      {/* ── Left brand panel ── */}
-      <div
-        className="hidden lg:flex flex-col justify-between p-12 xl:p-16 relative overflow-hidden"
-        style={{
-          background: "linear-gradient(160deg, #1A2E22 0%, #2D5A43 100%)",
-          width: "45%",
-          minWidth: 420,
-        }}
-      >
-        {/* Logo */}
-        <div className="flex items-center gap-3 relative z-10">
-          <svg width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="64" height="64" rx="14" fill="#EAF0EB" />
-            <path d="M18 16h22a4 4 0 0 1 4 4v28a2 2 0 0 1-2 2H18a2 2 0 0 1-2-2V18a2 2 0 0 1 2-2z" stroke="#2D5A43" strokeWidth="3" strokeLinejoin="round" />
-            <path d="M22 24h14M22 30h14M22 36h10" stroke="#2D5A43" strokeWidth="2.5" strokeLinecap="round" />
-            <circle cx="44" cy="44" r="8" fill="#4A7C5E" stroke="#2D5A43" strokeWidth="2.5" />
-            <path d="M44 40v8M40 44h8" stroke="#EAF0EB" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-          <div>
-            <h1 className="text-lg font-semibold text-white tracking-tight">SmartBooks SA</h1>
-            <p className="text-xs text-white/50 tracking-wide uppercase mt-0.5">South Africa</p>
-          </div>
-        </div>
+    <div className="flex min-h-screen flex-col bg-[#FAFBFA] lg:flex-row">
+      <AuthBrandPanel />
+      <AuthMobileHero />
 
-        {/* Value proposition */}
-        <div className="relative z-10 max-w-md">
-          <h2 className="text-3xl xl:text-4xl font-bold text-white leading-tight tracking-tight">
-            Smarter Accounting.<br />Stronger Business.
-          </h2>
-          <p className="text-white/60 mt-4 text-base leading-relaxed">
-            AI-powered bookkeeping, VAT compliance, and financial management built for South African businesses.
+      {/* ── Sign-in panel (same content and options at every breakpoint) ── */}
+      <div className="relative flex flex-1 justify-center px-4 pb-8 sm:px-6 lg:items-center lg:px-10 lg:py-12">
+        <div className="sb-fade-in -mt-5 w-full max-w-[420px] rounded-[26px] border border-[#E3E9E4] bg-white px-5 py-6 shadow-[0_24px_60px_-32px_rgba(11,31,26,0.35)] sm:px-7 lg:mt-0 lg:px-9 lg:py-9">
+          <h1 className="font-display text-[27px] leading-tight text-[#0B1F1A] lg:text-[30px]">
+            Welcome back
+          </h1>
+          <p className="mt-1 text-[13px] leading-relaxed text-[#5B6B64]">
+            Sign in to your SmartBooks SA workspace.
           </p>
 
-          {/* Feature bullets */}
-          <div className="mt-8 space-y-3.5">
-            {[
-              "Automated bank statement processing",
-              "SARS VAT 201 returns in one click",
-              "Real-time financial dashboards",
-              "Multi-company & team management",
-            ].map((feature) => (
-              <div key={feature} className="flex items-center gap-3">
-                <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
-                  <Check size={12} className="text-white/80" strokeWidth={2.5} />
-                </div>
-                <span className="text-sm text-white/70">{feature}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Bottom footer */}
-        <div className="relative z-10 text-xs text-white/40">
-          © 2026 SmartBooks SA. All rights reserved.
-        </div>
-
-        {/* Subtle decorative grid */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 80% 20%, rgba(255,255,255,0.04) 0%, transparent 50%), radial-gradient(circle at 20% 80%, rgba(255,255,255,0.03) 0%, transparent 50%)",
-          }}
-        />
-      </div>
-
-      {/* ── Right form panel ── */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 sm:px-12 bg-[#FAFBFA]">
-        <div className="w-full max-w-[400px]">
-          {/* Mobile logo */}
-          <div className="flex lg:hidden items-center gap-3 mb-8 justify-center">
-            <svg width="36" height="36" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="64" height="64" rx="14" fill="#2D5A43" />
-              <path d="M18 16h22a4 4 0 0 1 4 4v28a2 2 0 0 1-2 2H18a2 2 0 0 1-2-2V18a2 2 0 0 1 2-2z" stroke="#fff" strokeWidth="3" strokeLinejoin="round" />
-              <path d="M22 24h14M22 30h14M22 36h10" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" />
-              <circle cx="44" cy="44" r="8" fill="#4A7C5E" stroke="#fff" strokeWidth="2.5" />
-              <path d="M44 40v8M40 44h8" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            <span className="text-lg font-semibold text-[#1A2E22]">SmartBooks SA</span>
-          </div>
-
-          {/* ── Portal selection ── */}
-          {!portal ? (
-            <div className="sb-fade-in">
-              <h1 className="text-2xl font-bold text-[#1A2E22] tracking-tight mb-1">Choose your portal</h1>
-              <p className="text-sm text-[#5C7263] mb-6">Select how you'll be using SmartBooks today.</p>
-
-              <div className="space-y-3">
-                <button
-                  onClick={() => setPortal("business")}
-                  className="sb-portal-card group w-full flex items-start gap-4 p-5 rounded-xl border-2 border-[#E2E8E0] bg-white text-left transition-all hover:border-[#2D5A43] hover:shadow-md"
-                >
-                  <div className="w-11 h-11 rounded-lg bg-[#EFF4F0] flex items-center justify-center flex-shrink-0 group-hover:bg-[#2D5A43] transition-colors">
-                    <Building2 size={22} className="text-[#2D5A43] group-hover:text-white transition-colors" strokeWidth={1.5} />
-                  </div>
-                  <div className="flex-1">
-                    <h2 className="text-base font-semibold text-[#1A2E22]">Business Portal</h2>
-                    <p className="text-sm text-[#5C7263] mt-0.5 leading-relaxed">
-                      For business owners managing books, statements, and finances
-                    </p>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => setPortal("accountant")}
-                  className="sb-portal-card group w-full flex items-start gap-4 p-5 rounded-xl border-2 border-[#E2E8E0] bg-white text-left transition-all hover:border-[#2D5A43] hover:shadow-md"
-                >
-                  <div className="w-11 h-11 rounded-lg bg-[#EFF4F0] flex items-center justify-center flex-shrink-0 group-hover:bg-[#2D5A43] transition-colors">
-                    <Calculator size={22} className="text-[#2D5A43] group-hover:text-white transition-colors" strokeWidth={1.5} />
-                  </div>
-                  <div className="flex-1">
-                    <h2 className="text-base font-semibold text-[#1A2E22]">Accountant / Bookkeeper</h2>
-                    <p className="text-sm text-[#5C7263] mt-0.5 leading-relaxed">
-                      For professionals managing multiple client companies
-                    </p>
-                  </div>
-                </button>
-              </div>
-
-              <p className="text-center text-sm text-[#7A8E7E] mt-8">
-                Don't have an account?{" "}
-                <Link to="/register" className="text-[#2D5A43] font-medium hover:underline">
-                  Create one
-                </Link>
-              </p>
+          <div className="mt-5">
+            <div className="mb-2 flex items-baseline justify-between">
+              <span className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#5B6B64]">
+                Portal
+              </span>
+              <span className="text-[11px] text-[#9AA9A1]">Change anytime</span>
             </div>
-          ) : (
-            /* ── Login form ── */
-            <div className="sb-fade-in">
-              {/* Back link */}
-              <button
-                onClick={() => setPortal(null)}
-                className="sb-back-link flex items-center gap-1.5 text-sm text-[#5C7263] hover:text-[#2D5A43] mb-6 transition-colors"
-              >
-                <ArrowLeft size={15} /> Back to portals
-              </button>
+            <PortalPicker value={portal} onChange={setPortal} />
+          </div>
 
-              <h1 className="text-2xl font-bold text-[#1A2E22] tracking-tight mb-1">Welcome back</h1>
-              <div className="flex items-center gap-2 mb-6">
-                <span className="text-sm text-[#5C7263]">Signing in to</span>
-                <span className="text-sm font-medium text-[#2D5A43] bg-[#EFF4F0] px-2.5 py-0.5 rounded-full">
-                  {portalLabel}
-                </span>
-              </div>
+          {/* Google sign-in */}
+          <button
+            onClick={handleGoogle}
+            className="sb-google-btn mt-4 flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-[#E3E9E4] bg-white text-[13px] font-semibold text-[#0B1F1A] transition-all"
+          >
+            <GoogleIcon className="h-[18px] w-[18px]" />
+            Continue with Google
+          </button>
 
-              {/* Google sign-in */}
-              <button
-                onClick={handleGoogle}
-                className="sb-google-btn w-full h-11 flex items-center justify-center gap-2.5 border border-[#DDE3DA] rounded-lg bg-white text-sm font-medium text-[#1A2E22] transition-all"
-              >
-                <GoogleIcon className="w-5 h-5" />
-                Continue with Google
-              </button>
+          {/* Divider */}
+          <div className="my-5 flex items-center gap-3">
+            <div className="h-px flex-1 bg-[#EEF2EE]" />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#9AA9A1]">
+              or sign in with email
+            </span>
+            <div className="h-px flex-1 bg-[#EEF2EE]" />
+          </div>
 
-              {/* Divider */}
-              <div className="flex items-center gap-3 my-5">
-                <div className="flex-1 h-px bg-[#E2E8E0]" />
-                <span className="text-xs text-[#7A8E7E] uppercase tracking-wider">or</span>
-                <div className="flex-1 h-px bg-[#E2E8E0]" />
-              </div>
-
-              {/* Error */}
-              {error && (
-                <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm border border-red-200">
-                  {error}
-                </div>
-              )}
-
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-[#1A2E22] mb-1.5">
-                    Email
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A8E7E]" />
-                    <input
-                      id="email"
-                      type="email"
-                      autoComplete="email"
-                      autoFocus
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="sb-input-field w-full h-11 pl-10 pr-3 border border-[#DDE3DA] rounded-lg bg-white text-sm text-[#1A2E22] transition-all"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label htmlFor="password" className="block text-sm font-medium text-[#1A2E22]">
-                      Password
-                    </label>
-                    <Link to="/forgot-password" className="text-xs text-[#2D5A43] hover:underline">
-                      Forgot password?
-                    </Link>
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A8E7E]" />
-                    <input
-                      id="password"
-                      type="password"
-                      autoComplete="current-password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="sb-input-field w-full h-11 pl-10 pr-3 border border-[#DDE3DA] rounded-lg bg-white text-sm text-[#1A2E22] transition-all"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="sb-submit-btn w-full h-11 rounded-lg text-sm font-semibold text-white transition-all"
-                  style={{
-                    background: loading ? "#6B8E7A" : "#2D5A43",
-                    cursor: loading ? "not-allowed" : "pointer",
-                  }}
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" /> Signing in...
-                    </span>
-                  ) : (
-                    "Sign in"
-                  )}
-                </button>
-              </form>
-
-              <p className="text-center text-sm text-[#7A8E7E] mt-6">
-                Don't have an account?{" "}
-                <Link to="/register" className="text-[#2D5A43] font-medium hover:underline">
-                  Create one
-                </Link>
-              </p>
+          {/* Error */}
+          {error && (
+            <div
+              role="alert"
+              className="mb-4 rounded-xl border border-[#F6D5D0] bg-[#FDF2F0] px-3 py-2.5 text-[12.5px] leading-relaxed text-[#8E2218]"
+            >
+              {error}
             </div>
           )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label
+                htmlFor="email"
+                className="mb-1.5 block text-[12.5px] font-semibold text-[#0B1F1A]"
+              >
+                Email
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9AA9A1]" />
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="sb-input-field h-11 w-full rounded-xl border border-[#E3E9E4] bg-white pl-10 pr-3 text-[13.5px] text-[#0B1F1A] transition-all"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="mb-1.5 flex items-baseline justify-between">
+                <label htmlFor="password" className="block text-[12.5px] font-semibold text-[#0B1F1A]">
+                  Password
+                </label>
+                <Link
+                  to="/forgot-password"
+                  className="text-[11.5px] font-medium text-[#0F5132] hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9AA9A1]" />
+                <input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="sb-input-field h-11 w-full rounded-xl border border-[#E3E9E4] bg-white pl-10 pr-3 text-[13.5px] text-[#0B1F1A] transition-all"
+                  required
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-1 h-11 w-full rounded-xl bg-[#0F5132] text-[13px] font-semibold text-white shadow-[0_10px_24px_-14px_rgba(15,81,50,0.9)] transition-all hover:bg-[#0B3F27] active:scale-[0.99] disabled:opacity-70"
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Signing in...
+                </span>
+              ) : (
+                "Sign in"
+              )}
+            </button>
+          </form>
+
+          <p className="mt-5 text-center text-[12.5px] text-[#5B6B64]">
+            Don't have an account?{" "}
+            <Link to="/register" className="font-semibold text-[#0F5132] hover:underline">
+              Create one
+            </Link>
+          </p>
+
+          {/* Mobile keeps the brand story on the same page as the sign-in options */}
+          <div className="mt-6 border-t border-[#EEF2EE] pt-5 lg:hidden">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#9AA9A1]">
+              Everything you need
+            </p>
+            <ul className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
+              {AUTH_FEATURES.map((feature) => (
+                <li
+                  key={feature}
+                  className="flex items-start gap-1.5 text-[11.5px] leading-snug text-[#5B6B64]"
+                >
+                  <Check
+                    size={12}
+                    strokeWidth={3}
+                    className="mt-[2px] shrink-0 text-[#0F5132]"
+                  />
+                  {feature}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4 text-[10.5px] text-[#9AA9A1]">
+              © 2026 SmartBooks SA · POPIA-aligned · SARS-ready
+            </p>
+          </div>
         </div>
       </div>
     </div>
