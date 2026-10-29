@@ -144,6 +144,7 @@ const toAppUser = async (authUser) => {
     email: authUser.email,
     full_name: profile?.full_name || authUser.user_metadata?.full_name || authUser.user_metadata?.name || null,
     role: profile?.role || 'user',
+    avatar_url: authUser.user_metadata?.avatar_url || null,
   };
 };
 
@@ -198,6 +199,12 @@ const auth = {
   async resetPassword({ newPassword }) {
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) fail(error);
+  },
+  // Profile picture lives in the auth user's metadata, so no schema change is needed.
+  async updateAvatar(avatarUrl) {
+    const { data, error } = await supabase.auth.updateUser({ data: { avatar_url: avatarUrl } });
+    if (error) fail(error);
+    return data?.user?.user_metadata?.avatar_url || null;
   },
   async logout(redirectTo) {
     await supabase.auth.signOut();

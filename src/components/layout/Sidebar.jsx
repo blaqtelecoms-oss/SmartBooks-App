@@ -75,7 +75,9 @@ export default function Sidebar({ currentCompany, companies, onCompanyChange, un
               data-active={isActive ? "true" : "false"}
               className="sb-nav-item"
             >
-              <item.icon size={18} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" className="flex-none" />
+              <span className="sb-nav-icon">
+                <item.icon size={16} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+              </span>
               <span className="sb-nav-label truncate">{item.label}</span>
               {item.path === "/transactions" && unallocatedCount > 0 && (
                 <span className="sb-nav-badge">{collapsed && unallocatedCount > 9 ? "9+" : unallocatedCount}</span>

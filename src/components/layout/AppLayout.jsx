@@ -4,6 +4,7 @@ import { db } from "@/api/supabaseClient";
 import Sidebar from "./Sidebar";
 import MobileNav from "./MobileNav";
 import BottomNav from "./BottomNav";
+import ProfileMenu from "./ProfileMenu";
 import { Bell, Mail, Menu, Search } from "lucide-react";
 
 const PAGE_TITLES = {
@@ -126,9 +127,6 @@ export default function AppLayout() {
   };
 
   const pageTitle = PAGE_TITLES[location.pathname] || "Dashboard";
-  const initials = user?.full_name
-    ? user.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()
-    : "U";
   const roleLabel = user?.role
     ? user.role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
     : "";
@@ -243,14 +241,14 @@ export default function AppLayout() {
               <Mail size={17} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
             </button>
             <div className="ml-1 hidden items-center gap-2.5 md:flex">
-              <div className="sb-avatar" title={user?.full_name || "User"}>{initials}</div>
+              <ProfileMenu user={user} onUpdated={setUser} />
               <div className="leading-tight hidden xl:block">
                 <b className="block text-[13px] font-bold" style={{ color: "var(--sb-ink)" }}>{user?.full_name || "User"}</b>
                 <small className="text-[11px]" style={{ color: "var(--sb-muted)" }}>{roleLabel}</small>
               </div>
             </div>
             <div className="md:hidden">
-              <div className="sb-avatar" title={user?.full_name || "User"}>{initials}</div>
+              <ProfileMenu user={user} onUpdated={setUser} />
             </div>
           </div>
         </header>

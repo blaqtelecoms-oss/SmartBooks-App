@@ -2,8 +2,8 @@ import React from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * SmartBooks icon: a white rounded tile holding an open book (navy left page,
- * green right page) with three rising green bars. Matches the supplied artwork.
+ * SmartBooks icon, matching the brand artwork: a white rounded tile with an open
+ * book (navy left page, green right page) and three green bars rising from it.
  */
 export default function LogoMark({ size = 36, className, title }) {
   return (
@@ -19,13 +19,13 @@ export default function LogoMark({ size = 36, className, title }) {
       aria-hidden={title ? undefined : "true"}
     >
       <rect x="0.5" y="0.5" width="39" height="39" rx="11" fill="#FFFFFF" stroke="rgba(19,41,61,0.12)" />
-      {/* rising bars */}
-      <rect x="13" y="15.4" width="3.2" height="6.2" rx="1.4" fill="#27A54C" />
-      <rect x="18.4" y="11.6" width="3.2" height="10" rx="1.4" fill="#27A54C" />
-      <rect x="23.8" y="14" width="3.2" height="7.6" rx="1.4" fill="#27A54C" />
-      {/* open book */}
-      <rect x="8" y="21.6" width="11.4" height="10" rx="1.8" fill="#13293D" />
-      <rect x="20.6" y="21.6" width="11.4" height="10" rx="1.8" fill="#27A54C" />
+      {/* rising bars behind the book */}
+      <rect x="13.2" y="17.8" width="3.3" height="8.4" rx="1.65" fill="#27A54C" />
+      <rect x="18.35" y="12.8" width="3.3" height="13.4" rx="1.65" fill="#27A54C" />
+      <rect x="23.5" y="16.2" width="3.3" height="10" rx="1.65" fill="#27A54C" />
+      {/* open book: navy left page, green right page */}
+      <path d="M7.6 26.6c0-1.13.92-2.05 2.05-2.05h9.05v8.2H9.65c-1.13 0-2.05-.92-2.05-2.05z" fill="#13293D" />
+      <path d="M32.4 26.6c0-1.13-.92-2.05-2.05-2.05H21.3v8.2h9.05c1.13 0 2.05-.92 2.05-2.05z" fill="#27A54C" />
     </svg>
   );
 }

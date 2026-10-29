@@ -127,7 +127,9 @@ export default function MobileNav({
 
         <div className="sb-drawer-foot">
           <div className="sb-drawer-account">
-            <span className="sb-avatar" aria-hidden="true">{initials}</span>
+            <span className="sb-avatar" aria-hidden="true">
+              {user?.avatar_url ? <img src={user.avatar_url} alt="" /> : initials}
+            </span>
             <div className="min-w-0 leading-tight">
               <b className="block truncate text-[13px] font-bold text-white">{user?.full_name || "Signed in"}</b>
               <small className="text-[11px]" style={{ color: "rgba(185,204,194,0.7)" }}>{roleLabel}</small>
