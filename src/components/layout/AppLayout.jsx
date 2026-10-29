@@ -5,6 +5,7 @@ import Sidebar from "./Sidebar";
 import MobileNav from "./MobileNav";
 import BottomNav from "./BottomNav";
 import ProfileAvatar from "./ProfileAvatar";
+import { accountPortal, resolvePortal } from "@/lib/portal";
 import { Bell, Mail, Menu, Search } from "lucide-react";
 
 const PAGE_TITLES = {
@@ -56,9 +57,9 @@ export default function AppLayout() {
   const [companies, setCompanies] = useState([]);
   const [companiesLoaded, setCompaniesLoaded] = useState(false);
   const [currentCompany, setCurrentCompany] = useState(null);
-  const [portal, setPortal] = useState(null);
   const [unallocatedCount, setUnallocatedCount] = useState(0);
   const [user, setUser] = useState(null);
+  const [userLoaded, setUserLoaded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(readCollapsed);
@@ -80,7 +81,6 @@ export default function AppLayout() {
   };
 
   useEffect(() => {
-    setPortal(localStorage.getItem("smartbooks_portal") || "accountant");
     loadCompanies();
     loadUser();
   }, []);
@@ -127,7 +127,7 @@ export default function AppLayout() {
   };
 
   const loadUser = async () => {
-    try { setUser(await db.auth.me()); } catch (e) {}
+    try { setUser(await db.auth.me()); } catch (e) {} finally { setUserLoaded(true); }
   };
 
   const handleCompanyChange = (companyId) => {
@@ -138,6 +138,11 @@ export default function AppLayout() {
     }
   };
 
+  const portal = resolvePortal(user);
+  // The portal stored on the account decides which setup is required. Accounts
+  // created before portals existed fall back to the company-based gate.
+  const isAccountantAccount = accountPortal(user) === "accountant";
+
   const pageTitle = PAGE_TITLES[location.pathname] || "Dashboard";
   const roleLabel = user?.role
     ? user.role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
@@ -147,9 +152,13 @@ export default function AppLayout() {
     ? companies.filter((c) => c.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5)
     : [];
 
-  // A brand-new account has no business yet, and a half-finished setup stays a
-  // draft company: both belong in the wizard until onboarding is completed.
-  const needsOnboarding = companiesLoaded && companies.every((c) => !c.onboarding_completed);
+  // Businesses need a completed company (a half-finished setup stays a draft);
+  // accountants only need their own profile, so no company is required at all.
+  const needsOnboarding =
+    userLoaded &&
+    (isAccountantAccount
+      ? !user?.onboarding_completed
+      : companiesLoaded && companies.every((c) => !c.onboarding_completed));
 
   useEffect(() => {
     if (needsOnboarding) navigate("/onboarding", { replace: true });

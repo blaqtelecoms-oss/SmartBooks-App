@@ -46,7 +46,7 @@ function KpiCard({ label, value, chip, chipTone, chipNote, series, color }) {
 }
 
 export default function Dashboard() {
-  const { currentCompany, user } = useOutletContext();
+  const { currentCompany, user, portal } = useOutletContext();
   const [transactions, setTransactions] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -162,10 +162,12 @@ export default function Dashboard() {
         </div>
         <h2 className="sb-display" style={{ fontSize: 28, color: "var(--sb-ink)" }}>Welcome to SmartBooks SA</h2>
         <p className="mt-2 max-w-md text-[13px]" style={{ color: "var(--sb-muted)" }}>
-          Get started by adding your first company. You can manage multiple businesses from one account.
+          {portal === "accountant"
+            ? "Add the first set of client books you look after. You can switch between clients from here."
+            : "Get started by adding your first company. You can manage multiple businesses from one account."}
         </p>
         <Link to="/companies" className="sb-btn sb-btn-primary mt-6">
-          <Plus size={15} strokeWidth={1.8} /> Add Company
+          <Plus size={15} strokeWidth={1.8} /> {portal === "accountant" ? "Add client books" : "Add Company"}
         </Link>
       </div>
     );

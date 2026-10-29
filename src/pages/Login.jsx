@@ -6,6 +6,7 @@ import LandingSplash from "@/components/LandingSplash";
 import AuthBrandPanel, { AUTH_FEATURES } from "@/components/auth/AuthBrandPanel";
 import AuthMobileHero from "@/components/auth/AuthMobileHero";
 import PortalPicker from "@/components/auth/PortalPicker";
+import { storePortal } from "@/lib/portal";
 import { Loader2, Mail, Lock, Check } from "lucide-react";
 
 export default function Login() {
@@ -22,7 +23,10 @@ export default function Login() {
     setLoading(true);
     try {
       await db.auth.loginViaEmailPassword(email, password);
-      localStorage.setItem("smartbooks_portal", portal);
+      // The account's own portal wins; the picker only applies to accounts that
+      // were created before portals were recorded.
+      const me = await db.auth.me().catch(() => null);
+      storePortal(me?.portal || portal);
       window.location.href = "/";
     } catch (err) {
       setError(err.message || "Invalid email or password");
@@ -32,7 +36,7 @@ export default function Login() {
   };
 
   const handleGoogle = () => {
-    localStorage.setItem("smartbooks_portal", portal);
+    storePortal(portal);
     db.auth.loginWithProvider("google", "/");
   };
 
@@ -61,7 +65,7 @@ export default function Login() {
               <span className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#5B6B64]">
                 Portal
               </span>
-              <span className="text-[11px] text-[#9AA9A1]">Change anytime</span>
+              <span className="text-[11px] text-[#9AA9A1]">Matched to your account</span>
             </div>
             <PortalPicker value={portal} onChange={setPortal} />
           </div>
