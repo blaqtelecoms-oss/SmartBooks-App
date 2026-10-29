@@ -35,14 +35,6 @@ export default function AuthBrandPanel() {
             "radial-gradient(115% 75% at 84% 10%, rgba(200,241,105,0.16) 0%, rgba(200,241,105,0) 58%)",
         }}
       />
-      {/* Dissolve into the sign-in panel on the right */}
-      <div
-        className="absolute inset-y-0 right-0 w-28 xl:w-36"
-        style={{
-          background:
-            "linear-gradient(to right, rgba(250,251,250,0) 0%, rgba(250,251,250,0.5) 60%, #FAFBFA 100%)",
-        }}
-      />
       {/* Dissolve into the page floor */}
       <div
         className="absolute inset-x-0 bottom-0 h-44"

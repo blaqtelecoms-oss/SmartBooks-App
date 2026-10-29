@@ -1,18 +1,19 @@
-import { Building2, Calculator, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AccountantIcon, BusinessIcon } from "./PortalIcons";
 
 const PORTALS = [
   {
     id: "business",
     label: "Business",
     description: "Owners & SMEs",
-    icon: Building2,
+    icon: BusinessIcon,
   },
   {
     id: "accountant",
     label: "Accountant",
     description: "Multi-client books",
-    icon: Calculator,
+    icon: AccountantIcon,
   },
 ];
 
@@ -43,11 +44,13 @@ export default function PortalPicker({ value, onChange }) {
           >
             <span
               className={cn(
-                "grid h-9 w-9 shrink-0 place-items-center rounded-xl transition-colors",
-                active ? "bg-[#0F5132] text-white" : "bg-[#F1F4EF] text-[#0F5132]"
+                "grid h-9 w-9 shrink-0 place-items-center rounded-[11px] transition-colors",
+                active
+                  ? "bg-[#0F5132] text-[#EAF3ED] shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]"
+                  : "bg-white text-[#0F5132] ring-1 ring-[#E3E9E4]"
               )}
             >
-              <Icon size={17} strokeWidth={1.7} />
+              <Icon />
             </span>
             <span className="min-w-0">
               <span className="block truncate text-[13px] font-semibold text-[#0B1F1A]">
@@ -58,12 +61,9 @@ export default function PortalPicker({ value, onChange }) {
               </span>
             </span>
             {active && (
-              <Check
-                size={13}
-                strokeWidth={3}
-                className="absolute right-2 top-2 text-[#0F5132]"
-                aria-hidden="true"
-              />
+              <span className="absolute right-2 top-2 grid h-4 w-4 place-items-center rounded-full bg-[#0F5132]">
+                <Check size={9} strokeWidth={3.5} className="text-white" aria-hidden="true" />
+              </span>
             )}
           </button>
         );
