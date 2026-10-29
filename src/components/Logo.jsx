@@ -1,28 +1,48 @@
 import React from "react";
 
-export default function Logo({ size = 36, collapsed = false }) {
+/**
+ * SmartBooks brand lock-up.
+ * `dark` renders for the dark sidebar (white wordmark); default is for light surfaces.
+ */
+export default function Logo({ size = 36, collapsed = false, dark = false }) {
   return (
-    <div className="flex items-center gap-2.5">
+    <div className="flex items-center gap-2.5 min-w-0">
       <svg
         width={size}
         height={size}
-        viewBox="0 0 64 64"
-        className="rounded-xl flex-shrink-0"
+        viewBox="0 0 36 36"
+        className="rounded-[10px] flex-shrink-0"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
       >
-        <rect width="64" height="64" rx="14" fill="#2D5A43" />
-        <path d="M18 16h22a4 4 0 0 1 4 4v28a2 2 0 0 1-2 2H18a2 2 0 0 1-2-2V18a2 2 0 0 1 2-2z" stroke="#fff" strokeWidth="3" strokeLinejoin="round" />
-        <path d="M22 24h14M22 30h14M22 36h10" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" />
-        <circle cx="44" cy="44" r="8" fill="#4A7C5E" stroke="#fff" strokeWidth="2.5" />
-        <path d="M44 40v8M40 44h8" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+        <rect width="36" height="36" rx="10" fill="#C8F169" />
+        <rect x="9" y="19" width="3.4" height="7.5" rx="1.2" fill="#0B1F1A" />
+        <rect x="16.3" y="14" width="3.4" height="12.5" rx="1.2" fill="#0B1F1A" />
+        <rect x="23.6" y="10" width="3.4" height="16.5" rx="1.2" fill="#0B1F1A" />
       </svg>
       {!collapsed && (
-        <div className="leading-none">
-          <h1 className="text-[15px] font-semibold text-[#1A2E22] tracking-tight">
-            Smart<span className="text-[#2D5A43]">Books</span>
+        <div className="leading-none min-w-0">
+          <h1
+            className="text-[15px] tracking-tight truncate"
+            style={{
+              fontWeight: 800,
+              color: dark ? "#FFFFFF" : "var(--sb-ink)",
+            }}
+          >
+            SmartBooks
           </h1>
-          <p className="text-[10px] text-[#7A8E7E] mt-0.5 tracking-wide uppercase">South Africa</p>
+          <p
+            className="mt-1 uppercase"
+            style={{
+              fontSize: "9px",
+              letterSpacing: "0.18em",
+              fontWeight: 700,
+              color: dark ? "rgba(185,204,194,0.7)" : "var(--sb-muted)",
+            }}
+          >
+            South Africa
+          </p>
         </div>
       )}
     </div>

@@ -7,9 +7,21 @@ module.exports = {
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
+  			sm: 'calc(var(--radius) - 4px)',
+  			'2xl': '26px',
+  			card: '26px',
+  			pill: '999px'
   		},
   		colors: {
+  			page: 'var(--sb-page)',
+  			card2: 'var(--sb-card)',
+  			line: 'var(--sb-border)',
+  			soft: 'var(--sb-soft)',
+  			ink: 'var(--sb-ink)',
+  			inkmuted: 'var(--sb-muted)',
+  			brand: 'var(--sb-brand)',
+  			brand2: 'var(--sb-brand-2)',
+  			lime: 'var(--sb-lime)',
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {
@@ -62,9 +74,9 @@ module.exports = {
   			}
   		},
   		fontFamily: {
-  			heading: ['var(--font-heading)'],
-  			body: ['var(--font-body)'],
-  			display: ['var(--font-display)'],
+  			heading: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+  			body: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+  			display: ['Instrument Serif', 'Georgia', 'serif'],
   			mono: ['var(--font-mono)']
   		},
   		keyframes: {
