@@ -236,7 +236,7 @@ export default function Dashboard() {
             Bank balance · {currentCompany.name}
           </p>
           <p
-            className="sb-display sb-money relative mt-3"
+            className="sb-display sb-money sb-hero-number relative mt-3"
             style={{ fontSize: 68, lineHeight: 1, color: "#fff", letterSpacing: "-0.02em" }}
           >
             {formatRand(bankBalance)}

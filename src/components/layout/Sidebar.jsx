@@ -1,53 +1,9 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import {
-  LayoutDashboard, Building2, Upload, BookOpen, FileText, Calculator,
-  Shield, Settings, MessageSquare, Users, ArrowLeftRight, Receipt,
-  Wand2, ScanLine, LogOut, ChevronLeft, Landmark, Warehouse, CreditCard,
-  Clock, FileBarChart,
-} from "lucide-react";
+import { LogOut, ChevronLeft } from "lucide-react";
 import { db } from "@/api/supabaseClient";
 import Logo from "@/components/Logo";
-
-// Requested order first (Dashboard, Scan Receipt, Transactions, Upload Statement,
-// Invoices, Inventory, Tax, Receipts, Reports, AI Assistant, Settings), then every
-// remaining existing destination so no page or route is lost.
-const accountantNav = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "/" },
-  { label: "Scan Receipt", icon: ScanLine, path: "/scan-receipt" },
-  { label: "Transactions", icon: ArrowLeftRight, path: "/transactions" },
-  { label: "Upload Statement", icon: Upload, path: "/upload" },
-  { label: "Invoices", icon: CreditCard, path: "/invoices" },
-  { label: "Inventory", icon: Warehouse, path: "/inventory" },
-  { label: "Tax", icon: Calculator, path: "/tax" },
-  { label: "Receipts", icon: Receipt, path: "/documents" },
-  { label: "Reports", icon: FileText, path: "/reports" },
-  { label: "AI Assistant", icon: MessageSquare, path: "/assistant" },
-  { label: "Settings", icon: Settings, path: "/settings" },
-  // Additional existing destinations retained
-  { label: "Companies", icon: Building2, path: "/companies" },
-  { label: "Allocation Rules", icon: Wand2, path: "/rules" },
-  { label: "Bank Rules", icon: Landmark, path: "/bank-rules" },
-  { label: "Chart of Accounts", icon: BookOpen, path: "/accounts" },
-  { label: "Aging Reports", icon: Clock, path: "/aging" },
-  { label: "VAT 201", icon: FileBarChart, path: "/vat201" },
-  { label: "Team", icon: Users, path: "/team" },
-  { label: "Audit Log", icon: Shield, path: "/audit" },
-];
-
-const businessNav = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "/" },
-  { label: "Scan Receipt", icon: ScanLine, path: "/scan-receipt" },
-  { label: "Transactions", icon: ArrowLeftRight, path: "/transactions" },
-  { label: "Upload Statement", icon: Upload, path: "/upload" },
-  { label: "Invoices", icon: CreditCard, path: "/invoices" },
-  { label: "Inventory", icon: Warehouse, path: "/inventory" },
-  { label: "Tax", icon: Calculator, path: "/tax" },
-  { label: "Receipts", icon: Receipt, path: "/documents" },
-  { label: "Reports", icon: FileText, path: "/reports" },
-  { label: "AI Assistant", icon: MessageSquare, path: "/assistant" },
-  { label: "Settings", icon: Settings, path: "/settings" },
-];
+import { accountantNav, businessNav } from "./navConfig";
 
 export default function Sidebar({ currentCompany, companies, onCompanyChange, portal, unallocatedCount, collapsed, onToggleCollapse }) {
   const location = useLocation();
@@ -115,6 +71,7 @@ export default function Sidebar({ currentCompany, companies, onCompanyChange, po
               key={item.path}
               to={item.path}
               title={collapsed ? item.label : undefined}
+              aria-label={item.label}
               aria-current={isActive ? "page" : undefined}
               data-active={isActive ? "true" : "false"}
               className="sb-nav-item"

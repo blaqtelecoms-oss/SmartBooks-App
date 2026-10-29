@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { db } from "@/api/supabaseClient";
 import Sidebar from "./Sidebar";
-import { Bell, Mail, Search } from "lucide-react";
+import MobileNav from "./MobileNav";
+import BottomNav from "./BottomNav";
+import { Bell, Mail, Menu, Search } from "lucide-react";
 
 const PAGE_TITLES = {
   "/": "Dashboard",
@@ -51,9 +53,14 @@ export default function AppLayout() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(readCollapsed);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const searchRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname]);
 
   const toggleSidebar = () => {
     setSidebarCollapsed((prev) => {
@@ -145,8 +152,20 @@ export default function AppLayout() {
       <div className="sb-main">
         {/* Top bar */}
         <header className="sb-topbar">
-          <p className="sb-label truncate" aria-label="Current page">
-            SmartBooks <span style={{ opacity: 0.5 }}>/</span> {pageTitle}
+          <button
+            type="button"
+            className="sb-menu-btn"
+            onClick={() => setMobileNavOpen(true)}
+            aria-label="Open menu"
+            aria-expanded={mobileNavOpen}
+          >
+            <Menu size={18} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+          </button>
+
+          <p className="sb-label truncate min-w-0" aria-label="Current page">
+            <span className="sb-topbar-brand">SmartBooks</span>
+            <span style={{ opacity: 0.5 }}> / </span>
+            {pageTitle}
           </p>
 
           {/* Search */}
@@ -221,7 +240,7 @@ export default function AppLayout() {
               <Bell size={17} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
               <span className="absolute right-2.5 top-2.5 h-[7px] w-[7px] rounded-full" style={{ background: "#D14343", boxShadow: "0 0 0 2px var(--sb-card)" }} />
             </button>
-            <button type="button" className="sb-icon-btn" aria-label="Messages">
+            <button type="button" className="sb-icon-btn sb-icon-btn--mail" aria-label="Messages">
               <Mail size={17} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
             </button>
             <div className="ml-1 hidden items-center gap-2.5 md:flex">
@@ -242,6 +261,19 @@ export default function AppLayout() {
           <Outlet context={{ currentCompany, companies, refreshCompanies: loadCompanies, user, portal, scale: 1 }} />
         </div>
       </div>
+
+      <MobileNav
+        open={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        currentCompany={currentCompany}
+        companies={companies}
+        onCompanyChange={handleCompanyChange}
+        portal={portal}
+        unallocatedCount={unallocatedCount}
+        user={user}
+      />
+
+      <BottomNav portal={portal} onOpenMenu={() => setMobileNavOpen(true)} />
     </div>
   );
 }
