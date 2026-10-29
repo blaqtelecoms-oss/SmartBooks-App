@@ -35,14 +35,18 @@ export default function BottomNav({ onOpenMenu }) {
                 <Icon size={21} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
               </span>
             ) : (
-              <Icon size={20} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
+              <span className="sb-bottomnav-icon">
+                <Icon size={19} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
+              </span>
             )}
             <span className="sb-bottomnav-label">{item.label}</span>
           </button>
         );
       })}
       <button type="button" onClick={onOpenMenu} className="sb-bottomnav-item" aria-label="Open full menu">
-        <Menu size={20} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
+        <span className="sb-bottomnav-icon">
+          <Menu size={19} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
+        </span>
         <span className="sb-bottomnav-label">Menu</span>
       </button>
     </nav>

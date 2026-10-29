@@ -144,7 +144,7 @@ export default function VAT201Report() {
       {report && (
         <>
           {/* Summary cards */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="bg-white rounded-xl border border-[#E5E5E8] p-4">
               <p className="text-[11px] uppercase tracking-wider text-[#6B6B72]">Total Output Tax</p>
               <p className="text-[20px] font-semibold text-[#0F0F0F] mt-1">{formatR(report.summary.totalOutput)}</p>

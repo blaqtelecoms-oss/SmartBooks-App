@@ -83,13 +83,13 @@ export default function Companies() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-[24px] font-medium text-[#0F0F0F] tracking-tight">Companies</h1>
           <p className="text-[13px] text-[#6B6B72] mt-1">Manage your business entities and SA registrations</p>
         </div>
         <Button onClick={() => { setForm(emptyForm); setEditingId(null); setDialogOpen(true); }}
-          className="bg-[#0F0F0F] hover:bg-[#2D2D2D] text-white rounded-lg text-[13px] h-9">
+          className="w-full flex-none bg-[#0F0F0F] hover:bg-[#2D2D2D] text-white rounded-lg text-[13px] h-9 sm:w-auto">
           <Plus size={15} className="mr-1.5" /> Add Company
         </Button>
       </div>

@@ -108,12 +108,12 @@ export default function BankRules() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-[24px] font-medium text-[#0F0F0F] tracking-tight">Bank Rules</h1>
           <p className="text-[13px] text-[#6B6B72] mt-1">Keyword-based auto-allocation rules for bank transactions</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-none flex-wrap gap-2">
           <Button onClick={() => setTestOpen(true)} variant="outline" className="text-[13px] h-9 rounded-lg">
             <Search size={14} className="mr-1.5" /> Test Rule
           </Button>

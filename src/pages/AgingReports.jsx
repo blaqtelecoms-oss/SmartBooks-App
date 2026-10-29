@@ -82,18 +82,18 @@ export default function AgingReports() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-[24px] font-medium text-[#0F0F0F] tracking-tight">Aging Reports</h1>
           <p className="text-[13px] text-[#6B6B72] mt-1">Debtor and creditor aging analysis (30/60/90 days)</p>
         </div>
-        <Button onClick={downloadCSV} variant="outline" className="text-[13px] h-9 rounded-lg">
+        <Button onClick={downloadCSV} variant="outline" className="w-full flex-none text-[13px] h-9 rounded-lg sm:w-auto">
           <Download size={14} className="mr-1.5" /> Export CSV
         </Button>
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: "Current", value: aging.totals.current, color: "text-[#0F0F0F]" },
           { label: "1–30 Days", value: aging.totals.days30, color: "text-amber-600" },
