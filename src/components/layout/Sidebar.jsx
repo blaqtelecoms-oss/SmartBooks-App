@@ -3,12 +3,11 @@ import { Link, useLocation } from "react-router-dom";
 import { LogOut, ChevronLeft } from "lucide-react";
 import { db } from "@/api/supabaseClient";
 import Logo from "@/components/Logo";
-import { accountantNav, businessNav } from "./navConfig";
+import { navForPortal } from "./navConfig";
 
-export default function Sidebar({ currentCompany, companies, onCompanyChange, portal, unallocatedCount, collapsed, onToggleCollapse }) {
+export default function Sidebar({ currentCompany, companies, onCompanyChange, unallocatedCount, collapsed, onToggleCollapse }) {
   const location = useLocation();
-  const isBusiness = portal === "business";
-  const navItems = isBusiness ? businessNav : accountantNav;
+  const navItems = navForPortal();
   const vat = currentCompany?.vat_number;
   const fyEnd = currentCompany?.financial_year_end;
 
@@ -32,7 +31,7 @@ export default function Sidebar({ currentCompany, companies, onCompanyChange, po
       {/* b) Company selector box */}
       {!collapsed && currentCompany && (
         <div className="sb-company-box">
-          {!isBusiness && companies?.length > 1 ? (
+          {companies?.length > 1 ? (
             <div className="relative">
               <select
                 value={currentCompany?.id || ""}

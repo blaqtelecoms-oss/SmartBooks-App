@@ -22,7 +22,7 @@ export default function MobileNav({
 }) {
   const location = useLocation();
   const isBusiness = portal === "business";
-  const groups = navGroupsFor(portal);
+  const groups = navGroupsFor();
   const vat = currentCompany?.vat_number;
   const fyEnd = currentCompany?.financial_year_end;
 
@@ -68,7 +68,7 @@ export default function MobileNav({
         {currentCompany && (
           <div className="sb-drawer-company">
             <p className="sb-drawer-eyebrow">Active company</p>
-            {!isBusiness && companies?.length > 1 ? (
+            {companies?.length > 1 ? (
               <div className="relative">
                 <select
                   value={currentCompany.id || ""}

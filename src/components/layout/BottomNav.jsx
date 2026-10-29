@@ -1,26 +1,20 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, ArrowLeftRight, Upload, FileText, Sparkles, ScanLine, Menu } from "lucide-react";
+import { LayoutDashboard, ArrowLeftRight, Upload, FileText, Menu } from "lucide-react";
 
 // Four primary destinations plus a raised capture action and the full menu.
-const accountantItems = [
+// Shared by both portals so the quick bar is identical everywhere.
+const quickItems = [
   { label: "Home", path: "/", icon: LayoutDashboard },
   { label: "Transactions", path: "/transactions", icon: ArrowLeftRight },
   { label: "Upload", path: "/upload", icon: Upload, primary: true },
   { label: "Reports", path: "/reports", icon: FileText },
 ];
 
-const businessItems = [
-  { label: "Home", path: "/", icon: LayoutDashboard },
-  { label: "Transactions", path: "/transactions", icon: ArrowLeftRight },
-  { label: "Scan", path: "/scan-receipt", icon: ScanLine, primary: true },
-  { label: "Assistant", path: "/assistant", icon: Sparkles },
-];
-
-export default function BottomNav({ portal, onOpenMenu }) {
+export default function BottomNav({ onOpenMenu }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const items = portal === "business" ? businessItems : accountantItems;
+  const items = quickItems;
 
   return (
     <nav className="sb-bottomnav" aria-label="Quick navigation">

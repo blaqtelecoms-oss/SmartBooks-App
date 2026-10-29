@@ -143,7 +143,6 @@ export default function AppLayout() {
         currentCompany={currentCompany}
         companies={companies}
         onCompanyChange={handleCompanyChange}
-        portal={portal}
         unallocatedCount={unallocatedCount}
         collapsed={sidebarCollapsed}
         onToggleCollapse={toggleSidebar}
@@ -273,7 +272,7 @@ export default function AppLayout() {
         user={user}
       />
 
-      <BottomNav portal={portal} onOpenMenu={() => setMobileNavOpen(true)} />
+      <BottomNav onOpenMenu={() => setMobileNavOpen(true)} />
     </div>
   );
 }
