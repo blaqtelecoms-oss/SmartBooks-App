@@ -3,10 +3,7 @@ import { Link } from "react-router-dom";
 import { db } from "@/api/supabaseClient";
 import GoogleIcon from "@/components/GoogleIcon";
 import LandingSplash from "@/components/LandingSplash";
-import { Loader2, Mail, Lock, ArrowLeft, ArrowRight } from "lucide-react";
-
-const BG_IMAGE =
-  "https://media.base44.com/images/public/6ada1088ea3f224461b94413/9d35c9e1c_generated_1c032f0b.jpg";
+import { Loader2, Mail, Lock, ArrowLeft, Building2, Calculator, Check } from "lucide-react";
 
 export default function Login() {
   const [showSplash, setShowSplash] = useState(true);
@@ -41,319 +38,253 @@ export default function Login() {
     return <LandingSplash onComplete={() => setShowSplash(false)} />;
   }
 
-  const portals = [
-    {
-      key: "business",
-      title: "Business Portal",
-      desc: "For business owners to manage books, upload statements, and track finances",
-      icon: (
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#143628" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
-          <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2M10 6h4M10 10h4M10 14h4M10 18h4" />
-        </svg>
-      ),
-    },
-    {
-      key: "accountant",
-      title: "Accountant / Bookkeeper",
-      desc: "For accountants and bookkeepers managing multiple client companies",
-      icon: (
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#143628" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="4" y="2" width="16" height="20" rx="2" />
-          <path d="M8 6h8M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" />
-        </svg>
-      ),
-    },
-  ];
+  const portalLabel = portal === "business" ? "Business Portal" : "Accountant / Bookkeeper";
 
   return (
-    <div
-      className="relative min-h-screen flex flex-col items-center justify-center py-16 px-4"
-      style={{ background: "#143628", fontFamily: '"Inter","Segoe UI",Helvetica,Arial,sans-serif' }}
-    >
-      {/* Background image */}
-      <img
-        src={BG_IMAGE}
-        alt=""
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-        style={{ opacity: 0.55 }}
-      />
-      {/* Scrim */}
+    <div className="min-h-screen flex bg-white">
+      {/* ── Left brand panel ── */}
       <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: "linear-gradient(180deg, rgba(20,54,40,.78), rgba(20,54,40,.9))" }}
-      />
-      {/* Spinning bronze ring */}
-      <div
-        className="absolute pointer-events-none sb-spin hidden md:block"
-        style={{ right: -60, bottom: -60, width: 260, height: 260, borderRadius: "50%", border: "1px solid rgba(158,116,58,.35)" }}
-      />
-
-      {/* Frame + Card */}
-      <div
-        className="relative w-full max-w-[884px] p-3 sb-rise"
-        style={{ border: "1px solid rgba(158,116,58,.6)", borderRadius: 22 }}
+        className="hidden lg:flex flex-col justify-between p-12 xl:p-16 relative overflow-hidden"
+        style={{
+          background: "linear-gradient(160deg, #1A2E22 0%, #2D5A43 100%)",
+          width: "45%",
+          minWidth: 420,
+        }}
       >
-        <div
-          className="overflow-hidden mx-auto"
-          style={{ maxWidth: 860, borderRadius: 14, background: "#FAFCFA", boxShadow: "0 30px 70px rgba(0,0,0,.4)" }}
-        >
-          {/* Header bar */}
-          <div
-            className="flex items-center justify-between px-6 md:px-9 py-5 flex-wrap gap-3"
-            style={{ background: "#143628", borderBottom: "3px solid #9E743A" }}
-          >
-            <div className="flex items-center gap-3.5">
-              <div
-                className="w-[42px] h-[42px] rounded-[11px] flex items-center justify-center"
-                style={{ background: "#EAF0EB" }}
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#143628" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 3h10a2 2 0 0 1 2 2v7" />
-                  <path d="M5 3v16a2 2 0 0 0 2 2h5" />
-                  <path d="M8 8h6M8 12h6" />
-                  <circle cx="17" cy="18" r="4" />
-                  <path d="M17 16v4M15 18h4" />
-                </svg>
-              </div>
-              <div>
-                <div className="text-[22px] font-semibold tracking-[.06em]" style={{ color: "#FAFCFA" }}>
-                  SmartBooks SA
-                </div>
-                <p className="text-[13px] tracking-[.08em] m-0" style={{ color: "#9E743A" }}>
-                  Smarter Accounting. Stronger Business.
-                </p>
-              </div>
-            </div>
-            <div
-              className="text-[13px] tracking-[.1em] px-4 py-2 rounded-full"
-              style={{ color: "#EAF0EB", border: "1px solid rgba(158,116,58,.8)" }}
-            >
-              Choose your portal to continue
-            </div>
-          </div>
-
-          {/* Body: two columns */}
-          <div className="grid md:grid-cols-2 gap-0">
-            {/* Left column — portal cards */}
-            <div className="flex flex-col gap-5 p-8 md:p-9" style={{ background: "#EAF0EB" }}>
-              {portals.map((p, i) => {
-                const selected = portal === p.key;
-                return (
-                  <button
-                    key={p.key}
-                    onClick={() => setPortal(p.key)}
-                    className={`sb-pc sb-rise text-left p-6 rounded-[14px] border ${selected ? "sb-pc-sel" : ""}`}
-                    style={{
-                      background: "#FAFCFA",
-                      borderColor: selected ? "#9E743A" : "#cfdad2",
-                      animationDelay: `${0.3 + i * 0.2}s`,
-                      cursor: "pointer",
-                      font: "inherit",
-                      color: "inherit",
-                    }}
-                  >
-                    <div
-                      className="sb-ring w-16 h-16 rounded-full flex items-center justify-center mb-1.5"
-                      style={{
-                        background: "#EAF0EB",
-                        boxShadow: "inset 3px 3px 7px rgba(20,54,40,.22), inset -3px -3px 7px #fff",
-                        border: `2px solid ${selected ? "#9E743A" : "transparent"}`,
-                      }}
-                    >
-                      {p.icon}
-                    </div>
-                    <h2 className="m-0 mt-1.5 text-[19px] font-semibold tracking-[.03em]" style={{ color: "#143628" }}>
-                      {p.title}
-                    </h2>
-                    <p className="m-0 text-[14px] leading-[1.55] tracking-[.03em]" style={{ color: "#4a6355" }}>
-                      {p.desc}
-                    </p>
-                    <div
-                      className="flex items-center gap-2 text-[13px] font-semibold tracking-[.06em] mt-2"
-                      style={{ color: "#9E743A" }}
-                    >
-                      Log in <ArrowRight size={14} />
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Right column — credentials */}
-            <div
-              className="flex flex-col p-8 md:p-9"
-              style={{ background: "#FAFCFA", borderLeft: "1px solid #d6e0d8" }}
-            >
-              {portal ? (
-                <>
-                  {/* Back to portals */}
-                  <button
-                    onClick={() => setPortal(null)}
-                    className="sb-back inline-flex items-center gap-2 bg-transparent border-0 p-0 text-[13px] tracking-[.05em] mb-5 self-start"
-                    style={{ color: "#4a6355", font: "inherit", cursor: "pointer" }}
-                  >
-                    <ArrowLeft size={14} /> Back to portals
-                  </button>
-
-                  <h1 className="m-0 mb-6 text-[30px] font-medium tracking-[.04em]" style={{ color: "#143628" }}>
-                    Welcome back
-                  </h1>
-
-                  {/* Google sign-in */}
-                  <button
-                    onClick={handleGoogle}
-                    className="sb-gb flex items-center justify-center gap-2.5 h-12 border rounded-[10px] text-[14px] font-medium tracking-[.04em] bg-white"
-                    style={{ borderColor: "#b9c8bd", color: "#143628", font: "inherit", cursor: "pointer" }}
-                  >
-                    <GoogleIcon className="w-5 h-5" />
-                    Continue with Google
-                  </button>
-
-                  {/* Divider */}
-                  <div
-                    className="flex items-center gap-3 my-5 text-[12px] uppercase tracking-[.14em]"
-                    style={{ color: "#6f8576" }}
-                  >
-                    <div className="flex-1 h-px" style={{ background: "#d6e0d8" }} />
-                    or
-                    <div className="flex-1 h-px" style={{ background: "#d6e0d8" }} />
-                  </div>
-
-                  {/* Error */}
-                  {error && (
-                    <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm border border-red-200">
-                      {error}
-                    </div>
-                  )}
-
-                  {/* Login form */}
-                  <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <div className="flex flex-col gap-1.5 mb-4">
-                      <label
-                        htmlFor="email"
-                        className="text-[13px] font-medium tracking-[.06em]"
-                        style={{ color: "#143628" }}
-                      >
-                        Email
-                      </label>
-                      <div className="relative">
-                        <Mail
-                          className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4"
-                          style={{ color: "#6f8576" }}
-                        />
-                        <input
-                          id="email"
-                          type="email"
-                          autoComplete="email"
-                          autoFocus
-                          placeholder="you@example.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="sb-input w-full h-12 border rounded-[10px] bg-white pl-10 pr-3.5 text-[14px]"
-                          style={{ borderColor: "#b9c8bd", color: "#143628", font: "inherit" }}
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-1.5 mb-4">
-                      <div className="flex justify-between items-center">
-                        <label
-                          htmlFor="password"
-                          className="text-[13px] font-medium tracking-[.06em]"
-                          style={{ color: "#143628" }}
-                        >
-                          Password
-                        </label>
-                        <Link
-                          to="/forgot-password"
-                          className="text-[12px] tracking-[.04em] no-underline hover:underline"
-                          style={{ color: "#9E743A" }}
-                        >
-                          Forgot password?
-                        </Link>
-                      </div>
-                      <div className="relative">
-                        <Lock
-                          className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4"
-                          style={{ color: "#6f8576" }}
-                        />
-                        <input
-                          id="password"
-                          type="password"
-                          autoComplete="current-password"
-                          placeholder="••••••••"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="sb-input w-full h-12 border rounded-[10px] bg-white pl-10 pr-3.5 text-[14px]"
-                          style={{ borderColor: "#b9c8bd", color: "#143628", font: "inherit" }}
-                          required
-                        />
-                      </div>
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="sb-sub h-12 border-0 rounded-[10px] text-[14px] font-semibold tracking-[.08em] mt-1.5"
-                      style={{
-                        background: "#143628",
-                        color: "#FAFCFA",
-                        borderBottom: "3px solid #9E743A",
-                        font: "inherit",
-                        cursor: loading ? "not-allowed" : "pointer",
-                      }}
-                    >
-                      {loading ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <Loader2 className="w-4 h-4 animate-spin" /> Logging in...
-                        </span>
-                      ) : (
-                        "Log in"
-                      )}
-                    </button>
-                  </form>
-                </>
-              ) : (
-                /* Placeholder when no portal selected */
-                <div className="flex flex-col items-center justify-center h-full text-center gap-4 py-12">
-                  <div
-                    className="w-16 h-16 rounded-full flex items-center justify-center"
-                    style={{ background: "#EAF0EB" }}
-                  >
-                    <svg
-                      width="28"
-                      height="28"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#9E743A"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" />
-                    </svg>
-                  </div>
-                  <p className="text-[15px] tracking-[.04em] m-0" style={{ color: "#4a6355" }}>
-                    Select a portal to continue
-                  </p>
-                </div>
-              )}
-            </div>
+        {/* Logo */}
+        <div className="flex items-center gap-3 relative z-10">
+          <svg width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="64" height="64" rx="14" fill="#EAF0EB" />
+            <path d="M18 16h22a4 4 0 0 1 4 4v28a2 2 0 0 1-2 2H18a2 2 0 0 1-2-2V18a2 2 0 0 1 2-2z" stroke="#2D5A43" strokeWidth="3" strokeLinejoin="round" />
+            <path d="M22 24h14M22 30h14M22 36h10" stroke="#2D5A43" strokeWidth="2.5" strokeLinecap="round" />
+            <circle cx="44" cy="44" r="8" fill="#4A7C5E" stroke="#2D5A43" strokeWidth="2.5" />
+            <path d="M44 40v8M40 44h8" stroke="#EAF0EB" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+          <div>
+            <h1 className="text-lg font-semibold text-white tracking-tight">SmartBooks SA</h1>
+            <p className="text-xs text-white/50 tracking-wide uppercase mt-0.5">South Africa</p>
           </div>
         </div>
+
+        {/* Value proposition */}
+        <div className="relative z-10 max-w-md">
+          <h2 className="text-3xl xl:text-4xl font-bold text-white leading-tight tracking-tight">
+            Smarter Accounting.<br />Stronger Business.
+          </h2>
+          <p className="text-white/60 mt-4 text-base leading-relaxed">
+            AI-powered bookkeeping, VAT compliance, and financial management built for South African businesses.
+          </p>
+
+          {/* Feature bullets */}
+          <div className="mt-8 space-y-3.5">
+            {[
+              "Automated bank statement processing",
+              "SARS VAT 201 returns in one click",
+              "Real-time financial dashboards",
+              "Multi-company & team management",
+            ].map((feature) => (
+              <div key={feature} className="flex items-center gap-3">
+                <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
+                  <Check size={12} className="text-white/80" strokeWidth={2.5} />
+                </div>
+                <span className="text-sm text-white/70">{feature}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom footer */}
+        <div className="relative z-10 text-xs text-white/40">
+          © 2026 SmartBooks SA. All rights reserved.
+        </div>
+
+        {/* Subtle decorative grid */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 80% 20%, rgba(255,255,255,0.04) 0%, transparent 50%), radial-gradient(circle at 20% 80%, rgba(255,255,255,0.03) 0%, transparent 50%)",
+          }}
+        />
       </div>
 
-      {/* Footer */}
-      <p className="relative text-center mt-8 text-[14px] tracking-[.05em] m-0" style={{ color: "#EAF0EB" }}>
-        Don't have an account?{" "}
-        <Link
-          to="/register"
-          className="sb-link font-semibold no-underline"
-          style={{ color: "#d9b072" }}
-        >
-          Create one
-        </Link>
-      </p>
+      {/* ── Right form panel ── */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 sm:px-12 bg-[#FAFBFA]">
+        <div className="w-full max-w-[400px]">
+          {/* Mobile logo */}
+          <div className="flex lg:hidden items-center gap-3 mb-8 justify-center">
+            <svg width="36" height="36" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="64" height="64" rx="14" fill="#2D5A43" />
+              <path d="M18 16h22a4 4 0 0 1 4 4v28a2 2 0 0 1-2 2H18a2 2 0 0 1-2-2V18a2 2 0 0 1 2-2z" stroke="#fff" strokeWidth="3" strokeLinejoin="round" />
+              <path d="M22 24h14M22 30h14M22 36h10" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" />
+              <circle cx="44" cy="44" r="8" fill="#4A7C5E" stroke="#fff" strokeWidth="2.5" />
+              <path d="M44 40v8M40 44h8" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            <span className="text-lg font-semibold text-[#1A2E22]">SmartBooks SA</span>
+          </div>
+
+          {/* ── Portal selection ── */}
+          {!portal ? (
+            <div className="sb-fade-in">
+              <h1 className="text-2xl font-bold text-[#1A2E22] tracking-tight mb-1">Choose your portal</h1>
+              <p className="text-sm text-[#5C7263] mb-6">Select how you'll be using SmartBooks today.</p>
+
+              <div className="space-y-3">
+                <button
+                  onClick={() => setPortal("business")}
+                  className="sb-portal-card group w-full flex items-start gap-4 p-5 rounded-xl border-2 border-[#E2E8E0] bg-white text-left transition-all hover:border-[#2D5A43] hover:shadow-md"
+                >
+                  <div className="w-11 h-11 rounded-lg bg-[#EFF4F0] flex items-center justify-center flex-shrink-0 group-hover:bg-[#2D5A43] transition-colors">
+                    <Building2 size={22} className="text-[#2D5A43] group-hover:text-white transition-colors" strokeWidth={1.5} />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-base font-semibold text-[#1A2E22]">Business Portal</h2>
+                    <p className="text-sm text-[#5C7263] mt-0.5 leading-relaxed">
+                      For business owners managing books, statements, and finances
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setPortal("accountant")}
+                  className="sb-portal-card group w-full flex items-start gap-4 p-5 rounded-xl border-2 border-[#E2E8E0] bg-white text-left transition-all hover:border-[#2D5A43] hover:shadow-md"
+                >
+                  <div className="w-11 h-11 rounded-lg bg-[#EFF4F0] flex items-center justify-center flex-shrink-0 group-hover:bg-[#2D5A43] transition-colors">
+                    <Calculator size={22} className="text-[#2D5A43] group-hover:text-white transition-colors" strokeWidth={1.5} />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-base font-semibold text-[#1A2E22]">Accountant / Bookkeeper</h2>
+                    <p className="text-sm text-[#5C7263] mt-0.5 leading-relaxed">
+                      For professionals managing multiple client companies
+                    </p>
+                  </div>
+                </button>
+              </div>
+
+              <p className="text-center text-sm text-[#7A8E7E] mt-8">
+                Don't have an account?{" "}
+                <Link to="/register" className="text-[#2D5A43] font-medium hover:underline">
+                  Create one
+                </Link>
+              </p>
+            </div>
+          ) : (
+            /* ── Login form ── */
+            <div className="sb-fade-in">
+              {/* Back link */}
+              <button
+                onClick={() => setPortal(null)}
+                className="sb-back-link flex items-center gap-1.5 text-sm text-[#5C7263] hover:text-[#2D5A43] mb-6 transition-colors"
+              >
+                <ArrowLeft size={15} /> Back to portals
+              </button>
+
+              <h1 className="text-2xl font-bold text-[#1A2E22] tracking-tight mb-1">Welcome back</h1>
+              <div className="flex items-center gap-2 mb-6">
+                <span className="text-sm text-[#5C7263]">Signing in to</span>
+                <span className="text-sm font-medium text-[#2D5A43] bg-[#EFF4F0] px-2.5 py-0.5 rounded-full">
+                  {portalLabel}
+                </span>
+              </div>
+
+              {/* Google sign-in */}
+              <button
+                onClick={handleGoogle}
+                className="sb-google-btn w-full h-11 flex items-center justify-center gap-2.5 border border-[#DDE3DA] rounded-lg bg-white text-sm font-medium text-[#1A2E22] transition-all"
+              >
+                <GoogleIcon className="w-5 h-5" />
+                Continue with Google
+              </button>
+
+              {/* Divider */}
+              <div className="flex items-center gap-3 my-5">
+                <div className="flex-1 h-px bg-[#E2E8E0]" />
+                <span className="text-xs text-[#7A8E7E] uppercase tracking-wider">or</span>
+                <div className="flex-1 h-px bg-[#E2E8E0]" />
+              </div>
+
+              {/* Error */}
+              {error && (
+                <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm border border-red-200">
+                  {error}
+                </div>
+              )}
+
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-[#1A2E22] mb-1.5">
+                    Email
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A8E7E]" />
+                    <input
+                      id="email"
+                      type="email"
+                      autoComplete="email"
+                      autoFocus
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="sb-input-field w-full h-11 pl-10 pr-3 border border-[#DDE3DA] rounded-lg bg-white text-sm text-[#1A2E22] transition-all"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label htmlFor="password" className="block text-sm font-medium text-[#1A2E22]">
+                      Password
+                    </label>
+                    <Link to="/forgot-password" className="text-xs text-[#2D5A43] hover:underline">
+                      Forgot password?
+                    </Link>
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A8E7E]" />
+                    <input
+                      id="password"
+                      type="password"
+                      autoComplete="current-password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="sb-input-field w-full h-11 pl-10 pr-3 border border-[#DDE3DA] rounded-lg bg-white text-sm text-[#1A2E22] transition-all"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="sb-submit-btn w-full h-11 rounded-lg text-sm font-semibold text-white transition-all"
+                  style={{
+                    background: loading ? "#6B8E7A" : "#2D5A43",
+                    cursor: loading ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" /> Signing in...
+                    </span>
+                  ) : (
+                    "Sign in"
+                  )}
+                </button>
+              </form>
+
+              <p className="text-center text-sm text-[#7A8E7E] mt-6">
+                Don't have an account?{" "}
+                <Link to="/register" className="text-[#2D5A43] font-medium hover:underline">
+                  Create one
+                </Link>
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
