@@ -30,6 +30,8 @@ import ScanReceipt from '@/pages/ScanReceipt';
 import BankRules from '@/pages/BankRules';
 import VAT201Report from '@/pages/VAT201Report';
 import Inventory from '@/pages/Inventory';
+import Services from '@/pages/Services';
+import Onboarding from '@/pages/Onboarding';
 import Invoices from '@/pages/Invoices';
 import AgingReports from '@/pages/AgingReports';
 import TrialBalance from '@/pages/TrialBalance';
@@ -69,6 +71,7 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+        <Route path="/onboarding" element={<Onboarding />} />
         <Route element={<AppLayout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/companies" element={<Companies />} />
@@ -78,6 +81,7 @@ const AuthenticatedApp = () => {
           <Route path="/bank-rules" element={<BankRules />} />
           <Route path="/vat201" element={<VAT201Report />} />
           <Route path="/inventory" element={<Inventory />} />
+          <Route path="/services" element={<Services />} />
           <Route path="/invoices" element={<Invoices />} />
           <Route path="/trial-balance" element={<TrialBalance />} />
           <Route path="/balance-sheet" element={<BalanceSheet />} />

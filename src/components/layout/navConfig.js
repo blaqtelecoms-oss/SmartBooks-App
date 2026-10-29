@@ -2,13 +2,16 @@ import {
   LayoutDashboard, Building2, Upload, BookOpen, FileText, Calculator,
   Shield, Settings, MessageSquare, Users, ArrowLeftRight, Receipt,
   Wand2, ScanLine, Landmark, Warehouse, CreditCard, Clock, FileBarChart,
-  Scale, FileSpreadsheet, TrendingUp, Wallet, HandCoins,
+  Scale, FileSpreadsheet, TrendingUp, Wallet, HandCoins, Briefcase,
 } from "lucide-react";
 
 // Both portals share one navigation, so the business and accountant portals
 // expose exactly the same pages and features.
 // Items are grouped into categories; `group` drives both the desktop sidebar
 // headings and the mobile drawer sections, in first-appearance order.
+// `offering` limits an item to the business models chosen during onboarding:
+// a services-only business never sees inventory, a products-only business
+// never sees the services catalogue.
 export const portalNav = [
   // ---- Workspace
   { label: "Dashboard", icon: LayoutDashboard, path: "/", group: "Workspace" },
@@ -29,8 +32,9 @@ export const portalNav = [
   { label: "Tax", icon: Calculator, path: "/tax", group: "Tax" },
   { label: "VAT 201", icon: FileBarChart, path: "/vat201", group: "Tax" },
 
-  // ---- Stock
-  { label: "Inventory", icon: Warehouse, path: "/inventory", group: "Stock" },
+  // ---- Catalogue
+  { label: "Inventory", icon: Warehouse, path: "/inventory", group: "Catalogue", offering: ["products", "both"] },
+  { label: "Services", icon: Briefcase, path: "/services", group: "Catalogue", offering: ["services", "both"] },
 
   // ---- Records
   { label: "Chart of Accounts", icon: BookOpen, path: "/accounts", group: "Records" },
@@ -47,11 +51,15 @@ export const portalNav = [
   { label: "Settings", icon: Settings, path: "/settings", group: "Admin" },
 ];
 
-export const navForPortal = () => portalNav;
+// Companies created before onboarding existed have no offering_type and keep every page.
+const offeringOf = (company) => company?.offering_type || "both";
 
-export const navGroupsFor = () => {
+export const navForPortal = (company) =>
+  portalNav.filter((item) => !item.offering || item.offering.includes(offeringOf(company)));
+
+export const navGroupsFor = (company) => {
   const groups = [];
-  portalNav.forEach((item) => {
+  navForPortal(company).forEach((item) => {
     const existing = groups.find((g) => g.label === item.group);
     if (existing) existing.items.push(item);
     else groups.push({ label: item.group, items: [item] });

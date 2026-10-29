@@ -26,6 +26,7 @@ const TABLES = {
   InventoryItem: 'inventory_items',
   Invoice: 'invoices',
   PaymentGatewaySetting: 'payment_gateway_settings',
+  Service: 'services',
   StockMovement: 'stock_movements',
   TaxReturn: 'tax_returns',
   Transaction: 'transactions',

@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import { db } from "@/api/supabaseClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import moment from "moment";
 
 export default function Reports() {
@@ -64,17 +63,17 @@ export default function Reports() {
         <div className="text-center py-12"><Loader2 size={24} className="animate-spin text-[#6B6B72] mx-auto" /></div>
       ) : (
         <Tabs defaultValue="trial_balance" className="space-y-4">
-          <TabsList className="bg-[#F7F7FA] border border-[#E5E5E8] rounded-lg p-1 flex flex-wrap gap-1">
-            <TabsTrigger value="trial_balance" className="rounded-md text-[12px] data-[state=active]:bg-white data-[state=active]:shadow-sm">Trial Balance</TabsTrigger>
-            <TabsTrigger value="income_statement" className="rounded-md text-[12px] data-[state=active]:bg-white data-[state=active]:shadow-sm">Income Statement</TabsTrigger>
-            <TabsTrigger value="balance_sheet" className="rounded-md text-[12px] data-[state=active]:bg-white data-[state=active]:shadow-sm">Balance Sheet</TabsTrigger>
-            <TabsTrigger value="general_ledger" className="rounded-md text-[12px] data-[state=active]:bg-white data-[state=active]:shadow-sm">General Ledger</TabsTrigger>
+          <TabsList className="flex h-9 w-full flex-nowrap justify-start gap-1 overflow-x-auto rounded-lg border border-[#E5E5E8] bg-[#F7F7FA] p-1">
+            <TabsTrigger value="trial_balance" className="shrink-0 rounded-md px-2 text-[12px] data-[state=active]:bg-white data-[state=active]:shadow-sm sm:px-3">Trial Balance</TabsTrigger>
+            <TabsTrigger value="income_statement" className="shrink-0 rounded-md px-2 text-[12px] data-[state=active]:bg-white data-[state=active]:shadow-sm sm:px-3">Income Statement</TabsTrigger>
+            <TabsTrigger value="balance_sheet" className="shrink-0 rounded-md px-2 text-[12px] data-[state=active]:bg-white data-[state=active]:shadow-sm sm:px-3">Balance Sheet</TabsTrigger>
+            <TabsTrigger value="general_ledger" className="shrink-0 rounded-md px-2 text-[12px] data-[state=active]:bg-white data-[state=active]:shadow-sm sm:px-3">General Ledger</TabsTrigger>
           </TabsList>
 
           {/* Trial Balance */}
           <TabsContent value="trial_balance">
             <ReportCard title="Trial Balance" date={moment().format("DD MMMM YYYY")}>
-              <table className="w-full text-[13px]">
+              <table className="w-full min-w-[360px] text-[13px]">
                 <thead>
                   <tr className="border-b border-[#E5E5E8]">
                     <th className="text-left py-2 px-3 text-[11px] text-[#6B6B72] uppercase tracking-wider">Account</th>
@@ -194,7 +193,7 @@ export default function Reports() {
                     <span className="text-[12px] font-mono text-[#6B6B72]">{acct.code}</span>
                     <span className="text-[13px] font-medium text-[#0F0F0F]">{acct.name}</span>
                   </div>
-                  <table className="w-full text-[12px]">
+                  <table className="w-full min-w-[440px] text-[12px]">
                     <thead>
                       <tr className="border-b border-[#E5E5E8]">
                         <th className="text-left py-1.5 px-3 text-[#6B6B72]">Date</th>
@@ -236,7 +235,7 @@ function ReportCard({ title, date, children }) {
           <p className="text-[11px] text-[#6B6B72] mt-0.5">As at {date}</p>
         </div>
       </div>
-      <div className="p-4">{children}</div>
+      <div className="overflow-x-auto p-4">{children}</div>
     </div>
   );
 }

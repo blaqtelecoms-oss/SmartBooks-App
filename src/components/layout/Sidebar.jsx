@@ -7,7 +7,7 @@ import { navGroupsFor } from "./navConfig";
 
 export default function Sidebar({ currentCompany, companies, onCompanyChange, unallocatedCount, collapsed, onToggleCollapse }) {
   const location = useLocation();
-  const navGroups = navGroupsFor();
+  const navGroups = navGroupsFor(currentCompany);
   const vat = currentCompany?.vat_number;
   const fyEnd = currentCompany?.financial_year_end;
 

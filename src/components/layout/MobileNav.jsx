@@ -23,7 +23,7 @@ export default function MobileNav({
 }) {
   const location = useLocation();
   const isBusiness = portal === "business";
-  const groups = navGroupsFor();
+  const groups = navGroupsFor(currentCompany);
   const vat = currentCompany?.vat_number;
   const fyEnd = currentCompany?.financial_year_end;
 

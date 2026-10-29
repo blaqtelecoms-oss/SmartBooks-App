@@ -27,6 +27,7 @@ const PAGE_TITLES = {
   "/expenses": "Expenses",
   "/debtors-creditors": "Debtors & Creditors",
   "/inventory": "Inventory",
+  "/services": "Services",
   "/documents": "Receipts",
   "/team": "Team",
   "/audit": "Audit Log",
@@ -53,6 +54,7 @@ const writeCollapsed = (value) => {
 
 export default function AppLayout() {
   const [companies, setCompanies] = useState([]);
+  const [companiesLoaded, setCompaniesLoaded] = useState(false);
   const [currentCompany, setCurrentCompany] = useState(null);
   const [portal, setPortal] = useState(null);
   const [unallocatedCount, setUnallocatedCount] = useState(0);
@@ -107,7 +109,11 @@ export default function AppLayout() {
         const found = list.find((c) => c.id === saved);
         setCurrentCompany(found || list[0]);
       }
-    } catch (e) {}
+    } catch (e) {
+      // Leave the list empty: the onboarding gate picks this account up.
+    } finally {
+      setCompaniesLoaded(true);
+    }
   };
 
   const loadUnallocatedCount = async () => {
@@ -140,6 +146,22 @@ export default function AppLayout() {
   const matchingCompanies = searchQuery
     ? companies.filter((c) => c.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5)
     : [];
+
+  // A brand-new account has no business yet, and a half-finished setup stays a
+  // draft company: both belong in the wizard until onboarding is completed.
+  const needsOnboarding = companiesLoaded && companies.every((c) => !c.onboarding_completed);
+
+  useEffect(() => {
+    if (needsOnboarding) navigate("/onboarding", { replace: true });
+  }, [needsOnboarding, navigate]);
+
+  if (needsOnboarding) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center" style={{ background: "var(--sb-page)" }}>
+        <div className="h-8 w-8 animate-spin rounded-full border-4" style={{ borderColor: "var(--sb-border)", borderTopColor: "var(--sb-brand)" }} />
+      </div>
+    );
+  }
 
   return (
     <div className="sb-shell" data-collapsed={sidebarCollapsed ? "true" : "false"}>
