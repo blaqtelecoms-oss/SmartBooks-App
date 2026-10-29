@@ -24,13 +24,21 @@ import Team from '@/pages/Team';
 import AuditLog from '@/pages/AuditLog';
 import AIAssistant from '@/pages/AIAssistant';
 import Settings from '@/pages/Settings';
+import Profile from '@/pages/Profile';
 import AllocationRules from '@/pages/AllocationRules';
 import ScanReceipt from '@/pages/ScanReceipt';
 import BankRules from '@/pages/BankRules';
 import VAT201Report from '@/pages/VAT201Report';
 import Inventory from '@/pages/Inventory';
+import Services from '@/pages/Services';
+import Onboarding from '@/pages/Onboarding';
 import Invoices from '@/pages/Invoices';
 import AgingReports from '@/pages/AgingReports';
+import TrialBalance from '@/pages/TrialBalance';
+import BalanceSheet from '@/pages/BalanceSheet';
+import ProfitLoss from '@/pages/ProfitLoss';
+import Expenses from '@/pages/Expenses';
+import DebtorsCreditors from '@/pages/DebtorsCreditors';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -63,6 +71,7 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+        <Route path="/onboarding" element={<Onboarding />} />
         <Route element={<AppLayout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/companies" element={<Companies />} />
@@ -72,7 +81,13 @@ const AuthenticatedApp = () => {
           <Route path="/bank-rules" element={<BankRules />} />
           <Route path="/vat201" element={<VAT201Report />} />
           <Route path="/inventory" element={<Inventory />} />
+          <Route path="/services" element={<Services />} />
           <Route path="/invoices" element={<Invoices />} />
+          <Route path="/trial-balance" element={<TrialBalance />} />
+          <Route path="/balance-sheet" element={<BalanceSheet />} />
+          <Route path="/profit-loss" element={<ProfitLoss />} />
+          <Route path="/expenses" element={<Expenses />} />
+          <Route path="/debtors-creditors" element={<DebtorsCreditors />} />
           <Route path="/aging" element={<AgingReports />} />
           <Route path="/scan-receipt" element={<ScanReceipt />} />
           <Route path="/accounts" element={<ChartOfAccounts />} />
@@ -83,6 +98,7 @@ const AuthenticatedApp = () => {
           <Route path="/audit" element={<AuditLog />} />
           <Route path="/assistant" element={<AIAssistant />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/profile" element={<Profile />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

@@ -184,7 +184,7 @@ do $$
 declare t text;
 begin
   foreach t in array array[
-    'bank_rules','warehouses','inventory_items','warehouse_stock',
+    'bank_rules','warehouses','inventory_items',
     'stock_movements','payment_gateway_settings','contacts','invoices'
   ] loop
     execute format('create policy %1$s_all on public.%1$s for all to authenticated
@@ -192,3 +192,14 @@ begin
                     with check (public.is_company_member(company_id))', t);
   end loop;
 end $$;
+
+-- warehouse_stock has no company_id of its own: ownership follows its inventory item.
+create policy warehouse_stock_all on public.warehouse_stock for all to authenticated
+  using (exists (
+    select 1 from public.inventory_items i
+    where i.id = item_id and public.is_company_member(i.company_id)
+  ))
+  with check (exists (
+    select 1 from public.inventory_items i
+    where i.id = item_id and public.is_company_member(i.company_id)
+  ));

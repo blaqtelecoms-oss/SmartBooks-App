@@ -136,12 +136,12 @@ export default function Inventory() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-[24px] font-medium text-[#0F0F0F] tracking-tight">Inventory & Warehouses</h1>
           <p className="text-[13px] text-[#6B6B72] mt-1">Manage stock items, warehouses, and transfers</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button onClick={() => setTransferDialog(true)} variant="outline" className="text-[13px] h-9 rounded-lg">
             <ArrowRight size={14} className="mr-1.5" /> Transfer
           </Button>

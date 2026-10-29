@@ -26,6 +26,7 @@ const TABLES = {
   InventoryItem: 'inventory_items',
   Invoice: 'invoices',
   PaymentGatewaySetting: 'payment_gateway_settings',
+  Service: 'services',
   StockMovement: 'stock_movements',
   TaxReturn: 'tax_returns',
   Transaction: 'transactions',
@@ -139,11 +140,29 @@ const entities = Object.fromEntries(Object.entries(TABLES).map(([name, table]) =
 const toAppUser = async (authUser) => {
   if (!authUser) return null;
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', authUser.id).maybeSingle();
+  const meta = authUser.user_metadata || {};
   return {
     id: authUser.id,
     email: authUser.email,
-    full_name: profile?.full_name || authUser.user_metadata?.full_name || authUser.user_metadata?.name || null,
+    full_name: profile?.full_name || meta.full_name || meta.name || null,
     role: profile?.role || 'user',
+    // Which portal the account belongs to ("business" | "accountant") and whether
+    // its onboarding is done. Null/false for accounts created before portals existed.
+    portal: profile?.portal || meta.portal || null,
+    onboarding_completed: profile?.onboarding_completed === true,
+    avatar_url: meta.avatar_url || null,
+    // Business details edited on the profile page live in the user's metadata.
+    business_name: meta.business_name || null,
+    phone: meta.phone || null,
+    vat_number: meta.vat_number || null,
+    registration_number: meta.registration_number || null,
+    address: meta.address || null,
+    // Accountant profile: personal details plus an optional practice.
+    country: meta.country || null,
+    currency: meta.currency || null,
+    practice_name: meta.practice_name || null,
+    practice_email: meta.practice_email || null,
+    practice_phone: meta.practice_phone || null,
   };
 };
 
@@ -172,19 +191,45 @@ const auth = {
       options: { redirectTo: window.location.origin + redirectPath },
     });
   },
-  async register({ email, password }) {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+  // Account creation without email verification: the portal chosen up front is
+  // recorded on the account so onboarding and every later sign-in know it.
+  async register({ email, password, fullName, portal }) {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: fullName?.trim() || null, portal: portal || null },
+      },
+    });
     if (error) fail(error);
+    if (data?.session && data?.user) {
+      // handle_new_user() already created the profile row; mirror the portal there.
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ full_name: fullName?.trim() || null, portal: portal || null })
+        .eq('id', data.user.id);
+      if (profileError) fail(profileError);
+    }
     return data;
   },
-  async verifyOtp({ email, otpCode }) {
-    const { data, error } = await supabase.auth.verifyOtp({ email, token: otpCode, type: 'signup' });
+  // Marks the account's portal onboarding as finished. `metadataPatch` keeps the
+  // details the wizard collected on the auth user, as the profile page already does.
+  async completeOnboarding({ portal, profilePatch = {}, metadataPatch = {} }) {
+    if (Object.keys(metadataPatch).length > 0) {
+      const { error: metadataError } = await supabase.auth.updateUser({ data: metadataPatch });
+      if (metadataError) fail(metadataError);
+    }
+    const { data: current, error: userError } = await supabase.auth.getUser();
+    if (userError || !current?.user) fail(userError || { message: 'Not authenticated', status: 401 });
+    const { error } = await supabase
+      .from('profiles')
+      .update({ ...profilePatch, portal, onboarding_completed: true })
+      .eq('id', current.user.id);
     if (error) fail(error);
-    return { access_token: data?.session?.access_token };
-  },
-  async resendOtp(email) {
-    const { error } = await supabase.auth.resend({ type: 'signup', email });
-    if (error) fail(error);
+    return toAppUser({
+      ...current.user,
+      user_metadata: { ...(current.user.user_metadata || {}), ...metadataPatch },
+    });
   },
   // Session is persisted by supabase-js itself, so this is a no-op kept for call compatibility.
   setToken() {},
@@ -198,6 +243,27 @@ const auth = {
   async resetPassword({ newPassword }) {
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) fail(error);
+  },
+  // Profile picture lives in the auth user's metadata, so no schema change is needed.
+  async updateAvatar(avatarUrl) {
+    const { data, error } = await supabase.auth.updateUser({ data: { avatar_url: avatarUrl } });
+    if (error) fail(error);
+    return data?.user?.user_metadata?.avatar_url || null;
+  },
+  // Editable profile + business details (no schema change: stored on the auth user).
+  async updateProfile(patch) {
+    const { data: current, error: userError } = await supabase.auth.getUser();
+    if (userError || !current?.user) fail(userError || { message: 'Not authenticated', status: 401 });
+    const { error } = await supabase.auth.updateUser({ data: patch });
+    if (error) fail(error);
+    if (patch.full_name) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ full_name: patch.full_name })
+        .eq('id', current.user.id);
+      if (profileError) fail(profileError);
+    }
+    return toAppUser({ ...current.user, user_metadata: { ...(current.user.user_metadata || {}), ...patch } });
   },
   async logout(redirectTo) {
     await supabase.auth.signOut();

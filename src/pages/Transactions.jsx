@@ -1,15 +1,31 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import { db } from "@/api/supabaseClient";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ResponsiveSelect from "@/components/ResponsiveSelect";
 import PullToRefresh from "@/components/PullToRefresh";
-import { Search, Filter, Sparkles, ArrowUpRight, ArrowDownRight, Check, Loader2, ChevronDown, ChevronUp, Brain } from "lucide-react";
+import {
+  Search, Sparkles, Loader2, ChevronDown, ChevronUp, Brain,
+  ArrowDownLeft, ArrowUpRight, Wand2,
+} from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import moment from "moment";
+import { formatRand } from "@/lib/money";
+
+const FILTERS = [
+  { value: "all", label: "All" },
+  { value: "unallocated", label: "Unallocated" },
+  { value: "allocated", label: "Allocated" },
+  { value: "reviewed", label: "Reviewed" },
+];
+
+const STATUS_CHIP = {
+  allocated: "sb-chip sb-chip-green",
+  reviewed: "sb-chip sb-chip-green",
+  unallocated: "sb-chip sb-chip-amber",
+  locked: "sb-chip sb-chip-red",
+};
 
 export default function Transactions() {
   const { currentCompany } = useOutletContext();
@@ -35,7 +51,7 @@ export default function Transactions() {
     try {
       const [txs, accts] = await Promise.all([
         db.entities.Transaction.filter({ company_id: currentCompany.id }, "-date", 50),
-        db.entities.Account.filter({ company_id: currentCompany.id })
+        db.entities.Account.filter({ company_id: currentCompany.id }),
       ]);
       setTransactions(txs);
       setAccounts(accts);
@@ -44,18 +60,18 @@ export default function Transactions() {
   };
 
   const handleAllocate = async (txId, accountId) => {
-    const account = accounts.find(a => a.id === accountId);
+    const account = accounts.find((a) => a.id === accountId);
     if (!account) return;
     setAllocating(true);
     try {
       await db.entities.Transaction.update(txId, {
         account_id: accountId,
         account_name: account.name,
-        status: "allocated"
+        status: "allocated",
       });
 
       // Learn from this manual allocation — create a rule for future matching
-      const tx = transactions.find(t => t.id === txId);
+      const tx = transactions.find((t) => t.id === txId);
       if (tx?.description) {
         const keyword = tx.description.split(" ").slice(0, 3).join(" ").trim();
         if (keyword.length > 2) {
@@ -69,7 +85,7 @@ export default function Transactions() {
               account_name: account.name,
               vat_applicable: account.type === "expense" || account.type === "income",
               is_active: true,
-              source: "manual"
+              source: "manual",
             });
           } catch (e) { /* duplicate rule — that's fine */ }
         }
@@ -117,7 +133,7 @@ Provide a clear, professional explanation. Include:
 1. Why this category is appropriate under SA GAAP/IFRS
 2. The double-entry effect (which accounts are debited/credited)
 3. VAT implications at 15%
-4. Any compliance considerations`
+4. Any compliance considerations`,
       });
       setAiExplanation(result);
     } catch (e) {
@@ -139,8 +155,8 @@ Provide a clear, professional explanation. Include:
   };
 
   const filtered = transactions
-    .filter(t => statusFilter === "all" || t.status === statusFilter)
-    .filter(t => !searchTerm || t.description?.toLowerCase().includes(searchTerm.toLowerCase()) || t.reference?.toLowerCase().includes(searchTerm.toLowerCase()))
+    .filter((t) => statusFilter === "all" || t.status === statusFilter)
+    .filter((t) => !searchTerm || t.description?.toLowerCase().includes(searchTerm.toLowerCase()) || t.reference?.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => {
       const dir = sortDir === "asc" ? 1 : -1;
       if (sortField === "date") return dir * (new Date(a.date) - new Date(b.date));
@@ -149,7 +165,7 @@ Provide a clear, professional explanation. Include:
     });
 
   const toggleSort = (field) => {
-    if (sortField === field) setSortDir(d => d === "asc" ? "desc" : "asc");
+    if (sortField === field) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else { setSortField(field); setSortDir("desc"); }
   };
 
@@ -158,152 +174,247 @@ Provide a clear, professional explanation. Include:
     return sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />;
   };
 
-  if (!currentCompany) return <p className="text-center text-[#6B6B72] py-20">Select a company first</p>;
+  if (!currentCompany) return <p className="py-20 text-center text-[13px]" style={{ color: "var(--sb-muted)" }}>Select a company first</p>;
+
+  const moneyIn = transactions.filter((t) => t.type === "credit").reduce((s, t) => s + (t.amount || 0), 0);
+  const moneyOut = transactions.filter((t) => t.type === "debit").reduce((s, t) => s + (t.amount || 0), 0);
+  const unallocatedCount = transactions.filter((t) => t.status === "unallocated").length;
 
   return (
     <PullToRefresh onRefresh={loadData}>
-    <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-[24px] font-medium text-[#0F0F0F] tracking-tight">Transactions</h1>
-          <p className="text-[13px] text-[#6B6B72] mt-1">{transactions.length} transactions · {transactions.filter(t => t.status === "unallocated").length} unallocated</p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={handleLearnRules} disabled={allocating}
-            className="bg-white border border-[#E5E5E8] text-[#0F0F0F] hover:bg-[#F7F7FA] rounded-lg text-[13px] h-9">
-            <Brain size={14} className="mr-1.5" /> Learn Rules
-          </Button>
-          <Button onClick={handleBulkAllocate} disabled={allocating}
-            className="bg-[#0F0F0F] hover:bg-[#2D2D2D] text-white rounded-lg text-[13px] h-9">
-            <Sparkles size={14} className="mr-1.5" /> Apply Rules
-          </Button>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B6B72]" />
-          <Input value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-            placeholder="Search transactions..." className="pl-9 text-[13px]" />
-        </div>
-        <ResponsiveSelect
-          value={statusFilter}
-          onValueChange={setStatusFilter}
-          placeholder="All Status"
-          triggerClassName="w-40 text-[13px] h-9"
-          triggerIcon={<Filter size={14} className="mr-2 text-[#6B6B72]" />}
-          options={[
-            { value: "all", label: "All Status" },
-            { value: "unallocated", label: "Unallocated" },
-            { value: "allocated", label: "Allocated" },
-            { value: "reviewed", label: "Reviewed" },
-          ]}
-        />
-      </div>
-
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-[#E5E5E8] overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center"><Loader2 size={24} className="animate-spin text-[#6B6B72] mx-auto" /></div>
-        ) : filtered.length === 0 ? (
-          <div className="p-8 text-center text-[13px] text-[#6B6B72]">No transactions found</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-[13px]">
-              <thead>
-                <tr className="border-b border-[#E5E5E8]">
-                  <th className="text-left px-4 py-3 font-medium text-[#6B6B72] text-[11px] uppercase tracking-wider cursor-pointer" onClick={() => toggleSort("date")}>
-                    <span className="flex items-center gap-1">Date <SortIcon field="date" /></span>
-                  </th>
-                  <th className="text-left px-4 py-3 font-medium text-[#6B6B72] text-[11px] uppercase tracking-wider">Description</th>
-                  <th className="text-right px-4 py-3 font-medium text-[#6B6B72] text-[11px] uppercase tracking-wider cursor-pointer" onClick={() => toggleSort("amount")}>
-                    <span className="flex items-center justify-end gap-1">Amount <SortIcon field="amount" /></span>
-                  </th>
-                  <th className="text-left px-4 py-3 font-medium text-[#6B6B72] text-[11px] uppercase tracking-wider">Category</th>
-                  <th className="text-left px-4 py-3 font-medium text-[#6B6B72] text-[11px] uppercase tracking-wider">Status</th>
-                  <th className="text-right px-4 py-3 font-medium text-[#6B6B72] text-[11px] uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(tx => (
-                  <tr key={tx.id} className="border-b border-[#F1F1F4] hover:bg-[#F7F7FA] transition-colors">
-                    <td className="px-4 py-3 text-[#6B6B72] whitespace-nowrap">{moment(tx.date).format("DD MMM YY")}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${tx.type === "credit" ? "bg-green-50" : "bg-red-50"}`}>
-                          {tx.type === "credit" ? <ArrowDownRight size={11} className="text-[#22C55E]" /> : <ArrowUpRight size={11} className="text-red-500" />}
-                        </div>
-                        <span className="text-[#0F0F0F] truncate max-w-[200px]">{tx.description}</span>
-                      </div>
-                    </td>
-                    <td className={`px-4 py-3 text-right font-medium whitespace-nowrap ${tx.type === "credit" ? "text-[#22C55E]" : "text-[#0F0F0F]"}`}>
-                      {tx.type === "credit" ? "+" : "-"}R {Math.abs(tx.amount).toLocaleString("en-ZA", { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="px-4 py-3">
-                      {tx.status === "unallocated" && accounts.length > 0 ? (
-                        <ResponsiveSelect
-                          onValueChange={(v) => handleAllocate(tx.id, v)}
-                          placeholder={tx.category || "Allocate..."}
-                          triggerClassName="h-9 text-[12px] w-36"
-                          options={accounts.map(a => ({ value: a.id, label: `${a.code} – ${a.name}` }))}
-                        />
-                      ) : (
-                        <span className="text-[12px] text-[#6B6B72]">{tx.category || tx.account_name || "—"}</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                        tx.status === "allocated" ? "bg-green-50 text-green-700" :
-                        tx.status === "reviewed" ? "bg-blue-50 text-blue-700" :
-                        tx.status === "locked" ? "bg-gray-100 text-gray-700" :
-                        "bg-amber-50 text-amber-700"
-                      }`}>{tx.status}</span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <button onClick={() => handleAIExplain(tx)}
-                        className="text-[11px] text-[#3B82F6] hover:text-[#2563EB] font-medium">
-                        Explain
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="flex flex-col gap-5">
+        {/* Heading */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="sb-display" style={{ fontSize: 44, lineHeight: 1.05, color: "var(--sb-ink)" }}>
+              Every rand, accounted for.
+            </h1>
+            <p className="mt-2 text-[13px]" style={{ color: "var(--sb-muted)" }}>
+              {transactions.length} transactions · {unallocatedCount} unallocated
+            </p>
           </div>
-        )}
-      </div>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={handleLearnRules} disabled={allocating} className="sb-btn sb-btn-outline">
+              <Brain size={15} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" /> Learn Rules
+            </button>
+            <button type="button" onClick={handleBulkAllocate} disabled={allocating} className="sb-btn sb-btn-primary">
+              <Sparkles size={15} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" /> Apply Rules
+            </button>
+          </div>
+        </div>
 
-      {/* AI Explanation Dialog */}
-      <Dialog open={!!selectedTx} onOpenChange={() => setSelectedTx(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-[16px] font-medium flex items-center gap-2">
-              <Sparkles size={16} className="text-[#3B82F6]" /> AI Transaction Analysis
-            </DialogTitle>
-          </DialogHeader>
-          {selectedTx && (
-            <div className="space-y-4 mt-2">
-              <div className="bg-[#F7F7FA] rounded-lg p-4 space-y-1.5 text-[13px]">
-                <div className="flex justify-between"><span className="text-[#6B6B72]">Description</span><span className="text-[#0F0F0F] font-medium">{selectedTx.description}</span></div>
-                <div className="flex justify-between"><span className="text-[#6B6B72]">Amount</span><span className="text-[#0F0F0F] font-medium">R {selectedTx.amount?.toLocaleString("en-ZA", { minimumFractionDigits: 2 })}</span></div>
-                <div className="flex justify-between"><span className="text-[#6B6B72]">Category</span><span className="text-[#0F0F0F]">{selectedTx.category || "Unallocated"}</span></div>
-                <div className="flex justify-between"><span className="text-[#6B6B72]">Confidence</span><span className="text-[#0F0F0F]">{selectedTx.ai_confidence || 0}%</span></div>
+        {/* Stat cards */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="sb-card" style={{ padding: 20 }}>
+            <div className="flex items-center justify-between gap-3">
+              <p className="sb-label">Money in</p>
+              <span className="grid h-9 w-9 place-items-center rounded-full" style={{ background: "var(--sb-green-bg)", color: "var(--sb-green-ink)" }}>
+                <ArrowDownLeft size={17} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+              </span>
+            </div>
+            <p className="sb-display sb-money mt-3" style={{ fontSize: 34, lineHeight: 1.05, color: "var(--sb-green-ink)" }}>
+              {formatRand(moneyIn)}
+            </p>
+          </div>
+
+          <div className="sb-card" style={{ padding: 20 }}>
+            <div className="flex items-center justify-between gap-3">
+              <p className="sb-label">Money out</p>
+              <span className="grid h-9 w-9 place-items-center rounded-full" style={{ background: "var(--sb-soft)", color: "var(--sb-muted)" }}>
+                <ArrowUpRight size={17} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+              </span>
+            </div>
+            <p className="sb-display sb-money mt-3" style={{ fontSize: 34, lineHeight: 1.05, color: "var(--sb-ink)" }}>
+              {formatRand(moneyOut)}
+            </p>
+          </div>
+
+          <div className="sb-card" style={{ padding: 20, background: "var(--sb-brand)", borderColor: "transparent", color: "#fff" }}>
+            <div className="flex items-center justify-between gap-3">
+              <p className="sb-label" style={{ color: "rgba(255,255,255,0.72)" }}>AI suggestions ready</p>
+              <span className="grid h-9 w-9 place-items-center rounded-full" style={{ background: "rgba(200,241,105,0.18)", color: "var(--sb-lime)" }}>
+                <Wand2 size={17} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+              </span>
+            </div>
+            <p className="sb-display sb-money mt-3" style={{ fontSize: 34, lineHeight: 1.05, color: "#fff" }}>
+              {unallocatedCount}
+              <span className="ml-2 text-[13px] font-semibold" style={{ color: "rgba(255,255,255,0.72)" }}>to review</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Main card */}
+        <div className="sb-card" style={{ padding: 0 }}>
+          <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between" style={{ borderBottom: "1px solid var(--sb-border)" }}>
+            <div className="sb-seg" role="group" aria-label="Filter transactions by status">
+              {FILTERS.map((f) => (
+                <button
+                  key={f.value}
+                  type="button"
+                  onClick={() => setStatusFilter(f.value)}
+                  className="sb-seg-item"
+                  data-active={statusFilter === f.value ? "true" : "false"}
+                  aria-pressed={statusFilter === f.value}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative w-full sm:w-[260px]">
+                <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--sb-muted)" }} />
+                <Input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search transactions..."
+                  className="pl-9"
+                  aria-label="Search transactions"
+                />
               </div>
-              <div>
-                {aiExplaining ? (
-                  <div className="flex items-center gap-2 text-[13px] text-[#6B6B72] py-4">
-                    <Loader2 size={14} className="animate-spin" /> Analyzing transaction...
-                  </div>
-                ) : aiExplanation ? (
-                  <div className="text-[13px] text-[#0F0F0F] leading-relaxed whitespace-pre-wrap">{aiExplanation}</div>
-                ) : null}
-              </div>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: "var(--sb-muted)" }}>
+                Sorted by {sortField === "date" ? "date" : "amount"}
+              </span>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="p-10 text-center"><Loader2 size={22} className="mx-auto animate-spin" style={{ color: "var(--sb-muted)" }} /></div>
+          ) : filtered.length === 0 ? (
+            <div className="p-12 text-center">
+              <p className="sb-display" style={{ fontSize: 28, color: "var(--sb-ink)" }}>Nothing to review here.</p>
+              <p className="mt-1 text-[13px]" style={{ color: "var(--sb-muted)" }}>
+                No transactions match this filter. Try another status or clear your search.
+              </p>
+            </div>
+          ) : (
+            <div className="sb-table-scroll">
+              <table className="w-full min-w-[860px] text-[13px]">
+                <thead>
+                  <tr style={{ borderBottom: "1px solid var(--sb-border)" }}>
+                    <th className="sb-label px-5 py-3 text-left">Description</th>
+                    <th className="sb-label cursor-pointer px-5 py-3 text-left" onClick={() => toggleSort("date")}>
+                      <span className="inline-flex items-center gap-1">Date <SortIcon field="date" /></span>
+                    </th>
+                    <th className="sb-label cursor-pointer px-5 py-3 text-right" onClick={() => toggleSort("amount")}>
+                      <span className="inline-flex items-center justify-end gap-1">Amount <SortIcon field="amount" /></span>
+                    </th>
+                    <th className="sb-label px-5 py-3 text-left">Category</th>
+                    <th className="sb-label px-5 py-3 text-left">Status</th>
+                    <th className="sb-label px-5 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((tx) => {
+                    const isIn = tx.type === "credit";
+                    const hasSuggestion = tx.status === "unallocated" && tx.category && tx.ai_confidence;
+                    return (
+                      <tr
+                        key={tx.id}
+                        className="transition-colors duration-150"
+                        style={{ borderBottom: "1px solid var(--sb-border)" }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "var(--sb-soft)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                      >
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-2.5">
+                            <span
+                              className="grid h-[38px] w-[38px] flex-none place-items-center rounded-[12px]"
+                              style={{
+                                background: isIn ? "var(--sb-green-bg)" : "var(--sb-soft)",
+                                color: isIn ? "var(--sb-green-ink)" : "var(--sb-muted)",
+                              }}
+                            >
+                              {isIn
+                                ? <ArrowDownLeft size={17} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+                                : <ArrowUpRight size={17} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />}
+                            </span>
+                            <div className="min-w-0">
+                              <b className="block truncate max-w-[240px]" style={{ color: "var(--sb-ink)" }}>{tx.description}</b>
+                              {tx.reference && (
+                                <small className="block truncate text-[11px]" style={{ color: "var(--sb-muted)" }}>{tx.reference}</small>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-3.5" style={{ color: "var(--sb-muted)" }}>
+                          {moment(tx.date).format("DD MMM YYYY")}
+                        </td>
+                        <td className="sb-money whitespace-nowrap px-5 py-3.5 text-right font-bold" style={{ color: isIn ? "var(--sb-green-ink)" : "var(--sb-ink)" }}>
+                          {isIn ? "+" : "−"}{formatRand(Math.abs(tx.amount))}
+                        </td>
+                        <td className="px-5 py-3.5">
+                          {tx.status === "unallocated" && accounts.length > 0 ? (
+                            <div className="w-[210px]">
+                              <ResponsiveSelect
+                                onValueChange={(v) => handleAllocate(tx.id, v)}
+                                placeholder={tx.category || "Allocate..."}
+                                triggerClassName="h-9 text-[12px] w-full"
+                                options={accounts.map((a) => ({ value: a.id, label: `${a.code} – ${a.name}` }))}
+                              />
+                              {hasSuggestion && (
+                                <p className="mt-1 flex items-center gap-1 text-[10.5px]" style={{ color: "var(--sb-brand-2)" }}>
+                                  <Sparkles size={10} strokeWidth={2} /> AI suggests {tx.category} · {tx.ai_confidence}%
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-[12px] font-semibold" style={{ color: "var(--sb-ink)" }}>
+                              {tx.category || tx.account_name || "—"}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <span className={STATUS_CHIP[tx.status] || "sb-chip sb-chip-amber"}>{tx.status}</span>
+                        </td>
+                        <td className="px-5 py-3.5 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleAIExplain(tx)}
+                            className="text-[12px] font-semibold transition-opacity hover:opacity-70"
+                            style={{ color: "#1F6FD1", background: "transparent", border: 0, textDecoration: "none" }}
+                          >
+                            Explain
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
-    </div>
+        </div>
+
+        {/* AI Explanation Dialog */}
+        <Dialog open={!!selectedTx} onOpenChange={() => setSelectedTx(null)}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="sb-display flex items-center gap-2" style={{ fontSize: 24, fontWeight: 400 }}>
+                <Sparkles size={16} style={{ color: "var(--sb-brand-2)" }} /> AI Transaction Analysis
+              </DialogTitle>
+            </DialogHeader>
+            {selectedTx && (
+              <div className="mt-2 space-y-4">
+                <div className="space-y-1.5 rounded-[16px] p-4 text-[13px]" style={{ background: "var(--sb-soft)" }}>
+                  <div className="flex justify-between gap-4"><span style={{ color: "var(--sb-muted)" }}>Description</span><span className="font-semibold" style={{ color: "var(--sb-ink)" }}>{selectedTx.description}</span></div>
+                  <div className="flex justify-between gap-4"><span style={{ color: "var(--sb-muted)" }}>Amount</span><span className="sb-money font-semibold" style={{ color: "var(--sb-ink)" }}>{formatRand(selectedTx.amount)}</span></div>
+                  <div className="flex justify-between gap-4"><span style={{ color: "var(--sb-muted)" }}>Category</span><span style={{ color: "var(--sb-ink)" }}>{selectedTx.category || "Unallocated"}</span></div>
+                  <div className="flex justify-between gap-4"><span style={{ color: "var(--sb-muted)" }}>Confidence</span><span style={{ color: "var(--sb-ink)" }}>{selectedTx.ai_confidence || 0}%</span></div>
+                </div>
+                <div>
+                  {aiExplaining ? (
+                    <div className="flex items-center gap-2 py-4 text-[13px]" style={{ color: "var(--sb-muted)" }}>
+                      <Loader2 size={14} className="animate-spin" /> Analyzing transaction...
+                    </div>
+                  ) : aiExplanation ? (
+                    <div className="whitespace-pre-wrap text-[13px] leading-relaxed" style={{ color: "var(--sb-ink)" }}>{aiExplanation}</div>
+                  ) : null}
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
     </PullToRefresh>
   );
 }

@@ -1,23 +1,45 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { db } from "@/api/supabaseClient";
+import { storePortal } from "@/lib/portal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Mail, Lock, Loader2 } from "lucide-react";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { UserPlus, Mail, Lock, Loader2, User, Check } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
-import { toast } from "@/components/ui/use-toast";
+import PortalPicker from "@/components/auth/PortalPicker";
 
+const portalCopy = {
+  business: {
+    label: "Business",
+    subtitle: "Create your account, then tell us about your business.",
+  },
+  accountant: {
+    label: "Accountant",
+    subtitle: "Create your account, then set up your personal practice profile.",
+  },
+};
+
+/**
+ * Portal-first sign-up: choose Business or Accountant, then create the account.
+ * No email verification — the account is usable immediately and goes straight
+ * into that portal's onboarding.
+ */
 export default function Register() {
+  const [step, setStep] = useState("portal");
+  const [portal, setPortal] = useState("business");
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showOtp, setShowOtp] = useState(false);
-  const [otpCode, setOtpCode] = useState("");
+
+  const choosePortal = (value) => {
+    setPortal(value);
+    storePortal(value);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,101 +48,55 @@ export default function Register() {
       setError("Passwords do not match");
       return;
     }
+    if (password.length < 6) {
+      setError("Use at least 6 characters for your password");
+      return;
+    }
     setLoading(true);
     try {
-      await db.auth.register({ email, password });
-      setShowOtp(true);
+      await db.auth.register({ email, password, fullName, portal });
+      storePortal(portal);
+      // Full load so the new session is picked up before the onboarding gate runs.
+      window.location.href = "/onboarding";
     } catch (err) {
       setError(err.message || "Registration failed");
-    } finally {
       setLoading(false);
-    }
-  };
-
-  const handleVerify = async () => {
-    setError("");
-    setLoading(true);
-    try {
-      const result = await db.auth.verifyOtp({ email, otpCode });
-      if (result?.access_token) {
-        db.auth.setToken(result.access_token);
-      }
-      window.location.href = "/";
-    } catch (err) {
-      setError(err.message || "Invalid verification code");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResend = async () => {
-    setError("");
-    try {
-      await db.auth.resendOtp(email);
-      toast({
-        title: "Code sent",
-        description: "Check your email for the new code.",
-      });
-    } catch (err) {
-      setError(err.message || "Failed to resend code");
     }
   };
 
   const handleGoogle = () => {
-    db.auth.loginWithProvider("google", "/");
+    storePortal(portal);
+    db.auth.loginWithProvider("google", "/onboarding");
   };
 
-  if (showOtp) {
+  if (step === "portal") {
     return (
       <AuthLayout
-        icon={Mail}
-        title="Verify your email"
-        subtitle={`We sent a code to ${email}`}
+        icon={UserPlus}
+        title="Choose your portal"
+        subtitle="Pick the workspace you're joining. It decides what we ask you next."
+        footer={
+          <>
+            Already have an account?{" "}
+            <Link to="/login" className="text-primary font-medium hover:underline">
+              Log in
+            </Link>
+          </>
+        }
       >
-        {error && (
-          <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-            {error}
-          </div>
-        )}
-        <div className="flex justify-center mb-6">
-          <InputOTP
-            maxLength={8}
-            value={otpCode}
-            onChange={setOtpCode}
-            autoFocus
-            autoComplete="one-time-code"
-          >
-            <InputOTPGroup>
-              <InputOTPSlot index={0} />
-              <InputOTPSlot index={1} />
-              <InputOTPSlot index={2} />
-              <InputOTPSlot index={3} />
-              <InputOTPSlot index={4} />
-              <InputOTPSlot index={5} />
-              <InputOTPSlot index={6} />
-              <InputOTPSlot index={7} />
-            </InputOTPGroup>
-          </InputOTP>
-        </div>
+        <PortalPicker value={portal} onChange={choosePortal} />
         <Button
-          className="w-full h-12 font-medium"
-          onClick={handleVerify}
-          disabled={loading || otpCode.length < 8}
+          type="button"
+          className="mt-6 h-12 w-full font-medium"
+          onClick={() => {
+            setError("");
+            setStep("account");
+          }}
         >
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Verifying...
-            </>
-          ) : (
-            "Verify"
-          )}
+          Continue
         </Button>
-        <p className="text-center text-sm text-muted-foreground mt-4">
-          Didn't receive the code?{" "}
-          <button onClick={handleResend} className="text-primary font-medium hover:underline">
-            Resend
-          </button>
+        <p className="mt-4 text-center text-[12px] text-muted-foreground">
+          You can&apos;t switch portals later — each one has its own setup.
         </p>
       </AuthLayout>
     );
@@ -130,7 +106,7 @@ export default function Register() {
     <AuthLayout
       icon={UserPlus}
       title="Create your account"
-      subtitle="Sign up to get started"
+      subtitle={portalCopy[portal].subtitle}
       footer={
         <>
           Already have an account?{" "}
@@ -140,16 +116,31 @@ export default function Register() {
         </>
       }
     >
+      {/* Selected portal, with a way back to the choice */}
+      <div className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/40 px-3.5 py-2.5">
+        <span className="flex min-w-0 items-center gap-2 text-[13px] font-medium text-foreground">
+          <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+          <span className="truncate">{portalCopy[portal].label} portal</span>
+        </span>
+        <button
+          type="button"
+          onClick={() => setStep("portal")}
+          className="shrink-0 text-[12px] font-medium text-primary hover:underline"
+        >
+          Change
+        </button>
+      </div>
+
       <Button
         variant="outline"
-        className="w-full h-12 text-sm font-medium mb-6"
+        className="mb-5 h-12 w-full text-sm font-medium"
         onClick={handleGoogle}
       >
-        <GoogleIcon className="w-5 h-5 mr-2" />
+        <GoogleIcon className="mr-2 h-5 w-5" />
         Continue with Google
       </Button>
 
-      <div className="relative mb-6">
+      <div className="relative mb-5">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-border" />
         </div>
@@ -159,25 +150,40 @@ export default function Register() {
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+        <div className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
+          <Label htmlFor="name">Full name</Label>
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+            <Input
+              id="name"
+              autoComplete="name"
+              autoFocus
+              placeholder="Thandi Mokoena"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="h-12 pl-10"
+              required
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input
               id="email"
               type="email"
               autoComplete="email"
-              autoFocus
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="pl-10 h-12"
+              className="h-12 pl-10"
               required
             />
           </div>
@@ -185,7 +191,7 @@ export default function Register() {
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input
               id="password"
               type="password"
@@ -193,15 +199,15 @@ export default function Register() {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="pl-10 h-12"
+              className="h-12 pl-10"
               required
             />
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="confirm">Confirm Password</Label>
+          <Label htmlFor="confirm">Confirm password</Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input
               id="confirm"
               type="password"
@@ -209,15 +215,15 @@ export default function Register() {
               placeholder="••••••••"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="pl-10 h-12"
+              className="h-12 pl-10"
               required
             />
           </div>
         </div>
-        <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
+        <Button type="submit" className="h-12 w-full font-medium" disabled={loading}>
           {loading ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Creating account...
             </>
           ) : (

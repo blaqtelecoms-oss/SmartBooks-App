@@ -84,12 +84,12 @@ export default function Documents() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-[24px] font-medium text-[#0F0F0F] tracking-tight">Documents</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-[24px] font-medium text-[#0F0F0F] tracking-tight">Receipts</h1>
           <p className="text-[13px] text-[#6B6B72] mt-1">Receipts, invoices, and supporting documents</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-none flex-wrap gap-2">
           <label className="cursor-pointer">
             <input type="file" className="hidden" accept="image/*,.pdf" onChange={e => handleUpload(e, "receipt")} />
             <Button variant="outline" className="rounded-lg text-[13px] h-9 pointer-events-none" disabled={uploading}>

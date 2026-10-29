@@ -1,47 +1,54 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, ArrowLeftRight, Upload, Sparkles, ScanLine } from "lucide-react";
+import { LayoutDashboard, ArrowLeftRight, Upload, FileText, Menu } from "lucide-react";
 
-const accountantItems = [
+// Four primary destinations plus a raised capture action and the full menu.
+// Shared by both portals so the quick bar is identical everywhere.
+const quickItems = [
   { label: "Home", path: "/", icon: LayoutDashboard },
   { label: "Transactions", path: "/transactions", icon: ArrowLeftRight },
-  { label: "Upload", path: "/upload", icon: Upload },
-  { label: "Assistant", path: "/assistant", icon: Sparkles },
+  { label: "Upload", path: "/upload", icon: Upload, primary: true },
+  { label: "Reports", path: "/reports", icon: FileText },
 ];
 
-const businessItems = [
-  { label: "Home", path: "/", icon: LayoutDashboard },
-  { label: "Scan", path: "/scan-receipt", icon: ScanLine },
-  { label: "Transactions", path: "/transactions", icon: ArrowLeftRight },
-  { label: "Assistant", path: "/assistant", icon: Sparkles },
-];
-
-export default function BottomNav({ portal }) {
+export default function BottomNav({ onOpenMenu }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const items = portal === "business" ? businessItems : accountantItems;
+  const items = quickItems;
 
   return (
-    <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/90 backdrop-blur-md border-t border-[#DDE6DF] flex items-center justify-around"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-    >
+    <nav className="sb-bottomnav" aria-label="Quick navigation">
       {items.map((item) => {
-        const active = location.pathname === item.path;
+        const isActive = location.pathname === item.path;
         const Icon = item.icon;
         return (
           <button
             key={item.path}
+            type="button"
             onClick={() => navigate(item.path)}
-            className={`flex flex-col items-center gap-1 py-2 px-4 flex-1 transition-colors ${
-              active ? "text-[#2D5A43]" : "text-[#7A8E7E]"
-            }`}
+            data-active={isActive ? "true" : "false"}
+            aria-current={isActive ? "page" : undefined}
+            className={`sb-bottomnav-item${item.primary ? " is-primary" : ""}`}
           >
-            <Icon size={20} />
-            <span className="text-[10px] font-medium">{item.label}</span>
+            {item.primary ? (
+              <span className="sb-bottomnav-fab">
+                <Icon size={21} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+              </span>
+            ) : (
+              <span className="sb-bottomnav-icon">
+                <Icon size={19} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
+              </span>
+            )}
+            <span className="sb-bottomnav-label">{item.label}</span>
           </button>
         );
       })}
+      <button type="button" onClick={onOpenMenu} className="sb-bottomnav-item" aria-label="Open full menu">
+        <span className="sb-bottomnav-icon">
+          <Menu size={19} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
+        </span>
+        <span className="sb-bottomnav-label">Menu</span>
+      </button>
     </nav>
   );
 }

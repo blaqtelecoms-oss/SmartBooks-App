@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Trash2, Loader2, FileText, CreditCard, ExternalLink } from "lucide-react";
+import { Plus, Trash2, Loader2, FileText } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function Invoices() {
@@ -14,10 +14,8 @@ export default function Invoices() {
   const { toast } = useToast();
   const [invoices, setInvoices] = useState([]);
   const [contacts, setContacts] = useState([]);
-  const [gatewaySettings, setGatewaySettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [creatingLink, setCreatingLink] = useState(null);
   const [form, setForm] = useState({ contact_id: "", issue_date: new Date().toISOString().split("T")[0], due_date: "", subtotal: 0, vat_amount: 0, notes: "" });
 
   useEffect(() => { if (currentCompany) loadData(); }, [currentCompany]);
@@ -25,14 +23,12 @@ export default function Invoices() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [inv, ct, gw] = await Promise.all([
+      const [inv, ct] = await Promise.all([
         db.entities.Invoice.filter({ company_id: currentCompany.id }, "-created_date"),
         db.entities.Contact.filter({ company_id: currentCompany.id, type: "customer" }),
-        db.entities.PaymentGatewaySetting.filter({ company_id: currentCompany.id, provider: "yoco" }),
       ]);
       setInvoices(inv);
       setContacts(ct);
-      setGatewaySettings(gw[0] || null);
     } catch (e) {}
     setLoading(false);
   };
@@ -69,37 +65,6 @@ export default function Invoices() {
     }
   };
 
-  const handleCreatePaymentLink = async (invoice) => {
-    if (!gatewaySettings?.api_key) {
-      toast({ title: "Configure Yoco API key in Settings first", variant: "destructive" });
-      return;
-    }
-    setCreatingLink(invoice.id);
-    try {
-      const res = await db.functions.invoke("yoco-payment", {
-        action: "create_link",
-        invoice_id: invoice.id,
-        invoice_number: invoice.invoice_number,
-        amount: invoice.total_amount,
-        company_id: currentCompany.id,
-      });
-      if (res.data?.link) {
-        await db.entities.Invoice.update(invoice.id, {
-          payment_link: res.data.link,
-          payment_provider: "yoco",
-          status: "sent",
-        });
-        await loadData();
-        toast({ title: "Payment link created", description: "Invoice marked as sent" });
-      } else {
-        toast({ title: "Failed to create payment link", description: res.data?.error || "Unknown error", variant: "destructive" });
-      }
-    } catch (e) {
-      toast({ title: "Error creating payment link", description: e.message, variant: "destructive" });
-    }
-    setCreatingLink(null);
-  };
-
   const handleMarkPaid = async (invoice) => {
     try {
       await db.entities.Invoice.update(invoice.id, { status: "paid" });
@@ -134,22 +99,15 @@ export default function Invoices() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-[24px] font-medium text-[#0F0F0F] tracking-tight">Invoices</h1>
-          <p className="text-[13px] text-[#6B6B72] mt-1">Customer invoices with Yoco payment integration</p>
+          <p className="text-[13px] text-[#6B6B72] mt-1">Customer invoices and payment status</p>
         </div>
-        <Button onClick={() => setDialogOpen(true)} className="bg-[#0F0F0F] hover:bg-[#2D2D2D] text-white rounded-lg text-[13px] h-9">
+        <Button onClick={() => setDialogOpen(true)} className="w-full flex-none bg-[#0F0F0F] hover:bg-[#2D2D2D] text-white rounded-lg text-[13px] h-9 sm:w-auto">
           <Plus size={14} className="mr-1.5" /> New Invoice
         </Button>
       </div>
-
-      {!gatewaySettings?.api_key && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
-          <CreditCard size={18} className="text-amber-600" />
-          <p className="text-[13px] text-amber-700">Yoco payment gateway not configured. <a href="/settings" className="underline font-medium">Configure in Settings</a> to enable "Pay Now" links.</p>
-        </div>
-      )}
 
       {loading ? (
         <div className="text-center py-12"><Loader2 size={24} className="animate-spin text-[#6B6B72] mx-auto" /></div>
@@ -157,7 +115,7 @@ export default function Invoices() {
         <div className="bg-white rounded-xl border border-[#E5E5E8] p-12 text-center">
           <FileText size={32} className="text-[#6B6B72] mx-auto mb-3" strokeWidth={1} />
           <p className="text-[15px] font-medium text-[#0F0F0F]">No invoices yet</p>
-          <p className="text-[13px] text-[#6B6B72] mt-1">Create customer invoices and send payment links via Yoco</p>
+          <p className="text-[13px] text-[#6B6B72] mt-1">Create your first customer invoice to get started</p>
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-[#E5E5E8] overflow-hidden">
@@ -192,23 +150,10 @@ export default function Invoices() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          {inv.payment_link && (
-                            <a href={inv.payment_link} target="_blank" rel="noopener noreferrer" className="p-1 text-[#6B6B72] hover:text-[#0F0F0F]" title="Open payment link">
-                              <ExternalLink size={14} />
-                            </a>
-                          )}
                           {inv.status !== "paid" && (
-                            <>
-                              {!inv.payment_link && (
-                                <button onClick={() => handleCreatePaymentLink(inv)} disabled={creatingLink === inv.id}
-                                  className="text-[12px] px-2 py-1 rounded bg-[#0F0F0F] text-white hover:bg-[#2D2D2D] disabled:opacity-50">
-                                  {creatingLink === inv.id ? "..." : "Pay Now"}
-                                </button>
-                              )}
-                              <button onClick={() => handleMarkPaid(inv)} className="text-[12px] px-2 py-1 rounded bg-green-600 text-white hover:bg-green-700">
-                                Mark Paid
-                              </button>
-                            </>
+                            <button onClick={() => handleMarkPaid(inv)} className="text-[12px] px-2 py-1 rounded bg-green-600 text-white hover:bg-green-700">
+                              Mark Paid
+                            </button>
                           )}
                           <button onClick={() => handleDelete(inv.id)} className="p-1 text-[#6B6B72] hover:text-red-500">
                             <Trash2 size={14} />
