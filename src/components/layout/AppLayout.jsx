@@ -21,6 +21,11 @@ const PAGE_TITLES = {
   "/vat201": "VAT 201",
   "/aging": "Aging Reports",
   "/invoices": "Invoices",
+  "/trial-balance": "Trial Balance",
+  "/balance-sheet": "Balance Sheet",
+  "/profit-loss": "Profit & Loss",
+  "/expenses": "Expenses",
+  "/debtors-creditors": "Debtors & Creditors",
   "/inventory": "Inventory",
   "/documents": "Receipts",
   "/team": "Team",
@@ -244,7 +249,9 @@ export default function AppLayout() {
             <div className="ml-1 hidden items-center gap-2.5 md:flex">
               <ProfileAvatar user={user} />
               <div className="leading-tight hidden xl:block">
-                <b className="block text-[13px] font-bold" style={{ color: "var(--sb-ink)" }}>{user?.full_name || "User"}</b>
+                <b className="block max-w-[220px] truncate text-[13px] font-bold" style={{ color: "var(--sb-ink)" }}>
+                  {user?.business_name || user?.full_name || currentCompany?.name || "Your business"}
+                </b>
                 <small className="text-[11px]" style={{ color: "var(--sb-muted)" }}>{roleLabel}</small>
               </div>
             </div>

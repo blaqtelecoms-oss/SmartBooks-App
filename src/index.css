@@ -502,6 +502,26 @@
   scrollbar-width: thin;
   scrollbar-color: var(--sb-sidebar-border) transparent;
 }
+.sb-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sb-nav-group + .sb-nav-group { margin-top: 12px; }
+.sb-nav-group-label {
+  padding: 0 10px;
+  margin: 2px 0 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(185, 204, 194, 0.55);
+}
+.sb-sidebar[data-collapsed="true"] .sb-nav-group + .sb-nav-group {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--sb-sidebar-border);
+}
 .sb-nav-item {
   display: flex;
   align-items: center;

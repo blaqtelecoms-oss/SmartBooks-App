@@ -3,11 +3,11 @@ import { Link, useLocation } from "react-router-dom";
 import { LogOut, ChevronLeft } from "lucide-react";
 import { db } from "@/api/supabaseClient";
 import Logo from "@/components/Logo";
-import { navForPortal } from "./navConfig";
+import { navGroupsFor } from "./navConfig";
 
 export default function Sidebar({ currentCompany, companies, onCompanyChange, unallocatedCount, collapsed, onToggleCollapse }) {
   const location = useLocation();
-  const navItems = navForPortal();
+  const navGroups = navGroupsFor();
   const vat = currentCompany?.vat_number;
   const fyEnd = currentCompany?.financial_year_end;
 
@@ -63,28 +63,33 @@ export default function Sidebar({ currentCompany, companies, onCompanyChange, un
 
       {/* c) Navigation */}
       <nav className="sb-sidebar-nav" aria-label="Main navigation">
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              title={collapsed ? item.label : undefined}
-              aria-label={item.label}
-              aria-current={isActive ? "page" : undefined}
-              data-active={isActive ? "true" : "false"}
-              className="sb-nav-item"
-            >
-              <span className="sb-nav-icon">
-                <item.icon size={16} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
-              </span>
-              <span className="sb-nav-label truncate">{item.label}</span>
-              {item.path === "/transactions" && unallocatedCount > 0 && (
-                <span className="sb-nav-badge">{collapsed && unallocatedCount > 9 ? "9+" : unallocatedCount}</span>
-              )}
-            </Link>
-          );
-        })}
+        {navGroups.map((group) => (
+          <div key={group.label} className="sb-nav-group">
+            {!collapsed && <p className="sb-nav-group-label">{group.label}</p>}
+            {group.items.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  title={collapsed ? item.label : undefined}
+                  aria-label={item.label}
+                  aria-current={isActive ? "page" : undefined}
+                  data-active={isActive ? "true" : "false"}
+                  className="sb-nav-item"
+                >
+                  <span className="sb-nav-icon">
+                    <item.icon size={16} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+                  </span>
+                  <span className="sb-nav-label truncate">{item.label}</span>
+                  {item.path === "/transactions" && unallocatedCount > 0 && (
+                    <span className="sb-nav-badge">{collapsed && unallocatedCount > 9 ? "9+" : unallocatedCount}</span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       {/* d) Sign out pinned bottom */}

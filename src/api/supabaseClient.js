@@ -139,12 +139,19 @@ const entities = Object.fromEntries(Object.entries(TABLES).map(([name, table]) =
 const toAppUser = async (authUser) => {
   if (!authUser) return null;
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', authUser.id).maybeSingle();
+  const meta = authUser.user_metadata || {};
   return {
     id: authUser.id,
     email: authUser.email,
-    full_name: profile?.full_name || authUser.user_metadata?.full_name || authUser.user_metadata?.name || null,
+    full_name: profile?.full_name || meta.full_name || meta.name || null,
     role: profile?.role || 'user',
-    avatar_url: authUser.user_metadata?.avatar_url || null,
+    avatar_url: meta.avatar_url || null,
+    // Business details edited on the profile page live in the user's metadata.
+    business_name: meta.business_name || null,
+    phone: meta.phone || null,
+    vat_number: meta.vat_number || null,
+    registration_number: meta.registration_number || null,
+    address: meta.address || null,
   };
 };
 
@@ -205,6 +212,21 @@ const auth = {
     const { data, error } = await supabase.auth.updateUser({ data: { avatar_url: avatarUrl } });
     if (error) fail(error);
     return data?.user?.user_metadata?.avatar_url || null;
+  },
+  // Editable profile + business details (no schema change: stored on the auth user).
+  async updateProfile(patch) {
+    const { data: current, error: userError } = await supabase.auth.getUser();
+    if (userError || !current?.user) fail(userError || { message: 'Not authenticated', status: 401 });
+    const { error } = await supabase.auth.updateUser({ data: patch });
+    if (error) fail(error);
+    if (patch.full_name) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ full_name: patch.full_name })
+        .eq('id', current.user.id);
+      if (profileError) fail(profileError);
+    }
+    return toAppUser({ ...current.user, user_metadata: { ...(current.user.user_metadata || {}), ...patch } });
   },
   async logout(redirectTo) {
     await supabase.auth.signOut();

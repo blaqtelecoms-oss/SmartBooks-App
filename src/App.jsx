@@ -32,6 +32,11 @@ import VAT201Report from '@/pages/VAT201Report';
 import Inventory from '@/pages/Inventory';
 import Invoices from '@/pages/Invoices';
 import AgingReports from '@/pages/AgingReports';
+import TrialBalance from '@/pages/TrialBalance';
+import BalanceSheet from '@/pages/BalanceSheet';
+import ProfitLoss from '@/pages/ProfitLoss';
+import Expenses from '@/pages/Expenses';
+import DebtorsCreditors from '@/pages/DebtorsCreditors';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -74,6 +79,11 @@ const AuthenticatedApp = () => {
           <Route path="/vat201" element={<VAT201Report />} />
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/invoices" element={<Invoices />} />
+          <Route path="/trial-balance" element={<TrialBalance />} />
+          <Route path="/balance-sheet" element={<BalanceSheet />} />
+          <Route path="/profit-loss" element={<ProfitLoss />} />
+          <Route path="/expenses" element={<Expenses />} />
+          <Route path="/debtors-creditors" element={<DebtorsCreditors />} />
           <Route path="/aging" element={<AgingReports />} />
           <Route path="/scan-receipt" element={<ScanReceipt />} />
           <Route path="/accounts" element={<ChartOfAccounts />} />
