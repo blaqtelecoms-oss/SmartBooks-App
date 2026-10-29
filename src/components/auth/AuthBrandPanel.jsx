@@ -52,9 +52,9 @@ export default function AuthBrandPanel() {
           South African accounting
         </p>
         <h2 className="mt-4 font-display text-[40px] leading-[1.06] xl:text-[46px]">
-          Smarter accounting.
+          Accounting
           <br />
-          Stronger business.
+          made simple.
         </h2>
         <p className="mt-5 max-w-[360px] text-[13.5px] leading-relaxed text-white/70">
           AI-powered bookkeeping, VAT compliance and financial management — built for

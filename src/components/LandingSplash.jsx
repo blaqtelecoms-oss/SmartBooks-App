@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { motion } from "framer-motion";
-
-const LOGO_URL = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/media/site/favicon.svg`;
+import LogoMark from "@/components/brand/LogoMark";
+import Wordmark from "@/components/brand/Wordmark";
 
 export default function LandingSplash({ onComplete }) {
   useEffect(() => {
@@ -17,29 +17,23 @@ export default function LandingSplash({ onComplete }) {
       transition={{ duration: 0.4 }}
     >
       {/* Logo icon */}
-      <motion.img
-        src={LOGO_URL}
-        alt="SmartBooks SA"
-        className="object-contain mb-6"
-        style={{ width: 110, height: 110 }}
+      <motion.div
+        className="mb-6"
         initial={{ scale: 0.6, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-      />
+      >
+        <LogoMark size={110} title="Smart Books" />
+      </motion.div>
 
       {/* Brand name */}
-      <motion.h1
-        className="text-[44px] sm:text-[52px] font-bold tracking-tight"
+      <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
       >
-        <span
-          className="bg-gradient-to-r from-[#0A3D2E] to-[#34A835] bg-clip-text text-transparent"
-        >
-          SmartBooks
-        </span>
-      </motion.h1>
+        <Wordmark size={26} />
+      </motion.div>
 
       {/* Tagline */}
       <motion.p

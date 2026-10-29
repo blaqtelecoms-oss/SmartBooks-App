@@ -32,9 +32,7 @@ export default function AuthMobileHero() {
           South African accounting
         </p>
         <h1 className="mt-2.5 font-display text-[27px] leading-[1.1]">
-          Smarter accounting.
-          <br />
-          Stronger business.
+          Accounting made simple.
         </h1>
         <p className="mt-2.5 max-w-[280px] text-[12.5px] leading-relaxed text-white/70">
           AI-powered bookkeeping, VAT compliance and financial management.
