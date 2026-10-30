@@ -38,6 +38,22 @@ This app uses [Supabase](https://supabase.com) as its sole backend:
 
 The Supabase project is linked via `supabase/config.toml`. Database schema, RLS policies, and storage buckets are defined in `supabase/migrations/`. Edge Functions live in `supabase/functions/` and are deployed via `supabase functions deploy`.
 
+### Email (Resend)
+
+Account verification and password reset emails, plus customer statements, are sent
+from the Supabase Edge Functions in `supabase/functions/` through
+[Resend](https://resend.com) from `noreply@smartbooks-app.co.za`.
+
+Set the API key once per project (never in the frontend):
+
+```bash
+supabase secrets set RESEND_API_KEY=re_...
+supabase functions deploy send-verification-code verify-email-code request-password-reset reset-password send-statement
+```
+
+Optional: `APP_BASE_URL` (e.g. `https://app.example.co.za`) pins the origin used in
+password reset links; without it the link uses the origin of the reset request.
+
 ## Build
 
 ```bash

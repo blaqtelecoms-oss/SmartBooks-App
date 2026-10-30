@@ -150,6 +150,8 @@ const toAppUser = async (authUser) => {
     // its onboarding is done. Null/false for accounts created before portals existed.
     portal: profile?.portal || meta.portal || null,
     onboarding_completed: profile?.onboarding_completed === true,
+    // True once the six-digit email code has been confirmed.
+    email_verified: !!profile?.email_verified_at,
     avatar_url: meta.avatar_url || null,
     // Business details edited on the profile page live in the user's metadata.
     business_name: meta.business_name || null,

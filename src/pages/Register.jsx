@@ -5,11 +5,10 @@ import { storePortal } from "@/lib/portal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Mail, Lock, Loader2, User, Check, MailCheck } from "lucide-react";
+import { UserPlus, Mail, Lock, Loader2, User, Check } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import PortalPicker from "@/components/auth/PortalPicker";
-import VerifyEmailStep from "@/components/auth/VerifyEmailStep";
 
 const portalCopy = {
   business: {
@@ -36,8 +35,6 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [verifyNotice, setVerifyNotice] = useState("");
-  const [verifyError, setVerifyError] = useState("");
 
   const choosePortal = (value) => {
     setPortal(value);
@@ -59,19 +56,9 @@ export default function Register() {
     try {
       const data = await db.auth.register({ email, password, fullName, portal });
       storePortal(portal);
-      if (!data?.session) {
-        // Supabase still requires its own confirmation on this project: keep the old path.
-        window.location.href = "/onboarding";
-        return;
-      }
-      // Six-digit code emailed through Resend.
-      setStep("verify");
-      try {
-        await db.auth.sendVerificationCode();
-        setVerifyNotice(`We sent a 6-digit code to ${email}.`);
-      } catch (err) {
-        setVerifyError(err.message || "We could not send the verification email. Resend it below.");
-      }
+      // Six-digit code emailed through Resend on the verification screen
+      // (a full load, so it survives the auth refresh the new session triggers).
+      window.location.href = data?.session ? "/verify-email" : "/onboarding";
     } catch (err) {
       setError(err.message || "Registration failed");
     } finally {
@@ -113,25 +100,6 @@ export default function Register() {
         <p className="mt-4 text-center text-[12px] text-muted-foreground">
           You can&apos;t switch portals later — each one has its own setup.
         </p>
-      </AuthLayout>
-    );
-  }
-
-  if (step === "verify") {
-    return (
-      <AuthLayout
-        icon={MailCheck}
-        title="Verify your email"
-        subtitle={`Enter the 6-digit code we sent to ${email}`}
-      >
-        <VerifyEmailStep
-          email={email}
-          notice={verifyNotice}
-          initialError={verifyError}
-          onVerified={() => {
-            window.location.href = "/onboarding";
-          }}
-        />
       </AuthLayout>
     );
   }
