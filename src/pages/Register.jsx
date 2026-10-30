@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { UserPlus, Mail, Lock, Loader2, User, Check } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
-import PortalPicker from "@/components/auth/PortalPicker";
+import PortalChooser from "@/components/auth/PortalChooser";
 
 const portalCopy = {
   business: {
@@ -86,7 +86,7 @@ export default function Register() {
           </>
         }
       >
-        <PortalPicker value={portal} onChange={choosePortal} />
+        <PortalChooser value={portal} onChange={choosePortal} />
         <Button
           type="button"
           className="mt-6 h-12 w-full font-medium"

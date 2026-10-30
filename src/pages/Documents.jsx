@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import { db } from "@/api/supabaseClient";
-import { extractTextFromFile, parseDocumentData } from "@/lib/documentExtraction";
+import { extractTextFromFile, isPasswordError, parseDocumentData } from "@/lib/documentExtraction";
+import DocumentPasswordDialog from "@/components/documents/DocumentPasswordDialog";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Image, Loader2, Eye, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -16,6 +17,9 @@ export default function Documents() {
   const [uploading, setUploading] = useState(false);
   const [ocrResult, setOcrResult] = useState(null);
   const [selectedDoc, setSelectedDoc] = useState(null);
+  // A locked document stays here until its password is entered.
+  const [lockedFile, setLockedFile] = useState(null);
+  const [passwordError, setPasswordError] = useState("");
 
   useEffect(() => {
     if (currentCompany) loadDocs();
@@ -29,11 +33,15 @@ export default function Documents() {
     setLoading(false);
   };
 
-  const handleUpload = async (e, type) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const processDocument = async (file, type, password = "") => {
     setUploading(true);
+    setPasswordError("");
     try {
+      // Client-side extraction (OCR for images, text extraction for PDFs) — no AI needed.
+      // Read first, so a locked document can ask for its password before it is stored.
+      const rawText = await extractTextFromFile(file, { password });
+      const extracted = parseDocumentData(rawText, type);
+
       const { file_url } = await db.integrations.Core.UploadFile({ file, companyId: currentCompany.id, kind: type });
 
       const doc = await db.entities.Document.create({
@@ -45,10 +53,6 @@ export default function Documents() {
         status: "processing"
       });
 
-      // Client-side extraction (OCR for images, text extraction for PDFs) — no AI needed
-      const rawText = await extractTextFromFile(file);
-      const extracted = parseDocumentData(rawText, type);
-
       await db.entities.Document.update(doc.id, {
         status: "processed",
         extracted_data: JSON.stringify(extracted)
@@ -56,10 +60,33 @@ export default function Documents() {
 
       await loadDocs();
       toast({ title: `${type === "receipt" ? "Receipt" : "Invoice"} processed` });
+      return true;
     } catch (e) {
-      toast({ title: "Upload failed", variant: "destructive" });
+      if (isPasswordError(e)) {
+        setLockedFile({ file, type });
+        setPasswordError(e.message);
+      } else {
+        toast({ title: "Upload failed", description: e.message, variant: "destructive" });
+      }
+      return false;
+    } finally {
+      setUploading(false);
     }
-    setUploading(false);
+  };
+
+  const handleUpload = (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    processDocument(file, type);
+  };
+
+  const handleUnlock = async (password) => {
+    if (!lockedFile) return;
+    const ok = await processDocument(lockedFile.file, lockedFile.type, password);
+    if (ok) {
+      setLockedFile(null);
+      setPasswordError("");
+    }
   };
 
   const viewExtracted = (doc) => {
@@ -188,6 +215,19 @@ export default function Documents() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Password for a locked receipt or invoice */}
+      <DocumentPasswordDialog
+        open={!!lockedFile}
+        fileName={lockedFile?.file?.name}
+        error={passwordError}
+        busy={uploading}
+        onSubmit={handleUnlock}
+        onClose={() => {
+          setLockedFile(null);
+          setPasswordError("");
+        }}
+      />
     </div>
   );
 }

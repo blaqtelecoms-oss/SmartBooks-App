@@ -61,9 +61,11 @@ export function categorizeTransaction(description, amount) {
 /**
  * Extract transactions from a bank statement file.
  * @param {File} file
+ * @param {object} [options]
+ * @param {string} [options.password] — password of a password-protected statement
  * @returns {Promise<{ transactions: array, bank_name: string, account_number: string }>}
  */
-export async function extractBankTransactions(file) {
+export async function extractBankTransactions(file, { password } = {}) {
   const ext = file.name.split(".").pop().toLowerCase();
 
   if (ext === "csv") {
@@ -73,10 +75,10 @@ export async function extractBankTransactions(file) {
     return parseExcel(file);
   }
   if (ext === "pdf") {
-    return parsePdf(file);
+    return parsePdf(file, password);
   }
   // Fallback: try text extraction
-  const text = await extractTextFromFile(file);
+  const text = await extractTextFromFile(file, { password });
   return { transactions: parseTextLines(text), bank_name: "", account_number: "" };
 }
 
@@ -238,8 +240,8 @@ async function parseExcel(file) {
 }
 
 // ─── PDF parsing ───
-async function parsePdf(file) {
-  const text = await extractTextFromFile(file);
+async function parsePdf(file, password) {
+  const text = await extractTextFromFile(file, { password });
   return { transactions: parseTextLines(text), bank_name: detectBankName(file.name), account_number: detectAccountNumber(text) };
 }
 

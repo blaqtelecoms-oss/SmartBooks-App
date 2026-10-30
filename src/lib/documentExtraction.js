@@ -8,6 +8,14 @@
 
 const AMOUNT_RE = /R?\s*([\d][\d,]*\.?\d{0,2})/;
 
+/** Extraction error codes for documents that need a password to be opened. */
+export const PASSWORD_REQUIRED = "PASSWORD_REQUIRED";
+export const PASSWORD_INVALID = "PASSWORD_INVALID";
+
+/** True when the error means "give me the document password" or "that one was wrong". */
+export const isPasswordError = (error) =>
+  error?.code === PASSWORD_REQUIRED || error?.code === PASSWORD_INVALID;
+
 const parseAmount = (str) => {
   if (!str) return null;
   const cleaned = str.replace(/[R\s]/g, "").replace(/,/g, "");
@@ -18,13 +26,15 @@ const parseAmount = (str) => {
 /**
  * Extract raw text from a file.
  * @param {File} file
+ * @param {object} [options]
+ * @param {string} [options.password] — password of a password-protected PDF
  * @returns {Promise<string>}
  */
-export async function extractTextFromFile(file) {
+export async function extractTextFromFile(file, { password } = {}) {
   const ext = file.name.split(".").pop().toLowerCase();
 
   if (ext === "pdf") {
-    return extractTextFromPdf(file);
+    return extractTextFromPdf(file, password);
   }
   if (["jpg", "jpeg", "png", "webp", "bmp", "gif", "tiff"].includes(ext)) {
     return extractTextFromImage(file);
@@ -36,12 +46,12 @@ export async function extractTextFromFile(file) {
   return extractTextFromImage(file);
 }
 
-async function extractTextFromPdf(file) {
+async function extractTextFromPdf(file, password) {
   const arrayBuffer = await file.arrayBuffer();
   const pdfjsLib = await import("pdfjs-dist");
   pdfjsLib.GlobalWorkerOptions.workerSrc = (await import("pdfjs-dist/build/pdf.worker.mjs?url")).default;
 
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const pdf = await openPdf(pdfjsLib, arrayBuffer, password);
   let fullText = "";
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
@@ -60,15 +70,36 @@ async function extractTextFromPdf(file) {
 
   // If very little text was found, the PDF is likely scanned — fall back to OCR
   if (fullText.trim().length < 20) {
-    fullText = await ocrPdf(file, pdfjsLib);
+    fullText = await ocrPdf(file, pdfjsLib, password);
   }
 
   return fullText.trim();
 }
 
-async function ocrPdf(file, pdfjsLib) {
+/**
+ * Open a PDF, translating pdfjs password failures into actionable errors.
+ * @returns {Promise<object>} the loaded pdf document
+ */
+async function openPdf(pdfjsLib, data, password) {
+  try {
+    return await pdfjsLib.getDocument({ data, password: password || undefined }).promise;
+  } catch (error) {
+    if (error?.name !== "PasswordException") throw error;
+
+    // pdfjs uses code 1 for "no password given" and 2 for "incorrect password".
+    const invalid = error.code === 2 || /incorrect/i.test(error.message || "");
+    const message = invalid
+      ? "That password did not unlock this document. Please check it and try again."
+      : "This document is password protected. Enter its password to continue.";
+    const err = new Error(message);
+    err.code = invalid ? PASSWORD_INVALID : PASSWORD_REQUIRED;
+    throw err;
+  }
+}
+
+async function ocrPdf(file, pdfjsLib, password) {
   const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const pdf = await openPdf(pdfjsLib, arrayBuffer, password);
   const { createWorker } = await import("tesseract.js");
   const worker = await createWorker("eng");
   let fullText = "";

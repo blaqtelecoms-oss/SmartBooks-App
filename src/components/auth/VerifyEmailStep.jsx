@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { db } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -144,10 +143,7 @@ export default function VerifyEmailStep({ email, notice, initialError, autoSend 
       </form>
 
       <p className="mt-4 text-center text-[12px] text-muted-foreground">
-        Sent to {email}.{" "}
-        <Link to="/onboarding" className="text-primary font-medium hover:underline">
-          Verify later
-        </Link>
+        Sent to {email}. Verification is required to finish setting up your workspace.
       </p>
     </>
   );
