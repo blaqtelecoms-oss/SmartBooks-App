@@ -7,12 +7,12 @@ import ResponsiveSelect from "@/components/ResponsiveSelect";
 import PullToRefresh from "@/components/PullToRefresh";
 import {
   Search, Sparkles, Loader2, ChevronDown, ChevronUp, Brain,
-  ArrowDownLeft, ArrowUpRight, Wand2, Eye,
+  ArrowDownLeft, ArrowUpRight, Wand2, Eye, Zap,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import moment from "moment";
 import { formatRand } from "@/lib/money";
-import { buildStatementSummary } from "@/lib/bankStatementExtraction";
+import { buildStatementSummary, categorizeTransaction } from "@/lib/bankStatementExtraction";
 
 const FILTERS = [
   { value: "all", label: "All" },
@@ -42,9 +42,9 @@ const categoryLabel = (tx) =>
 const DetailRow = ({ label, value }) => {
   if (value == null || value === "") return null;
   return (
-    <div className="flex justify-between gap-4">
-      <span style={{ color: "var(--sb-muted)" }}>{label}</span>
-      <span className="text-right font-semibold" style={{ color: "var(--sb-ink)" }}>{value}</span>
+    <div className="flex items-start justify-between gap-3">
+      <span className="shrink-0" style={{ color: "var(--sb-muted)" }}>{label}</span>
+      <span className="min-w-0 break-words text-right font-semibold" style={{ color: "var(--sb-ink)" }}>{value}</span>
     </div>
   );
 };
@@ -59,6 +59,7 @@ export default function Transactions() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [statementFilter, setStatementFilter] = useState("all");
   const [selectedTx, setSelectedTx] = useState(null);
   const [aiExplaining, setAiExplaining] = useState(false);
   const [aiExplanation, setAiExplanation] = useState("");
@@ -68,6 +69,8 @@ export default function Transactions() {
 
   useEffect(() => {
     if (!currentCompany) return undefined;
+    // A statement belongs to one company, so a switch starts from all statements.
+    setStatementFilter("all");
     loadData();
     // Coming back to the tab catches up with imports and edits made elsewhere.
     const refresh = () => loadData(true);
@@ -96,6 +99,8 @@ export default function Transactions() {
   const handleAllocate = async (txId, accountId) => {
     const account = accounts.find((a) => a.id === accountId);
     if (!account) return;
+    const previous = transactions.find((t) => t.id === txId);
+    const isEdit = previous?.status === "allocated" || previous?.status === "reviewed";
     setAllocating(true);
     try {
       const updated = await db.entities.Transaction.update(txId, {
@@ -108,8 +113,8 @@ export default function Transactions() {
       setTransactions((list) => list.map((t) => (t.id === txId ? { ...t, ...updated } : t)));
 
       // Learn from this manual allocation — create a rule for future matching
-      const tx = transactions.find((t) => t.id === txId);
-      if (tx?.description) {
+      const tx = previous;
+      if (!isEdit && tx?.description) {
         const keyword = tx.description.split(" ").slice(0, 3).join(" ").trim();
         if (keyword.length > 2) {
           try {
@@ -128,7 +133,10 @@ export default function Transactions() {
         }
       }
 
-      toast({ title: "Transaction allocated", description: "Rule learned for future transactions" });
+      toast({
+        title: isEdit ? "Allocation updated" : "Transaction allocated",
+        description: isEdit ? undefined : "Rule learned for future transactions",
+      });
     } catch (e) {
       toast({ title: "Error allocating", variant: "destructive" });
     }
@@ -178,6 +186,51 @@ Provide a clear, professional explanation. Include:
     setAiExplaining(false);
   };
 
+  // Categorises every unallocated transaction with the same keyword rules an
+  // import uses, then saves the results in one go.
+  const handleAutoAllocate = async () => {
+    const pending = transactions.filter((t) => t.status !== "allocated" && t.status !== "reviewed");
+    if (pending.length === 0) {
+      toast({ title: "Nothing to allocate", description: "Every transaction is already allocated." });
+      return;
+    }
+    setAllocating(true);
+    try {
+      const records = pending.reduce((list, tx) => {
+        const signed = tx.type === "credit" ? Math.abs(tx.amount || 0) : -Math.abs(tx.amount || 0);
+        const cat = categorizeTransaction(tx.description, signed);
+        if (isPlaceholderCategory(cat.category)) return list;
+        list.push({
+          id: tx.id,
+          category: cat.category,
+          vat_amount: cat.vat_amount,
+          status: "allocated",
+          ai_confidence: cat.confidence,
+          ai_reasoning: `Auto-categorized from "${tx.description}"`,
+        });
+        return list;
+      }, []);
+
+      if (records.length === 0) {
+        toast({
+          title: "No categories matched",
+          description: "None of the descriptions matched an existing category.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const updated = await db.entities.Transaction.bulkUpdate(records);
+      const byId = new Map(updated.filter(Boolean).map((t) => [t.id, t]));
+      setTransactions((list) => list.map((t) => byId.get(t.id) || t));
+      toast({ title: `${records.length} transaction${records.length === 1 ? "" : "s"} auto-allocated` });
+    } catch (e) {
+      toast({ title: "Auto allocate failed", description: e.message, variant: "destructive" });
+    } finally {
+      setAllocating(false);
+    }
+  };
+
   const handleBulkAllocate = async () => {
     setAllocating(true);
     try {
@@ -192,6 +245,7 @@ Provide a clear, professional explanation. Include:
 
   const filtered = transactions
     .filter((t) => statusFilter === "all" || t.status === statusFilter)
+    .filter((t) => statementFilter === "all" || t.document_id === statementFilter)
     .filter((t) => !searchTerm || t.description?.toLowerCase().includes(searchTerm.toLowerCase()) || t.reference?.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => {
       const dir = sortDir === "asc" ? 1 : -1;
@@ -232,6 +286,15 @@ Provide a clear, professional explanation. Include:
     })
     .filter((item) => item.rows.length > 0);
 
+  // Only statements that actually imported transactions are worth filtering by.
+  const statementOptions = [
+    { value: "all", label: "All statements" },
+    ...statementSummaries.map(({ doc, rows }) => ({
+      value: doc.id,
+      label: `${doc.name} (${rows.length})`,
+    })),
+  ];
+
   return (
     <PullToRefresh onRefresh={loadData}>
       <div className="flex flex-col gap-5">
@@ -246,10 +309,16 @@ Provide a clear, professional explanation. Include:
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={handleAutoAllocate} disabled={allocating} className="sb-btn sb-btn-primary">
+              {allocating
+                ? <Loader2 size={15} className="animate-spin" />
+                : <Zap size={15} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />}
+              Auto allocate
+            </button>
             <button type="button" onClick={handleLearnRules} disabled={allocating} className="sb-btn sb-btn-outline">
               <Brain size={15} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" /> Learn Rules
             </button>
-            <button type="button" onClick={handleBulkAllocate} disabled={allocating} className="sb-btn sb-btn-primary">
+            <button type="button" onClick={handleBulkAllocate} disabled={allocating} className="sb-btn sb-btn-outline">
               <Sparkles size={15} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" /> Apply Rules
             </button>
           </div>
@@ -359,6 +428,15 @@ Provide a clear, professional explanation. Include:
               ))}
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              <div className="w-full sm:w-[220px]">
+                <ResponsiveSelect
+                  value={statementFilter}
+                  onValueChange={setStatementFilter}
+                  placeholder="All statements"
+                  triggerClassName="h-9 text-[12px] w-full"
+                  options={statementOptions}
+                />
+              </div>
               <div className="relative w-full sm:w-[260px]">
                 <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--sb-muted)" }} />
                 <Input
@@ -442,12 +520,12 @@ Provide a clear, professional explanation. Include:
                           {isIn ? "+" : "−"}{formatRand(Math.abs(tx.amount))}
                         </td>
                         <td className="px-5 py-3.5">
-                          {tx.status === "unallocated" && accounts.length > 0 ? (
+                          {accounts.length > 0 ? (
                             <div className="w-[210px]">
                               <ResponsiveSelect
                                 value={tx.account_id || undefined}
                                 onValueChange={(v) => handleAllocate(tx.id, v)}
-                                placeholder={suggested || "Allocate..."}
+                                placeholder={categoryLabel(tx) || "Allocate..."}
                                 triggerClassName="h-9 text-[12px] w-full"
                                 options={accounts.map((a) => ({ value: a.id, label: `${a.code} – ${a.name}` }))}
                               />
@@ -528,7 +606,7 @@ Provide a clear, professional explanation. Include:
 
         {/* Transaction detail Dialog */}
         <Dialog open={!!detailTx} onOpenChange={() => setDetailTx(null)}>
-          <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
+          <DialogContent className="w-[calc(100vw-1.5rem)] max-w-lg overflow-x-hidden overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="sb-display flex items-center gap-2" style={{ fontSize: 24, fontWeight: 400 }}>
                 <Eye size={16} style={{ color: "var(--sb-brand-2)" }} /> Transaction details
@@ -538,7 +616,7 @@ Provide a clear, professional explanation. Include:
               const statement = statements.find((doc) => doc.id === detailTx.document_id);
               const isIn = detailTx.type === "credit";
               return (
-                <div className="mt-2 space-y-1.5 rounded-[16px] p-4 text-[13px]" style={{ background: "var(--sb-soft)" }}>
+                <div className="mt-2 space-y-1.5 overflow-hidden rounded-[16px] p-4 text-[13px]" style={{ background: "var(--sb-soft)" }}>
                   <DetailRow label="Description" value={detailTx.description} />
                   <DetailRow label="Date" value={moment(detailTx.date).format("DD MMM YYYY")} />
                   <DetailRow
