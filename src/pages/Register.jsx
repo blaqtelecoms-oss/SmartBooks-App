@@ -90,7 +90,7 @@ export default function Register() {
         <PortalChooser value={portal} onChange={choosePortal} />
         <Button
           type="button"
-          className="mt-6 h-12 w-full font-medium"
+          className="mt-5 h-[52px] w-full text-[14px] font-semibold shadow-[0_16px_32px_-16px_rgba(11,31,26,0.65)] sm:mt-6 sm:h-12"
           onClick={() => {
             setError("");
             setStep("account");
@@ -98,7 +98,7 @@ export default function Register() {
         >
           Continue
         </Button>
-        <p className="mt-4 text-center text-[12px] text-muted-foreground">
+        <p className="mt-4 text-center text-[12px] leading-relaxed text-muted-foreground">
           You can&apos;t switch portals later — each one has its own setup.
         </p>
       </AuthLayout>
@@ -223,7 +223,11 @@ export default function Register() {
             />
           </div>
         </div>
-        <Button type="submit" className="h-12 w-full font-medium" disabled={loading}>
+        <Button
+          type="submit"
+          className="h-[52px] w-full text-[14px] font-semibold shadow-[0_16px_32px_-16px_rgba(11,31,26,0.65)] sm:h-12"
+          disabled={loading}
+        >
           {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

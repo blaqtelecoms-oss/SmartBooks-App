@@ -120,7 +120,11 @@ export default function ResetPassword() {
             />
           </div>
         </div>
-        <Button type="submit" className="h-12 w-full font-medium" disabled={loading}>
+        <Button
+          type="submit"
+          className="h-[52px] w-full text-[14px] font-semibold shadow-[0_16px_32px_-16px_rgba(11,31,26,0.65)] sm:h-12"
+          disabled={loading}
+        >
           {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -114,13 +114,17 @@ export default function VerifyEmailStep({ email, notice, initialError, autoSend 
           >
             <InputOTPGroup>
               {Array.from({ length: CODE_LENGTH }).map((_, index) => (
-                <InputOTPSlot key={index} index={index} className="h-12 w-11 text-lg" />
+                <InputOTPSlot key={index} index={index} className="h-12 w-[38px] text-lg sm:w-11" />
               ))}
             </InputOTPGroup>
           </InputOTP>
         </div>
 
-        <Button type="submit" className="h-12 w-full font-medium" disabled={verifying || code.length !== CODE_LENGTH}>
+        <Button
+          type="submit"
+          className="h-[52px] w-full text-[14px] font-semibold shadow-[0_16px_32px_-16px_rgba(11,31,26,0.65)] sm:h-12"
+          disabled={verifying || code.length !== CODE_LENGTH}
+        >
           {verifying ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

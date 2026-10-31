@@ -161,7 +161,8 @@ export default function VAT201Report() {
 
           {/* Box breakdown */}
           <div className="bg-white rounded-xl border border-[#E5E5E8] overflow-hidden">
-            <table className="w-full text-[13px]">
+            <div className="sb-table-scroll">
+            <table className="w-full min-w-[680px] text-[13px]">
               <thead>
                 <tr className="border-b border-[#E5E5E8]">
                   <th className="text-left px-4 py-3 font-medium text-[#6B6B72] text-[11px] uppercase tracking-wider">Box</th>
@@ -208,6 +209,7 @@ export default function VAT201Report() {
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         </>
       )}
