@@ -16,6 +16,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import Dashboard from '@/pages/Dashboard';
 import Companies from '@/pages/Companies';
 import Transactions from '@/pages/Transactions';
+import TransactionDetail from '@/pages/TransactionDetail';
 import UploadStatement from '@/pages/UploadStatement';
 import ChartOfAccounts from '@/pages/ChartOfAccounts';
 import Reports from '@/pages/Reports';
@@ -79,6 +80,7 @@ const AuthenticatedApp = () => {
           <Route path="/" element={<Dashboard />} />
           <Route path="/companies" element={<Companies />} />
           <Route path="/transactions" element={<Transactions />} />
+          <Route path="/transactions/:id" element={<TransactionDetail />} />
           <Route path="/upload" element={<UploadStatement />} />
           <Route path="/rules" element={<AllocationRules />} />
           <Route path="/bank-rules" element={<BankRules />} />

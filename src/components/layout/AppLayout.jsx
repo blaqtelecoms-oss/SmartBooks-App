@@ -144,7 +144,9 @@ export default function AppLayout() {
   // created before portals existed fall back to the company-based gate.
   const isAccountantAccount = accountPortal(user) === "accountant";
 
-  const pageTitle = PAGE_TITLES[location.pathname] || "Dashboard";
+  const pageTitle =
+    PAGE_TITLES[location.pathname] ||
+    (location.pathname.startsWith("/transactions/") ? "Transaction details" : "Dashboard");
   const roleLabel = user?.role
     ? user.role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
     : "";

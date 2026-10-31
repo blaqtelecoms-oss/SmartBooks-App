@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useNavigate } from "react-router-dom";
 import { db } from "@/api/supabaseClient";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,6 +15,9 @@ import { useToast } from "@/components/ui/use-toast";
 import moment from "moment";
 import { formatRand } from "@/lib/money";
 import { buildStatementSummary } from "@/lib/bankStatementExtraction";
+import {
+  allocateTransaction, categoryLabel, explainTransaction, isPlaceholderCategory,
+} from "@/lib/transactionDetail";
 
 const FILTERS = [
   { value: "all", label: "All" },
@@ -30,18 +33,11 @@ const STATUS_CHIP = {
   locked: "sb-chip sb-chip-red",
 };
 
-// Statements import "Uncategorized" when no keyword matches; that value must never
-// mask the account the user actually picked for the transaction.
-const isPlaceholderCategory = (category) =>
-  !category || category.trim().toLowerCase() === "uncategorized";
-
 const suggestedCategory = (tx) => (isPlaceholderCategory(tx.category) ? null : tx.category);
-
-const categoryLabel = (tx) =>
-  tx.account_name || suggestedCategory(tx) || null;
 
 export default function Transactions() {
   const { currentCompany } = useOutletContext();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [transactions, setTransactions] = useState([]);
   const [accounts, setAccounts] = useState([]);
@@ -91,40 +87,19 @@ export default function Transactions() {
     const account = accounts.find((a) => a.id === accountId);
     if (!account) return;
     const previous = transactions.find((t) => t.id === txId);
-    const isEdit = previous?.status === "allocated" || previous?.status === "reviewed";
+    if (!previous) return;
     setAllocating(true);
     try {
-      const updated = await db.entities.Transaction.update(txId, {
-        account_id: accountId,
-        account_name: account.name,
-        status: "allocated",
+      const { updated, isEdit } = await allocateTransaction({
+        tx: previous,
+        account,
+        companyId: currentCompany.id,
       });
 
       // The row updates in place — no reload, so the list never refreshes or flickers.
       setTransactions((list) => list.map((t) => (t.id === txId ? { ...t, ...updated } : t)));
       // Keep the open detail sheet in step with the row that was just allocated.
       setDetailTx((current) => (current && current.id === txId ? { ...current, ...updated } : current));
-
-      // Learn from this manual allocation — create a rule for future matching
-      const tx = previous;
-      if (!isEdit && tx?.description) {
-        const keyword = tx.description.split(" ").slice(0, 3).join(" ").trim();
-        if (keyword.length > 2) {
-          try {
-            await db.entities.AllocationRule.create({
-              company_id: currentCompany.id,
-              match_field: "description",
-              match_type: "contains",
-              match_value: keyword,
-              account_id: accountId,
-              account_name: account.name,
-              vat_applicable: account.type === "expense" || account.type === "income",
-              is_active: true,
-              source: "manual",
-            });
-          } catch (e) { /* duplicate rule — that's fine */ }
-        }
-      }
 
       toast({
         title: isEdit ? "Allocation updated" : "Transaction allocated",
@@ -153,26 +128,8 @@ export default function Transactions() {
     setAiExplaining(true);
     setAiExplanation("");
     try {
-      const result = await db.integrations.Core.InvokeLLM({
-        prompt: `You are a South African chartered accountant. Explain why this transaction was categorized as "${tx.category}" and allocated to "${tx.account_name || "unallocated"}".
-
-Transaction details:
-- Date: ${tx.date}
-- Description: ${tx.description}
-- Amount: R ${tx.amount}
-- Type: ${tx.type}
-- Reference: ${tx.reference || "N/A"}
-- AI Confidence: ${tx.ai_confidence}%
-
-Previous AI reasoning: ${tx.ai_reasoning || "None"}
-
-Provide a clear, professional explanation. Include:
-1. Why this category is appropriate under SA GAAP/IFRS
-2. The double-entry effect (which accounts are debited/credited)
-3. VAT implications at 15%
-4. Any compliance considerations`,
-      });
-      setAiExplanation(result);
+      const result = await explainTransaction(tx);
+      setAiExplanation(typeof result === "string" ? result : "No explanation returned.");
     } catch (e) {
       setAiExplanation("Unable to generate explanation. Please try again.");
     }
@@ -421,8 +378,11 @@ Provide a clear, professional explanation. Include:
             </div>
           ) : (
             <>
-              {/* Phones: a banking-style feed; every row opens the full record. */}
-              <TransactionListMobile transactions={filtered} onOpen={setDetailTx} />
+              {/* Phones: a banking-style feed; every row opens the full record page. */}
+              <TransactionListMobile
+                transactions={filtered}
+                onOpen={(tx) => navigate(`/transactions/${tx.id}`)}
+              />
 
               {/* Tablet and up: the dense ledger, scrolling sideways when needed. */}
               <div className="sb-table-scroll hidden md:block">
