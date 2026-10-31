@@ -33,7 +33,8 @@ export function ReportCard({ title, meta, children, footer }) {
           {meta}
         </div>
       )}
-      <div className="px-5 py-3">{children}</div>
+      {/* Wide report tables scroll inside the card instead of being clipped */}
+      <div className="sb-table-scroll px-5 py-3">{children}</div>
       {footer && (
         <div className="border-t px-5 py-3.5" style={{ borderColor: "var(--sb-border)", background: "var(--sb-soft)" }}>
           {footer}

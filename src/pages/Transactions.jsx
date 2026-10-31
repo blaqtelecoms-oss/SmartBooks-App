@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ResponsiveSelect from "@/components/ResponsiveSelect";
 import PullToRefresh from "@/components/PullToRefresh";
+import TransactionListMobile from "@/components/transactions/TransactionListMobile";
+import TransactionDetailSheet from "@/components/transactions/TransactionDetailSheet";
 import {
   Search, Sparkles, Loader2, ChevronDown, ChevronUp, Brain,
   ArrowDownLeft, ArrowUpRight, Wand2, Eye, Zap,
@@ -37,17 +39,6 @@ const suggestedCategory = (tx) => (isPlaceholderCategory(tx.category) ? null : t
 
 const categoryLabel = (tx) =>
   tx.account_name || suggestedCategory(tx) || null;
-
-/** One label/value line in a transaction's detail dialog. */
-const DetailRow = ({ label, value }) => {
-  if (value == null || value === "") return null;
-  return (
-    <div className="flex items-start justify-between gap-3">
-      <span className="shrink-0" style={{ color: "var(--sb-muted)" }}>{label}</span>
-      <span className="min-w-0 break-words text-right font-semibold" style={{ color: "var(--sb-ink)" }}>{value}</span>
-    </div>
-  );
-};
 
 export default function Transactions() {
   const { currentCompany } = useOutletContext();
@@ -111,6 +102,8 @@ export default function Transactions() {
 
       // The row updates in place — no reload, so the list never refreshes or flickers.
       setTransactions((list) => list.map((t) => (t.id === txId ? { ...t, ...updated } : t)));
+      // Keep the open detail sheet in step with the row that was just allocated.
+      setDetailTx((current) => (current && current.id === txId ? { ...current, ...updated } : current));
 
       // Learn from this manual allocation — create a rule for future matching
       const tx = previous;
@@ -427,7 +420,12 @@ Provide a clear, professional explanation. Include:
               </p>
             </div>
           ) : (
-            <div className="sb-table-scroll">
+            <>
+              {/* Phones: a banking-style feed; every row opens the full record. */}
+              <TransactionListMobile transactions={filtered} onOpen={setDetailTx} />
+
+              {/* Tablet and up: the dense ledger, scrolling sideways when needed. */}
+              <div className="sb-table-scroll hidden md:block">
               <table className="w-full min-w-[860px] text-[13px]">
                 <thead>
                   <tr style={{ borderBottom: "1px solid var(--sb-border)" }}>
@@ -534,7 +532,8 @@ Provide a clear, professional explanation. Include:
                   })}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </>
           )}
         </div>
 
@@ -568,51 +567,16 @@ Provide a clear, professional explanation. Include:
           </DialogContent>
         </Dialog>
 
-        {/* Transaction detail Dialog */}
-        <Dialog open={!!detailTx} onOpenChange={() => setDetailTx(null)}>
-          <DialogContent className="w-[calc(100vw-1.5rem)] max-w-lg overflow-x-hidden overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="sb-display flex items-center gap-2" style={{ fontSize: 24, fontWeight: 400 }}>
-                <Eye size={16} style={{ color: "var(--sb-brand-2)" }} /> Transaction details
-              </DialogTitle>
-            </DialogHeader>
-            {detailTx && (() => {
-              const statement = statements.find((doc) => doc.id === detailTx.document_id);
-              const isIn = detailTx.type === "credit";
-              return (
-                <div className="mt-2 space-y-1.5 overflow-hidden rounded-[16px] p-4 text-[13px]" style={{ background: "var(--sb-soft)" }}>
-                  <DetailRow label="Description" value={detailTx.description} />
-                  <DetailRow label="Date" value={moment(detailTx.date).format("DD MMM YYYY")} />
-                  <DetailRow
-                    label="Amount"
-                    value={`${isIn ? "+" : "−"}${formatRand(Math.abs(detailTx.amount || 0))}`}
-                  />
-                  <DetailRow label="Type" value={isIn ? "Credit" : "Debit"} />
-                  <DetailRow label="Status" value={detailTx.status} />
-                  <DetailRow label="Category" value={categoryLabel(detailTx) || "Uncategorized"} />
-                  <DetailRow label="Account" value={detailTx.account_name} />
-                  <DetailRow label="Reference" value={detailTx.reference} />
-                  <DetailRow label="Fee" value={detailTx.fee ? formatRand(detailTx.fee) : null} />
-                  <DetailRow
-                    label="Running balance"
-                    value={detailTx.balance != null ? formatRand(detailTx.balance) : null}
-                  />
-                  <DetailRow label="Bank" value={detailTx.bank_name} />
-                  <DetailRow label="Statement" value={statement?.name} />
-                  <DetailRow label="Source" value={detailTx.source} />
-                  <DetailRow
-                    label="AI confidence"
-                    value={detailTx.ai_confidence != null ? `${detailTx.ai_confidence}%` : null}
-                  />
-                  <DetailRow
-                    label="Imported"
-                    value={detailTx.created_date ? moment(detailTx.created_date).format("DD MMM YYYY HH:mm") : null}
-                  />
-                </div>
-              );
-            })()}
-          </DialogContent>
-        </Dialog>
+        {/* Transaction detail sheet — full record plus allocation controls */}
+        <TransactionDetailSheet
+          tx={detailTx}
+          onClose={() => setDetailTx(null)}
+          accounts={accounts}
+          statements={statements}
+          onAllocate={handleAllocate}
+          onExplain={(tx) => { setDetailTx(null); handleAIExplain(tx); }}
+          allocating={allocating}
+        />
       </div>
     </PullToRefresh>
   );

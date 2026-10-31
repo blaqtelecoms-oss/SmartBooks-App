@@ -68,7 +68,7 @@ export default function PortalChooser({ value, onChange }) {
             {/* Header */}
             <span className="flex items-start gap-3.5 bg-white px-4 pb-4 pt-4 sm:px-5 sm:pt-5">
               <span
-                className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[18px] transition-transform duration-200 group-hover:scale-[1.03] sm:h-14 sm:w-14"
+                className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-full transition-transform duration-200 group-hover:scale-[1.03] sm:h-14 sm:w-14"
                 style={{ backgroundImage: accents.iconBg }}
               >
                 <Icon size={52} />

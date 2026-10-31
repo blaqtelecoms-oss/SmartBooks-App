@@ -60,7 +60,7 @@ export default function CompanyCard({ company, bankBalance, formatR, portal }) {
         />
       </div>
 
-      <div className="grid grid-cols-4 gap-2 mt-3">
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {quickActions.map(action => (
           <Link
             key={action.label}

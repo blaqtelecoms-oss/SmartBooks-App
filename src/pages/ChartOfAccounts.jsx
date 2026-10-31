@@ -136,14 +136,14 @@ export default function ChartOfAccounts() {
               </div>
               <div>
                 {group.accounts.map(acct => (
-                  <div key={acct.id} className="flex items-center justify-between px-4 py-2.5 border-b border-[#F7F7FA] last:border-0 hover:bg-[#F7F7FA] transition-colors">
-                    <div className="flex items-center gap-4">
-                      <span className="text-[12px] font-mono text-[#6B6B72] w-12">{acct.code}</span>
-                      <span className="text-[13px] text-[#0F0F0F]">{acct.name}</span>
-                      {acct.sub_type && <span className="text-[10px] text-[#6B6B72] bg-[#F1F1F4] px-1.5 py-0.5 rounded">{acct.sub_type}</span>}
+                  <div key={acct.id} className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-[#F7F7FA] last:border-0 hover:bg-[#F7F7FA] transition-colors">
+                    <div className="flex min-w-0 items-center gap-2.5 sm:gap-4">
+                      <span className="w-12 shrink-0 text-[12px] font-mono text-[#6B6B72]">{acct.code}</span>
+                      <span className="min-w-0 truncate text-[13px] text-[#0F0F0F]">{acct.name}</span>
+                      {acct.sub_type && <span className="hidden shrink-0 rounded bg-[#F1F1F4] px-1.5 py-0.5 text-[10px] text-[#6B6B72] sm:inline">{acct.sub_type}</span>}
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-[12px] font-medium text-[#0F0F0F]">R {(acct.balance || 0).toLocaleString("en-ZA", { minimumFractionDigits: 2 })}</span>
+                    <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+                      <span className="whitespace-nowrap text-[12px] font-medium text-[#0F0F0F]">R {(acct.balance || 0).toLocaleString("en-ZA", { minimumFractionDigits: 2 })}</span>
                       <button onClick={() => { setForm({ code: acct.code, name: acct.name, type: acct.type, sub_type: acct.sub_type || "", description: acct.description || "", normal_side: acct.normal_side || "debit" }); setEditingId(acct.id); setDialogOpen(true); }}
                         className="p-1 rounded hover:bg-[#F1F1F4] text-[#6B6B72]"><Pencil size={13} /></button>
                       {!acct.is_system && (

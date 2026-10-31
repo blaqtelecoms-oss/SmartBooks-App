@@ -566,48 +566,36 @@
   color: var(--sb-ink);
 }
 
-/* Embossed 3D icon tiles in the desktop sidebar */
+/* Round, softly lit nav marks — no hard tile shadows */
 .sb-nav-icon {
   width: 28px;
   height: 28px;
-  border-radius: 9px;
+  border-radius: 999px;
   display: grid;
   place-items: center;
   flex: none;
-  background: linear-gradient(155deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 48%, rgba(0, 0, 0, 0.24) 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.24),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.45),
-    0 1px 2px rgba(0, 0, 0, 0.38),
-    0 5px 10px -6px rgba(0, 0, 0, 0.7);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: background-color 0.18s ease, box-shadow 0.18s ease;
 }
 .sb-nav-icon svg {
-  color: #fff;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
+  color: #d6e4dc;
 }
 .sb-nav-item:hover .sb-nav-icon {
-  transform: translateY(-1.5px);
-  background: linear-gradient(155deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(0, 0, 0, 0.18) 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.32),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.4),
-    0 6px 12px -6px rgba(0, 0, 0, 0.65);
+  background: rgba(255, 255, 255, 0.13);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 .sb-nav-item[data-active="true"] .sb-nav-icon {
-  background: linear-gradient(160deg, #1B4234 0%, #0B1F1A 100%);
+  background: linear-gradient(160deg, #22503F 0%, #0F2A22 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.5),
-    0 2px 5px rgba(0, 0, 0, 0.26);
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 3px 8px -4px rgba(0, 0, 0, 0.55);
 }
 .sb-nav-item[data-active="true"] .sb-nav-icon svg {
   color: var(--sb-lime);
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
 }
 .sb-nav-item[data-active="true"]:hover .sb-nav-icon {
-  transform: translateY(-1.5px);
-  background: linear-gradient(160deg, #22503F 0%, #0F2A22 100%);
+  background: linear-gradient(160deg, #2A5F4B 0%, #12322A 100%);
 }
 
 .sb-sidebar[data-collapsed="true"] .sb-nav-item {
@@ -866,23 +854,17 @@
     height: 30px;
   }
   .sb-drawer-link:hover .sb-nav-icon {
-    transform: translateY(-1.5px);
-    background: linear-gradient(155deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(0, 0, 0, 0.18) 100%);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.32),
-      inset 0 -1px 1px rgba(0, 0, 0, 0.4),
-      0 6px 12px -6px rgba(0, 0, 0, 0.65);
+    background: rgba(255, 255, 255, 0.13);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
   }
   .sb-drawer-link[data-active="true"] .sb-nav-icon {
-    background: linear-gradient(160deg, #1B4234 0%, #0B1F1A 100%);
+    background: linear-gradient(160deg, #22503F 0%, #0F2A22 100%);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.18),
-      inset 0 -2px 3px rgba(0, 0, 0, 0.5),
-      0 2px 5px rgba(0, 0, 0, 0.26);
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      0 3px 8px -4px rgba(0, 0, 0, 0.55);
   }
   .sb-drawer-link[data-active="true"] .sb-nav-icon svg {
     color: var(--sb-lime);
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
   }
   .sb-drawer-badge {
     margin-left: auto;
@@ -952,37 +934,24 @@
     color: var(--sb-muted);
     transition: color 0.15s ease;
   }
-  /* Embossed tiles mirror the raised 3D surface used by the sidebar icons */
+  /* Plain round marks; only the active item is filled */
   .sb-bottomnav-icon {
     display: grid;
     place-items: center;
     width: 34px;
     height: 34px;
-    border-radius: 12px;
-    background: linear-gradient(
-      160deg,
-      var(--sb-card) 0%,
-      color-mix(in srgb, var(--sb-card) 90%, var(--sb-page)) 55%,
-      color-mix(in srgb, var(--sb-card) 78%, var(--sb-page)) 100%
-    );
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.95),
-      inset 0 -2px 3px rgba(11, 31, 26, 0.12),
-      0 2px 4px -1px rgba(11, 31, 26, 0.18);
-    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, color 0.18s ease;
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
   }
   .sb-bottomnav-item[data-active="true"] { color: var(--sb-ink); }
   .sb-bottomnav-item[data-active="true"] .sb-bottomnav-icon {
-    background: linear-gradient(160deg, #1f4f3c 0%, #0b1f1a 100%);
-    color: var(--sb-lime);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.2),
-      inset 0 -3px 5px rgba(0, 0, 0, 0.5),
-      0 6px 12px -6px rgba(11, 31, 26, 0.55);
+    background: var(--sb-green-bg);
+    color: var(--sb-green-ink);
   }
   .sb-bottomnav-item:active .sb-bottomnav-icon {
-    transform: translateY(1px) scale(0.96);
-    box-shadow: inset 0 2px 4px rgba(11, 31, 26, 0.24), inset 0 -1px 0 rgba(255, 255, 255, 0.55);
+    transform: scale(0.94);
   }
   .sb-bottomnav-item[data-active="true"]::before {
     content: "";
@@ -1000,18 +969,17 @@
   .sb-bottomnav-fab {
     display: grid;
     place-items: center;
-    width: 48px;
-    height: 48px;
+    width: 50px;
+    height: 50px;
     margin-top: -28px;
-    border-radius: 17px;
-    background: linear-gradient(160deg, #235742 0%, #0b1f1a 72%);
+    border-radius: 999px;
+    background: radial-gradient(130% 130% at 32% 12%, #2F6B52 0%, #15452F 52%, #0B1F1A 100%);
     color: var(--sb-lime);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.26),
-      inset 0 -4px 8px rgba(0, 0, 0, 0.5),
-      0 12px 22px -10px rgba(11, 31, 26, 0.85),
-      0 0 0 4px var(--sb-card),
-      0 0 0 5px rgba(11, 31, 26, 0.06);
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      inset 0 -2px 5px rgba(0, 0, 0, 0.3),
+      0 4px 10px -6px rgba(11, 31, 26, 0.5),
+      0 12px 26px -18px rgba(11, 31, 26, 0.7);
     transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
   }
   .sb-bottomnav-item.is-primary:active .sb-bottomnav-fab { transform: scale(0.94); }
