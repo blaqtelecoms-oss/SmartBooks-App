@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useOutletContext } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import { db } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -180,9 +180,14 @@ export default function Invoices() {
                 <SelectTrigger className="mt-1"><SelectValue placeholder="Select customer" /></SelectTrigger>
                 <SelectContent>
                   {contacts.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                  {contacts.length === 0 && <SelectItem value="" disabled>No customers — add in Aging tab</SelectItem>}
+                  {contacts.length === 0 && <SelectItem value="" disabled>No customers yet</SelectItem>}
                 </SelectContent>
               </Select>
+              {contacts.length === 0 && (
+                <Link to="/customers" className="inline-block text-[11px] mt-1 underline text-[#0F0F0F]">
+                  Add a customer first
+                </Link>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label className="text-[12px] text-[#6B6B72]">Issue Date</Label><Input type="date" value={form.issue_date} onChange={e => setForm({ ...form, issue_date: e.target.value })} className="mt-1 text-[13px]" /></div>

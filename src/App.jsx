@@ -34,6 +34,7 @@ import Inventory from '@/pages/Inventory';
 import Services from '@/pages/Services';
 import Onboarding from '@/pages/Onboarding';
 import Invoices from '@/pages/Invoices';
+import Customers from '@/pages/Customers';
 import AgingReports from '@/pages/AgingReports';
 import TrialBalance from '@/pages/TrialBalance';
 import BalanceSheet from '@/pages/BalanceSheet';
@@ -85,6 +86,7 @@ const AuthenticatedApp = () => {
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/services" element={<Services />} />
           <Route path="/invoices" element={<Invoices />} />
+          <Route path="/customers" element={<Customers />} />
           <Route path="/trial-balance" element={<TrialBalance />} />
           <Route path="/balance-sheet" element={<BalanceSheet />} />
           <Route path="/profit-loss" element={<ProfitLoss />} />

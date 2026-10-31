@@ -22,6 +22,7 @@ const PAGE_TITLES = {
   "/vat201": "VAT 201",
   "/aging": "Aging Reports",
   "/invoices": "Invoices",
+  "/customers": "Customers",
   "/trial-balance": "Trial Balance",
   "/balance-sheet": "Balance Sheet",
   "/profit-loss": "Profit & Loss",

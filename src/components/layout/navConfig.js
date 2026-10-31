@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Building2, Upload, BookOpen, FileText, Calculator,
   Shield, Settings, MessageSquare, Users, ArrowLeftRight, Receipt,
   Wand2, ScanLine, Landmark, Warehouse, CreditCard, Clock, FileBarChart,
-  Scale, FileSpreadsheet, TrendingUp, Wallet, HandCoins, Briefcase,
+  Scale, FileSpreadsheet, TrendingUp, Wallet, HandCoins, Briefcase, Contact,
 } from "lucide-react";
 
 // Both portals share one navigation, so the business and accountant portals
@@ -26,6 +26,7 @@ export const portalNav = [
   { label: "Profit & Loss", icon: TrendingUp, path: "/profit-loss", group: "Accounting" },
   { label: "Expenses", icon: Wallet, path: "/expenses", group: "Accounting" },
   { label: "Invoices", icon: CreditCard, path: "/invoices", group: "Accounting" },
+  { label: "Customers", icon: Contact, path: "/customers", group: "Accounting" },
   { label: "Debtors & Creditors", icon: HandCoins, path: "/debtors-creditors", group: "Accounting" },
 
   // ---- Tax
