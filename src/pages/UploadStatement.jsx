@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { db } from "@/api/supabaseClient";
 import { extractBankTransactions, categorizeTransaction } from "@/lib/bankStatementExtraction";
@@ -6,8 +6,9 @@ import { isPasswordError } from "@/lib/documentExtraction";
 import { autoAllocate } from "@/lib/bankRuleEngine";
 import FilePasswordField from "@/components/documents/FilePasswordField";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, Check, Loader2, AlertCircle } from "lucide-react";
+import { Upload, FileText, Check, Loader2, AlertCircle, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import moment from "moment";
 
 export default function UploadStatement() {
   const { currentCompany } = useOutletContext();
@@ -18,6 +19,26 @@ export default function UploadStatement() {
   const [results, setResults] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const [password, setPassword] = useState("");
+  const [documents, setDocuments] = useState([]);
+  const [loadingDocuments, setLoadingDocuments] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
+
+  useEffect(() => {
+    if (currentCompany) loadDocuments();
+  }, [currentCompany]);
+
+  const loadDocuments = async () => {
+    try {
+      const docs = await db.entities.Document.filter(
+        { company_id: currentCompany.id, type: "bank_statement" },
+        "-created_date"
+      );
+      setDocuments(docs);
+    } catch (e) {
+      // Keep whatever list is already on screen.
+    }
+    setLoadingDocuments(false);
+  };
 
   const handleFile = (f) => {
     const ext = f.name.split(".").pop().toLowerCase();
@@ -30,37 +51,54 @@ export default function UploadStatement() {
     setResults(null);
   };
 
+  const transactionCountOf = (doc) => {
+    try {
+      return JSON.parse(doc.extracted_data || "{}").transaction_count || 0;
+    } catch (e) {
+      return 0;
+    }
+  };
+
   const handleUpload = async () => {
     if (!file || !currentCompany) return;
     setUploading(true);
+    setResults(null);
     try {
-      const { file_url } = await db.integrations.Core.UploadFile({ file, companyId: currentCompany.id, kind: "bank_statement" });
+      // Read the statement first: nothing is stored, and a locked file asks for
+      // its password, before any document record is created.
+      const { transactions: txs, bank_name } = await extractBankTransactions(file, { password });
 
-      await db.entities.Document.create({
+      if (txs.length === 0) {
+        toast({
+          title: "No transactions found",
+          description:
+            "We couldn't find any transaction rows in this statement. Try the original PDF, CSV or Excel file, or check that each row shows a date and an amount.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setUploading(false);
+      setProcessing(true);
+
+      const { file_url } = await db.integrations.Core.UploadFile({
+        file,
+        companyId: currentCompany.id,
+        kind: "bank_statement",
+      });
+
+      const document = await db.entities.Document.create({
         company_id: currentCompany.id,
         name: file.name,
         type: "bank_statement",
         file_url,
         file_type: file.name.split(".").pop().toLowerCase(),
-        status: "processing"
+        status: "processing",
       });
 
-      setUploading(false);
-      setProcessing(true);
-
-      // Client-side extraction — no AI needed. A password-protected statement is
-      // opened with the password typed above; it is used once and never stored.
-      const { transactions: txs, bank_name } = await extractBankTransactions(file, { password });
-
-      if (txs.length > 0) {
-        // Load bank rules for auto-allocation
-        let bankRules = [];
-        try {
-          bankRules = await db.entities.BankRule.filter({ company_id: currentCompany.id, is_active: true });
-        } catch (e) {}
-
-        // Apply categorization first
-        let categorized = txs.slice(0, 100).map((tx) => {
+      try {
+        // Every extracted row is imported — no cap, in the statement's own order.
+        let categorized = txs.map((tx) => {
           const cat = categorizeTransaction(tx.description, tx.amount);
           return {
             company_id: currentCompany.id,
@@ -75,44 +113,68 @@ export default function UploadStatement() {
             status: cat.confidence > 80 ? "allocated" : "unallocated",
             ai_confidence: cat.confidence,
             ai_reasoning: "",
-            bank_name: bank_name || ""
+            bank_name: bank_name || "",
           };
         });
 
-        // Then apply bank rules auto-allocation (overrides categorization for matched transactions)
+        // Bank rules override the keyword categorization for matched transactions.
+        let bankRules = [];
+        try {
+          bankRules = await db.entities.BankRule.filter({ company_id: currentCompany.id, is_active: true });
+        } catch (e) {
+          bankRules = [];
+        }
+
         if (bankRules.length > 0) {
           categorized = autoAllocate(categorized, bankRules);
-          const matched = categorized.filter(t => t.status === "allocated" && t.ai_reasoning?.startsWith("Auto-matched"));
+          const matched = categorized.filter((t) => t.status === "allocated" && t.ai_reasoning?.startsWith("Auto-matched"));
           if (matched.length > 0) {
             toast({ title: `${matched.length} transactions auto-matched by bank rules` });
           }
         }
 
-        const created = categorized;
+        await db.entities.Transaction.bulkCreate(categorized);
+        await db.entities.Document.update(document.id, {
+          status: "processed",
+          extracted_data: JSON.stringify({ transaction_count: categorized.length, bank_name }),
+        });
 
-        if (created.length > 0) {
-          await db.entities.Transaction.bulkCreate(created);
-        }
-
-        await db.entities.Document.update(
-          (await db.entities.Document.filter({ company_id: currentCompany.id, name: file.name }, "-created_date"))[0]?.id,
-          { status: "processed" }
-        );
-
-        setResults({ total: txs.length, imported: created.length, bank: bank_name });
-        toast({ title: `${created.length} transactions imported and categorized` });
-      } else {
-        toast({ title: "Could not extract transactions", description: "Please check the file format", variant: "destructive" });
+        setResults({ total: txs.length, imported: categorized.length, bank: bank_name });
+        toast({ title: `${categorized.length} transactions imported and categorized` });
+        setFile(null);
+        setPassword("");
+        await loadDocuments();
+      } catch (error) {
+        await db.entities.Document.update(document.id, { status: "error" }).catch(() => {});
+        throw error;
       }
     } catch (e) {
       toast({
-        title: isPasswordError(e) ? "Statement locked" : "Upload failed",
+        title: isPasswordError(e) ? "Statement locked" : "Statement import failed",
         description: e.message,
         variant: "destructive",
       });
+    } finally {
+      setUploading(false);
+      setProcessing(false);
     }
-    setUploading(false);
-    setProcessing(false);
+  };
+
+  const handleDelete = async (doc) => {
+    setDeletingId(doc.id);
+    try {
+      if (doc.file_url) {
+        // Missing storage objects must not block removing the record.
+        await db.integrations.Core.DeleteFile({ file_uri: doc.file_url }).catch(() => {});
+      }
+      await db.entities.Document.delete(doc.id);
+      setDocuments((list) => list.filter((item) => item.id !== doc.id));
+      toast({ title: "Statement removed" });
+    } catch (e) {
+      toast({ title: "Could not remove statement", description: e.message, variant: "destructive" });
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   if (!currentCompany) {
@@ -128,7 +190,7 @@ export default function UploadStatement() {
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
         <h1 className="text-[24px] font-medium text-[#0F0F0F] tracking-tight">Upload Bank Statement</h1>
-        <p className="text-[13px] text-[#6B6B72] mt-1">Upload PDF, CSV, or Excel bank statements for automatic extraction and categorization</p>
+        <p className="text-[13px] text-[#6B6B72] mt-1">Upload PDF, CSV, or Excel bank statements to import every transaction and categorize it</p>
       </div>
 
       {/* Drop zone */}
@@ -162,8 +224,8 @@ export default function UploadStatement() {
             </div>
             <Button onClick={handleUpload} disabled={uploading || processing}
               className="shrink-0 bg-[#2D5A43] hover:bg-[#1F4030] text-white rounded-lg text-[13px] h-9 shadow-sm shadow-[#2D5A43]/20">
-              {uploading ? <><Loader2 size={14} className="mr-2 animate-spin" /> Uploading...</> :
-               processing ? <><Loader2 size={14} className="mr-2 animate-spin" /> Processing...</> :
+              {uploading ? <><Loader2 size={14} className="mr-2 animate-spin" /> Reading...</> :
+               processing ? <><Loader2 size={14} className="mr-2 animate-spin" /> Importing...</> :
                "Process Statement"}
             </Button>
           </div>
@@ -193,6 +255,49 @@ export default function UploadStatement() {
           </div>
         </div>
       )}
+
+      {/* Uploaded statements */}
+      <div className="space-y-3">
+        <div>
+          <h2 className="text-[15px] font-medium text-[#0F0F0F]">Uploaded statements</h2>
+          <p className="text-[12px] text-[#6B6B72] mt-0.5">
+            Removing a statement deletes the stored file and its record. Transactions already imported stay in your books.
+          </p>
+        </div>
+
+        {loadingDocuments ? (
+          <div className="text-center py-8"><Loader2 size={20} className="animate-spin text-[#6B6B72] mx-auto" /></div>
+        ) : documents.length === 0 ? (
+          <div className="bg-white rounded-xl border border-[#E5E5E8] p-6 text-center">
+            <p className="text-[13px] text-[#6B6B72]">No statements uploaded yet</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {documents.map((doc) => (
+              <div key={doc.id} className="bg-white rounded-xl border border-[#E5E5E8] p-3.5 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-[#EFF4F0] flex items-center justify-center flex-shrink-0">
+                  <FileText size={16} className="text-[#2D5A43]" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-medium text-[#0F0F0F] truncate">{doc.name}</p>
+                  <p className="text-[11px] text-[#6B6B72]">
+                    {moment(doc.created_date).format("DD MMM YYYY")}
+                    {transactionCountOf(doc) > 0 && ` · ${transactionCountOf(doc)} transactions`}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleDelete(doc)}
+                  disabled={deletingId === doc.id}
+                  aria-label={`Remove ${doc.name}`}
+                  className="p-1.5 rounded-lg text-[#6B6B72] hover:text-red-500 hover:bg-red-50 disabled:opacity-50"
+                >
+                  {deletingId === doc.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

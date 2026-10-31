@@ -1,12 +1,24 @@
 /**
  * Client-side bank statement extraction and categorization without AI.
- * - CSV: direct parsing
- * - Excel (xlsx/xls): SheetJS (xlsx package)
- * - PDF: text extraction via pdfjs-dist, then line-based parsing
- * - Categorization: keyword-based rules for SA accounting categories
+ * - CSV/TSV: delimiter-aware parsing with a header-based column map
+ * - Excel (xlsx/xls): SheetJS, same column map
+ * - PDF: layout-aware text extraction (pdfjs-dist), then row parsing
+ *
+ * Every transaction row in the file is kept, in source order. Rows that are not
+ * transactions (opening/closing balances, totals, headers, footers) are
+ * dropped, and a row is only accepted when the document supports it.
  */
 
 import { extractTextFromFile } from "./documentExtraction";
+import {
+  normalizeDate,
+  parseMoneyToken,
+  round2,
+  signedAmount,
+  stripDateTokens,
+  takeLeadingDate,
+  tidyText,
+} from "./amountParsing";
 
 // ─── Categorization rules (keyword → category) ───
 const CATEGORY_RULES = [
@@ -58,6 +70,400 @@ export function categorizeTransaction(description, amount) {
   return { category, type, vat_amount, confidence };
 }
 
+// ─── Rows that are not transactions ───
+const BALANCE_MARKER_RE =
+  /^(opening balance|closing balance|balance brought forward|balance carried forward|balance forward|brought forward|carried forward|opening|closing)\b/i;
+const SUMMARY_ROW_RE =
+  /^(total|totals|sub\s*total|statement summary|summary|end of statement)(\s+(debits?|credits?|transactions?|amount|amounts|balance|for the period))?$/i;
+
+// A line that wraps the row above, but only descriptive text — not a reference or footer.
+const CONTINUATION_STOP_RE =
+  /^(ref|reference|cheque|chq|card|txn|transaction|auth|approval|vat|tax|total|page|statement|account|date|time)\b/i;
+
+// ─── Free-text (PDF / OCR) statement rows ───
+
+// Money as statements actually print it: "1 250,00", "1,250.00", "500.00", "1,250".
+// Reading it as one token keeps spaces used as thousand separators out of the
+// description ("R 1 250,00" is one amount, not 1 and 250,00).
+const MONEY_TOKEN_SOURCE =
+  "(?:" +
+  "\\d{1,3}(?:[ \\u00A0]\\d{3})+[.,]\\d{1,2}" +
+  "|\\d{1,3}(?:[.,]\\d{3})+[.,]\\d{1,2}" +
+  "|\\d+(?:[.,]\\d{1,2})" +
+  "|\\d{1,3}(?:[.,]\\d{3})+" +
+  ")" +
+  "(?:\\s?(?:CR|DR))?";
+
+const newMoneyTokenRe = () => new RegExp(MONEY_TOKEN_SOURCE, "g");
+
+function scanStatementTokens(body) {
+  const amounts = [];
+  for (const match of body.match(newMoneyTokenRe()) || []) {
+    const money = parseMoneyToken(match, { allowWhole: false });
+    if (money) amounts.push(money);
+  }
+  const words = body
+    .replace(newMoneyTokenRe(), " ")
+    .split(" ")
+    .filter((word) => word && !/^(r|zar)$/i.test(word));
+  return { amounts, words };
+}
+
+/**
+ * Fallback for rows printed without decimals: only the values at the very end
+ * of the line are considered, so a reference number mid-row is never money.
+ */
+function scanTrailingAmounts(body) {
+  const tokens = body.split(" ").filter(Boolean);
+  const amounts = [];
+  let index = tokens.length - 1;
+  while (index >= 0 && amounts.length < 2) {
+    const money = parseMoneyToken(tokens[index], { allowWhole: true });
+    if (!money) break;
+    amounts.unshift(money);
+    index -= 1;
+  }
+  return { amounts, words: tokens.slice(0, index + 1) };
+}
+
+/**
+ * Parse statement text (PDF text layer or OCR output) into transaction rows.
+ * @param {string} text
+ * @returns {Array<{ date: string, description: string, amount: number, reference: string, balance: number|null }>}
+ */
+export function parseStatementText(text) {
+  const lines = String(text || "").split(/\r?\n/);
+  const transactions = [];
+  let lastDate = "";
+  let pendingDescription = "";
+  let previousBalance = null;
+  let previousTransaction = null;
+
+  for (const rawLine of lines) {
+    const line = rawLine.replace(/\s+/g, " ").trim();
+    if (!line) continue;
+
+    const leading = takeLeadingDate(line);
+    if (leading) {
+      const parsed = normalizeDate(leading.date);
+      if (parsed) lastDate = parsed;
+    }
+    const body = stripDateTokens(leading ? leading.rest : line);
+
+    const primary = scanStatementTokens(body);
+    let amounts = primary.amounts;
+    let words = primary.words;
+    let usedFallback = false;
+    if (amounts.length === 0) {
+      const fallback = scanTrailingAmounts(body);
+      if (fallback.amounts.length > 0) {
+        amounts = fallback.amounts;
+        words = fallback.words;
+        usedFallback = true;
+      }
+    }
+
+    const description = tidyText(words.join(" "));
+
+    // Opening/closing balance rows seed the running balance; totals are not transactions.
+    if (BALANCE_MARKER_RE.test(description) || SUMMARY_ROW_RE.test(description)) {
+      if (amounts.length > 0 && BALANCE_MARKER_RE.test(description)) {
+        previousBalance = signedAmount(amounts[amounts.length - 1]);
+      }
+      continue;
+    }
+
+    if (amounts.length === 0) {
+      // A description that wraps onto the next line belongs to its row, not to page furniture.
+      const isText = /([A-Za-z]{2}\s+){1,}/.test(description) && !CONTINUATION_STOP_RE.test(description);
+      if (isText && leading) {
+        pendingDescription = tidyText(`${pendingDescription} ${description}`);
+      } else if (isText && pendingDescription) {
+        // Text wrapped under a row whose amount has not arrived yet.
+        pendingDescription = tidyText(`${pendingDescription} ${description}`);
+      } else if (isText && previousTransaction) {
+        previousTransaction.description = tidyText(
+          `${previousTransaction.description} ${description}`
+        );
+      }
+      continue;
+    }
+
+    const hasBalanceColumn = amounts.length >= 2;
+    const balanceToken = hasBalanceColumn ? amounts[amounts.length - 1] : null;
+    const candidates = hasBalanceColumn ? amounts.slice(0, -1) : amounts;
+
+    let amountToken = candidates[candidates.length - 1];
+    let direction = null;
+    const balance = balanceToken ? signedAmount(balanceToken) : null;
+
+    // A running balance settles both which figure is the amount and which way it moves.
+    if (balance != null && previousBalance != null) {
+      const delta = round2(balance - previousBalance);
+      if (Math.abs(delta) >= 0.01) {
+        const match = candidates.find((c) => Math.abs(Math.abs(delta) - c.value) <= 0.02);
+        if (match) {
+          amountToken = match;
+          direction = delta < 0 ? -1 : 1;
+        }
+      }
+    }
+
+    // Without a date of its own, a row is only trusted when the balance moved by its amount.
+    if (!leading && direction == null) continue;
+    // Amounts printed without decimals are only trusted when the balance confirms them.
+    if (usedFallback && direction == null) continue;
+    if (!amountToken || amountToken.value <= 0) continue;
+
+    const sign = direction != null ? direction : amountToken.negative ? -1 : 1;
+    const marked = direction != null || amountToken.negative || Boolean(amountToken.suffix);
+
+    const transaction = {
+      date: leading ? normalizeDate(leading.date) || lastDate : lastDate,
+      description: tidyText(`${pendingDescription} ${description}`) || "Transaction",
+      amount: round2(amountToken.value * sign),
+      reference: "",
+      balance,
+      $signal: direction != null ? "balance" : marked ? "marked" : "none",
+      $creditMarker: amountToken.suffix === "CR",
+    };
+
+    pendingDescription = "";
+    transactions.push(transaction);
+    previousTransaction = transaction;
+    if (balance != null) previousBalance = balance;
+  }
+
+  // A statement that marks credits with "CR" leaves every unmarked amount a debit.
+  if (transactions.some((transaction) => transaction.$creditMarker)) {
+    for (const transaction of transactions) {
+      if (transaction.$signal === "none") transaction.amount = -Math.abs(transaction.amount);
+    }
+  }
+
+  return transactions.map(({ $signal, $creditMarker, ...transaction }) => transaction);
+}
+
+// ─── Tabular (CSV / Excel) parsing ───
+
+/**
+ * @param {string[][]} rows
+ * @returns {Array<object>} transactions
+ */
+export function parseTableRows(rows) {
+  const header = findHeaderRow(rows);
+  if (!header) return [];
+
+  const { index, mapping } = header;
+  const transactions = [];
+
+  for (let i = index + 1; i < rows.length; i += 1) {
+    const cells = rows[i] || [];
+    if (!cells.some((cell) => String(cell ?? "").trim() !== "")) continue;
+
+    const cellText = (key) =>
+      mapping[key] >= 0 ? String(cells[mapping[key]] ?? "").trim() : "";
+    const description = cellText("description");
+
+    // Repeated header rows and summary rows are not transactions.
+    if (/^date$/i.test(cellText("date")) || /^description$/i.test(description)) continue;
+    if (BALANCE_MARKER_RE.test(description) || SUMMARY_ROW_RE.test(description)) continue;
+
+    const date = normalizeDate(cellText("date"));
+    if (!date) continue;
+
+    let amount = null;
+    const debit = parseMoneyToken(cellText("debit"));
+    const credit = parseMoneyToken(cellText("credit"));
+    if (debit || credit) {
+      amount = round2(
+        (credit ? Math.abs(credit.value) : 0) - (debit ? Math.abs(debit.value) : 0)
+      );
+    } else {
+      const token = parseMoneyToken(cellText("amount"));
+      if (token) amount = round2(signedAmount(token));
+    }
+    if (amount == null || amount === 0) continue;
+
+    const balanceToken = parseMoneyToken(cellText("balance"));
+
+    transactions.push({
+      date,
+      description: description || "Transaction",
+      amount,
+      reference: cellText("reference"),
+      balance: balanceToken ? signedAmount(balanceToken) : null,
+    });
+  }
+
+  return transactions;
+}
+
+/** Headerless tables: each row that starts with a date is read like a text row. */
+function parseLooseRows(rows) {
+  const transactions = [];
+  for (const cells of rows) {
+    const line = (cells || [])
+      .map((cell) => String(cell ?? "").trim())
+      .filter(Boolean)
+      .join(" ");
+    if (!line) continue;
+    transactions.push(...parseStatementText(line));
+  }
+  return transactions;
+}
+
+const COLUMN_PATTERNS = {
+  balance: [/^(running\s+)?balance$/, /balance/, /balans/],
+  date: [/^(transaction|posting|value|entry|effective|txn)\s*date$/, /date/, /datum/],
+  debit: [/debit|withdraw|money out|paid out|^dr$/, /debet/],
+  credit: [/credit|deposit|money in|paid in|^cr$/, /krediet|deposito/],
+  amount: [/^(transaction\s*)?amount$/, /^amount\b/, /^value$/, /^bedrag$/],
+  description: [
+    /^(description|narrative|details|particulars?|memo|payee)$/,
+    /desc|narrative|details|particular|memo|payee|beskrywing/,
+  ],
+  reference: [/^(reference|ref|cheque)/, /reference|^ref$/],
+};
+
+function mapColumns(cells) {
+  const normalized = (cells || []).map((cell) =>
+    String(cell ?? "").toLowerCase().replace(/\s+/g, " ").trim()
+  );
+  const taken = new Set();
+  const pick = (patterns) => {
+    for (const pattern of patterns) {
+      const index = normalized.findIndex(
+        (cell, i) => cell && !taken.has(i) && pattern.test(cell)
+      );
+      if (index >= 0) {
+        taken.add(index);
+        return index;
+      }
+    }
+    return -1;
+  };
+
+  return {
+    balance: pick(COLUMN_PATTERNS.balance),
+    date: pick(COLUMN_PATTERNS.date),
+    debit: pick(COLUMN_PATTERNS.debit),
+    credit: pick(COLUMN_PATTERNS.credit),
+    amount: pick(COLUMN_PATTERNS.amount),
+    description: pick(COLUMN_PATTERNS.description),
+    reference: pick(COLUMN_PATTERNS.reference),
+  };
+}
+
+function findHeaderRow(rows) {
+  const limit = Math.min(rows.length, 25);
+  for (let i = 0; i < limit; i += 1) {
+    const mapping = mapColumns(rows[i]);
+    const hasAmount = mapping.debit >= 0 || mapping.credit >= 0 || mapping.amount >= 0;
+    if (mapping.date >= 0 && hasAmount) return { index: i, mapping };
+  }
+  return null;
+}
+
+// ─── CSV file handling ───
+
+function detectDelimiter(text) {
+  const sample = String(text || "").split(/\r?\n/).slice(0, 20).join("\n");
+  const counts = { ",": 0, ";": 0, "\t": 0 };
+  let inQuotes = false;
+  for (const character of sample) {
+    if (character === '"') inQuotes = !inQuotes;
+    else if (!inQuotes && character in counts) counts[character] += 1;
+  }
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+}
+
+function parseCsvRows(text) {
+  const delimiter = detectDelimiter(text);
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const character = text[i];
+    if (inQuotes) {
+      if (character === '"') {
+        if (text[i + 1] === '"') {
+          cell += '"';
+          i += 1;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        cell += character;
+      }
+      continue;
+    }
+    if (character === '"') {
+      inQuotes = true;
+    } else if (character === delimiter) {
+      row.push(cell);
+      cell = "";
+    } else if (character === "\n") {
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = "";
+    } else if (character !== "\r") {
+      cell += character;
+    }
+  }
+
+  row.push(cell);
+  if (row.some((value) => value.trim() !== "")) rows.push(row);
+  return rows;
+}
+
+function parseCsvText(text, fileName) {
+  const rows = parseCsvRows(text);
+  let transactions = parseTableRows(rows);
+  if (transactions.length === 0) transactions = parseLooseRows(rows);
+  return {
+    transactions,
+    bank_name: detectBankName(fileName),
+    account_number: detectAccountNumber(text),
+  };
+}
+
+// ─── Excel file handling ───
+
+async function parseExcel(file) {
+  const XLSX = await import("xlsx");
+  const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
+  const result = {
+    transactions: [],
+    bank_name: detectBankName(file.name),
+    account_number: "",
+  };
+
+  for (const name of workbook.SheetNames) {
+    const sheet = workbook.Sheets[name];
+    if (!sheet) continue;
+    const rows = XLSX.utils.sheet_to_json(sheet, {
+      header: 1,
+      raw: false,
+      blankrows: false,
+      defval: "",
+    });
+    if (!rows.length) continue;
+
+    let parsed = parseTableRows(rows);
+    if (parsed.length === 0) parsed = parseLooseRows(rows);
+    // Statements live on one sheet; keep the one that actually holds transactions.
+    if (parsed.length > result.transactions.length) result.transactions = parsed;
+  }
+
+  return result;
+}
+
+// ─── Public API ───
+
 /**
  * Extract transactions from a bank statement file.
  * @param {File} file
@@ -66,308 +472,49 @@ export function categorizeTransaction(description, amount) {
  * @returns {Promise<{ transactions: array, bank_name: string, account_number: string }>}
  */
 export async function extractBankTransactions(file, { password } = {}) {
-  const ext = file.name.split(".").pop().toLowerCase();
+  const extension = (file.name.split(".").pop() || "").toLowerCase();
 
-  if (ext === "csv") {
-    return parseCsv(file);
+  if (extension === "csv" || extension === "tsv" || extension === "txt") {
+    return parseCsvText(await file.text(), file.name);
   }
-  if (ext === "xlsx" || ext === "xls") {
+
+  if (extension === "xlsx" || extension === "xls") {
     return parseExcel(file);
   }
-  if (ext === "pdf") {
-    return parsePdf(file, password);
-  }
-  // Fallback: try text extraction
+
   const text = await extractTextFromFile(file, { password });
-  return { transactions: parseTextLines(text), bank_name: "", account_number: "" };
-}
-
-// ─── CSV parsing ───
-async function parseCsv(file) {
-  const text = await file.text();
-  const lines = text.split(/\r?\n/).filter((l) => l.trim());
-  if (lines.length === 0) return { transactions: [], bank_name: "", account_number: "" };
-
-  // Find the header row by looking for date/description/amount columns
-  let headerIdx = -1;
-  let dateCol = -1, descCol = -1, amountCol = -1, refCol = -1, balanceCol = -1;
-
-  for (let i = 0; i < Math.min(lines.length, 10); i++) {
-    const cols = splitCsvLine(lines[i]);
-    const lowerCols = cols.map((c) => c.toLowerCase().trim());
-    dateCol = lowerCols.findIndex((c) => /date|datum/.test(c));
-    descCol = lowerCols.findIndex((c) => /desc|narrative|details|particular/.test(c));
-    amountCol = lowerCols.findIndex((c) => /amount|value|debit|credit|trans/.test(c));
-    if (dateCol >= 0) {
-      headerIdx = i;
-      // If no explicit amount column, look for debit/credit pair
-      if (amountCol < 0) {
-        const debitCol = lowerCols.findIndex((c) => c === "debit" || c === "withdrawal" || c === "payment");
-        const creditCol = lowerCols.findIndex((c) => c === "credit" || c === "deposit" || c === "receipt");
-        if (debitCol >= 0 || creditCol >= 0) {
-          amountCol = debitCol >= 0 ? debitCol : creditCol;
-        }
-      }
-      refCol = lowerCols.findIndex((c) => /ref|reference/.test(c));
-      balanceCol = lowerCols.findIndex((c) => /balance/.test(c));
-      break;
-    }
+  if (text.replace(/\s/g, "").length < 10) {
+    const error = new Error(
+      "We couldn't read any text from this document. Try the original PDF, a CSV or Excel export, or a sharper scan."
+    );
+    error.code = "UNREADABLE_DOCUMENT";
+    throw error;
   }
 
-  if (headerIdx < 0) {
-    // No header found — try to parse all lines as transactions
-    return { transactions: lines.map((l) => parseCsvTransaction(l, 0, 1, 2, 3, 4)).filter(Boolean), bank_name: "", account_number: "" };
-  }
-
-  const transactions = [];
-  for (let i = headerIdx + 1; i < lines.length; i++) {
-    const cols = splitCsvLine(lines[i]);
-    if (cols.length < 2) continue;
-
-    let amount = null;
-    if (amountCol >= 0 && cols[amountCol]) {
-      amount = parseFloat(cols[amountCol].replace(/[R\s]/g, "").replace(/,/g, ""));
-    } else {
-      // Try to find any numeric column
-      for (const c of cols) {
-        const n = parseFloat(c.replace(/[R\s]/g, "").replace(/,/g, ""));
-        if (!isNaN(n) && c.match(/\d/)) { amount = n; break; }
-      }
-    }
-    if (amount === null || isNaN(amount)) continue;
-
-    // Check for separate debit/credit columns
-    const lowerCols = splitCsvLine(lines[headerIdx]).map((c) => c.toLowerCase().trim());
-    const debitCol = lowerCols.findIndex((c) => c === "debit" || c === "withdrawal" || c === "payment");
-    const creditCol = lowerCols.findIndex((c) => c === "credit" || c === "deposit" || c === "receipt");
-    if (debitCol >= 0 && creditCol >= 0) {
-      const debit = parseFloat((cols[debitCol] || "0").replace(/[R\s]/g, "").replace(/,/g, "")) || 0;
-      const credit = parseFloat((cols[creditCol] || "0").replace(/[R\s]/g, "").replace(/,/g, "")) || 0;
-      amount = credit - debit;
-    }
-
-    transactions.push({
-      date: dateCol >= 0 ? normalizeDate(cols[dateCol]) : "",
-      description: descCol >= 0 ? (cols[descCol] || "").trim() : cols.find((c) => c && isNaN(parseFloat(c.replace(/[R,\s]/g, "")))) || "",
-      amount,
-      reference: refCol >= 0 ? (cols[refCol] || "").trim() : "",
-      balance: balanceCol >= 0 ? parseFloat((cols[balanceCol] || "0").replace(/[R\s]/g, "").replace(/,/g, "")) || 0 : null,
-    });
-  }
-
-  // Try to detect bank name from filename
-  const bank_name = detectBankName(file.name);
-  return { transactions, bank_name, account_number: "" };
-}
-
-function splitCsvLine(line) {
-  const result = [];
-  let current = "";
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') { inQuotes = !inQuotes; continue; }
-    if (ch === "," && !inQuotes) { result.push(current); current = ""; continue; }
-    current += ch;
-  }
-  result.push(current);
-  return result;
-}
-
-// ─── Excel parsing ───
-async function parseExcel(file) {
-  const XLSX = await import("xlsx");
-  const arrayBuffer = await file.arrayBuffer();
-  const workbook = XLSX.read(arrayBuffer, { type: "array" });
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
-
-  if (rows.length === 0) return { transactions: [], bank_name: "", account_number: "" };
-
-  // Find header row
-  let headerIdx = -1;
-  let dateCol = -1, descCol = -1, amountCol = -1, refCol = -1, balanceCol = -1;
-
-  for (let i = 0; i < Math.min(rows.length, 10); i++) {
-    const cols = (rows[i] || []).map((c) => String(c).toLowerCase().trim());
-    dateCol = cols.findIndex((c) => /date|datum/.test(c));
-    descCol = cols.findIndex((c) => /desc|narrative|details|particular/.test(c));
-    amountCol = cols.findIndex((c) => /amount|value|debit|credit|trans/.test(c));
-    if (dateCol >= 0) {
-      headerIdx = i;
-      refCol = cols.findIndex((c) => /ref|reference/.test(c));
-      balanceCol = cols.findIndex((c) => /balance/.test(c));
-      break;
-    }
-  }
-
-  if (headerIdx < 0) return { transactions: [], bank_name: "", account_number: "" };
-
-  const headerCols = (rows[headerIdx] || []).map((c) => String(c).toLowerCase().trim());
-  const debitCol = headerCols.findIndex((c) => c === "debit" || c === "withdrawal" || c === "payment");
-  const creditCol = headerCols.findIndex((c) => c === "credit" || c === "deposit" || c === "receipt");
-
-  const transactions = [];
-  for (let i = headerIdx + 1; i < rows.length; i++) {
-    const cols = rows[i] || [];
-    if (cols.length < 2) continue;
-
-    let amount = null;
-    if (debitCol >= 0 && creditCol >= 0) {
-      const debit = parseFloat(String(cols[debitCol] || "0").replace(/[R\s]/g, "").replace(/,/g, "")) || 0;
-      const credit = parseFloat(String(cols[creditCol] || "0").replace(/[R\s]/g, "").replace(/,/g, "")) || 0;
-      amount = credit - debit;
-    } else if (amountCol >= 0 && cols[amountCol]) {
-      amount = parseFloat(String(cols[amountCol]).replace(/[R\s]/g, "").replace(/,/g, ""));
-    } else {
-      for (const c of cols) {
-        const n = parseFloat(String(c).replace(/[R\s]/g, "").replace(/,/g, ""));
-        if (!isNaN(n)) { amount = n; break; }
-      }
-    }
-    if (amount === null || isNaN(amount)) continue;
-
-    transactions.push({
-      date: dateCol >= 0 ? normalizeDate(String(cols[dateCol] || "")) : "",
-      description: descCol >= 0 ? String(cols[descCol] || "").trim() : "",
-      amount,
-      reference: refCol >= 0 ? String(cols[refCol] || "").trim() : "",
-      balance: balanceCol >= 0 ? parseFloat(String(cols[balanceCol] || "0").replace(/[R\s]/g, "").replace(/,/g, "")) || 0 : null,
-    });
-  }
-
-  return { transactions, bank_name: detectBankName(file.name), account_number: "" };
-}
-
-// ─── PDF parsing ───
-async function parsePdf(file, password) {
-  const text = await extractTextFromFile(file, { password });
-  return { transactions: parseTextLines(text), bank_name: detectBankName(file.name), account_number: detectAccountNumber(text) };
-}
-
-function parseTextLines(text) {
-  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
-  const transactions = [];
-
-  // Date patterns that can appear at the start of a line
-  const datePatterns = [
-    /^(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4})\s+/,       // 03/09/2026, 03-09-26
-    /^(\d{4}[\/\-.]\d{2}[\/\-.]\d{2})\s+/,              // 2026-09-03
-    /^(\d{1,2}\s+\w{3,9}\s+\d{2,4})\s+/,                // 03 Sep 2026
-    /^(\d{1,2}\s+\w{3,9}['']\d{2})\s+/,                // 03 Sep'26
-  ];
-
-  // Amount pattern: optional R prefix, digits with optional commas, optional decimals, optional CR/DR/+/- 
-  const amountRe = /R?\s*([\d][\d,]*\.?\d{0,2})\s*(CR|DR|\+|-)?\b/gi;
-
-  // Skip lines that look like headers, footers, or non-transaction data
-  const skipKeywords = /^(page|statement|account|opening|closing|balance|summary|total|period|available|branch|held|overdraft|limit|interest\s+rate|card|client|reference\s+no|dated|generated|printed)\b/i;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (skipKeywords.test(line)) continue;
-
-    // Try each date pattern at the start of the line
-    let dateMatch = null;
-    for (const dp of datePatterns) {
-      const m = line.match(dp);
-      if (m) { dateMatch = m; break; }
-    }
-    if (!dateMatch) continue;
-
-    const dateStr = dateMatch[1];
-    const rest = line.slice(dateMatch[0].length).trim();
-
-    // Extract all amounts from the rest of the line
-    const amounts = [];
-    let am;
-    const amtRe = /R?\s*(\d[\d,]*\.?\d{0,2})\s*(CR|DR|\+|\-)?/gi;
-    while ((am = amtRe.exec(rest)) !== null) {
-      const val = parseFloat(am[1].replace(/,/g, ""));
-      if (!isNaN(val) && val > 0) {
-        const suffix = (am[2] || "").toUpperCase();
-        amounts.push({ value: val, suffix });
-      }
-    }
-
-    if (amounts.length === 0) continue;
-
-    // The transaction amount is typically the first or last amount (before balance)
-    // If there are 2+ amounts, the last is usually the balance and the second-to-last is the transaction
-    let txAmount, balance;
-    if (amounts.length >= 2) {
-      txAmount = amounts[amounts.length - 2];
-      balance = amounts[amounts.length - 1].value;
-    } else {
-      txAmount = amounts[0];
-      balance = null;
-    }
-
-    // Determine sign: DR/- means debit (negative), CR/+ means credit (positive)
-    let signedAmount = txAmount.value;
-    if (txAmount.suffix === "DR" || txAmount.suffix === "-") {
-      signedAmount = -signedAmount;
-    } else if (txAmount.suffix === "CR" || txAmount.suffix === "+") {
-      signedAmount = Math.abs(signedAmount);
-    }
-
-    // Description: everything in `rest` except the amounts
-    let description = rest;
-    // Remove the trailing amounts and suffixes
-    description = description.replace(/R?\s*\d[\d,]*\.?\d{0,2}\s*(CR|DR|\+|-)?/gi, " ").replace(/\s+/g, " ").trim();
-    if (!description) description = "Transaction";
-
-    transactions.push({
-      date: normalizeDate(dateStr),
-      description,
-      amount: signedAmount,
-      reference: "",
-      balance,
-    });
-  }
-
-  return transactions;
+  return {
+    transactions: parseStatementText(text),
+    bank_name: detectBankName(file.name),
+    account_number: detectAccountNumber(text),
+  };
 }
 
 // ─── Helpers ───
-function normalizeDate(str) {
-  if (!str) return "";
-  str = str.trim().replace(/['']/g, "'");
-  // YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
-  // DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY
-  let m = str.match(/^(\d{1,2})[\/.\s-](\d{1,2})[\/.\s-](\d{2,4})$/);
-  if (m) {
-    const d = m[1], mo = m[2], y = m[3];
-    return `${y.length === 2 ? "20" + y : y}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
-  }
-  // DD MMM YYYY or DD MMM'YY or DD MMMMM YYYY (full month name)
-  m = str.match(/^(\d{1,2})\s+([A-Za-z]{3,9})'?(\d{2,4})$/i);
-  if (m) {
-    const months = { jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06", jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12",
-      january: "01", february: "02", march: "03", april: "04", june: "06", july: "07", august: "08", september: "09", october: "10", november: "11", december: "12" };
-    const mo = months[m[2].toLowerCase().slice(0, 9)];
-    if (mo) {
-      const y = m[3].length === 2 ? "20" + m[3] : m[3];
-      return `${y}-${mo}-${m[1].padStart(2, "0")}`;
-    }
-  }
-  return str;
-}
 
 function detectBankName(filename) {
-  const lower = filename.toLowerCase();
-  if (lower.includes("fnb")) return "FNB";
+  const lower = String(filename || "").toLowerCase();
+  if (lower.includes("fnb") || lower.includes("first national")) return "FNB";
   if (lower.includes("absa")) return "ABSA";
   if (lower.includes("nedbank")) return "Nedbank";
   if (lower.includes("standard") || lower.includes("stdbank")) return "Standard Bank";
   if (lower.includes("capitec")) return "Capitec";
   if (lower.includes("discovery")) return "Discovery Bank";
   if (lower.includes("investec")) return "Investec";
+  if (lower.includes("tymebank") || lower.includes("tyme")) return "TymeBank";
+  if (lower.includes("african bank")) return "African Bank";
   return "";
 }
 
 function detectAccountNumber(text) {
-  const m = text.match(/account\s*(?:no\.?|number)[:\s]*(\d{6,20})/i);
-  return m ? m[1] : "";
+  const match = String(text || "").match(/account\s*(?:no\.?|number|#)?[:\s]*(\d{6,20})/i);
+  return match ? match[1] : "";
 }

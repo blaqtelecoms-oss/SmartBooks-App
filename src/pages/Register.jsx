@@ -75,6 +75,7 @@ export default function Register() {
     return (
       <AuthLayout
         icon={UserPlus}
+        wide
         title="Choose your portal"
         subtitle="Pick the workspace you're joining. It decides what we ask you next."
         footer={

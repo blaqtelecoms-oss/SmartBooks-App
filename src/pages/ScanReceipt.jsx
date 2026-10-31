@@ -4,7 +4,7 @@ import { db } from "@/api/supabaseClient";
 import { extractTextFromFile, isPasswordError, parseDocumentData } from "@/lib/documentExtraction";
 import DocumentPasswordDialog from "@/components/documents/DocumentPasswordDialog";
 import { Button } from "@/components/ui/button";
-import { Camera, Upload, Loader2, ScanLine, Send, CheckCircle2, Eye, Trash2, Receipt } from "lucide-react";
+import { Camera, Upload, Loader2, Send, CheckCircle2, Eye, Trash2, Receipt } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import moment from "moment";
@@ -17,6 +17,7 @@ export default function ScanReceipt() {
   const [uploading, setUploading] = useState(false);
   const [ocrResult, setOcrResult] = useState(null);
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   // A locked receipt stays here until its password is entered.
   const [lockedFile, setLockedFile] = useState(null);
   const [passwordError, setPasswordError] = useState("");
@@ -120,14 +121,20 @@ export default function ScanReceipt() {
   };
 
   const handleDelete = async (doc) => {
+    setDeletingId(doc.id);
     try {
       if (doc.file_url) {
-        await db.integrations.Core.DeleteFile({ file_uri: doc.file_url });
+        // A file that is already gone must not block removing the record.
+        await db.integrations.Core.DeleteFile({ file_uri: doc.file_url }).catch(() => {});
       }
       await db.entities.Document.delete(doc.id);
       await loadDocs();
       toast({ title: "Receipt deleted" });
-    } catch (e) {}
+    } catch (e) {
+      toast({ title: "Could not delete receipt", description: e.message, variant: "destructive" });
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const formatR = (v) => `R ${(v || 0).toLocaleString("en-ZA", { minimumFractionDigits: 2 })}`;
@@ -254,8 +261,12 @@ export default function ScanReceipt() {
                       <Eye size={14} />
                     </button>
                   )}
-                  <button onClick={() => handleDelete(doc)} className="p-1.5 rounded-lg hover:bg-red-50 text-[#5C7263] hover:text-red-500">
-                    <Trash2 size={14} />
+                  <button
+                    onClick={() => handleDelete(doc)}
+                    disabled={deletingId === doc.id}
+                    className="p-1.5 rounded-lg hover:bg-red-50 text-[#5C7263] hover:text-red-500 disabled:opacity-50"
+                  >
+                    {deletingId === doc.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                   </button>
                 </div>
               </div>
@@ -278,7 +289,9 @@ export default function ScanReceipt() {
               {ocrResult.document_number && <div className="flex justify-between"><span className="text-[#5C7263]">Receipt No.</span><span className="font-medium">{ocrResult.document_number}</span></div>}
               {ocrResult.line_items?.length > 0 && (
                 <div className="pt-2 border-t border-[#E5E5E8]">
-                  <p className="text-[11px] text-[#5C7263] uppercase tracking-wider mb-2">Line Items</p>
+                  <p className="text-[11px] text-[#5C7263] uppercase tracking-wider mb-2">
+                    Transactions ({ocrResult.line_items.length})
+                  </p>
                   {ocrResult.line_items.map((item, i) => (
                     <div key={i} className="flex justify-between py-1">
                       <span>{item.description}</span>

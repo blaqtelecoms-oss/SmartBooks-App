@@ -30,11 +30,11 @@ const PORTALS = [
 /**
  * Full-size portal choice for the standalone portal step: roomy cards with a
  * short explanation of what each portal gives you and a soft cool gradient
- * behind the detail section.
+ * behind the detail section. Side by side from large screens up, stacked below.
  */
 export default function PortalChooser({ value, onChange }) {
   return (
-    <div role="radiogroup" aria-label="Choose your portal" className="space-y-3.5">
+    <div role="radiogroup" aria-label="Choose your portal" className="grid gap-3.5 lg:grid-cols-2">
       {PORTALS.map(({ id, label, description, icon: Icon, highlights }) => {
         const active = value === id;
 
@@ -46,7 +46,7 @@ export default function PortalChooser({ value, onChange }) {
             aria-checked={active}
             onClick={() => onChange(id)}
             className={cn(
-              "group block w-full overflow-hidden rounded-2xl border text-left transition-all duration-200",
+              "group flex h-full w-full flex-col overflow-hidden rounded-2xl border text-left transition-all duration-200",
               active
                 ? "border-[#0F5132] shadow-[0_18px_40px_-24px_rgba(15,81,50,0.55)]"
                 : "border-[#E3E9E4] hover:border-[#B9CCC2] hover:shadow-[0_14px_32px_-28px_rgba(11,31,26,0.45)]"
@@ -89,7 +89,7 @@ export default function PortalChooser({ value, onChange }) {
             {/* Detail section with the restrained cool gradient */}
             <span
               className={cn(
-                "block border-t px-5 pb-5 pt-4",
+                "mt-auto block border-t px-5 pb-5 pt-4",
                 active ? "border-[#DCEBE1]" : "border-[#EDF1EE]"
               )}
               style={{

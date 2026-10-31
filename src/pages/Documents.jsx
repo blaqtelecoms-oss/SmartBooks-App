@@ -4,7 +4,7 @@ import { db } from "@/api/supabaseClient";
 import { extractTextFromFile, isPasswordError, parseDocumentData } from "@/lib/documentExtraction";
 import DocumentPasswordDialog from "@/components/documents/DocumentPasswordDialog";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, Image, Loader2, Eye, Trash2 } from "lucide-react";
+import { FileText, Image, Loader2, Eye, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import moment from "moment";
@@ -17,6 +17,7 @@ export default function Documents() {
   const [uploading, setUploading] = useState(false);
   const [ocrResult, setOcrResult] = useState(null);
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   // A locked document stays here until its password is entered.
   const [lockedFile, setLockedFile] = useState(null);
   const [passwordError, setPasswordError] = useState("");
@@ -95,14 +96,20 @@ export default function Documents() {
   };
 
   const handleDelete = async (doc) => {
+    setDeletingId(doc.id);
     try {
       if (doc.file_url) {
-        await db.integrations.Core.DeleteFile({ file_uri: doc.file_url });
+        // A file that is already gone must not block removing the record.
+        await db.integrations.Core.DeleteFile({ file_uri: doc.file_url }).catch(() => {});
       }
       await db.entities.Document.delete(doc.id);
       await loadDocs();
       toast({ title: "Document deleted" });
-    } catch (e) {}
+    } catch (e) {
+      toast({ title: "Could not delete document", description: e.message, variant: "destructive" });
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const formatR = (v) => `R ${(v || 0).toLocaleString("en-ZA", { minimumFractionDigits: 2 })}`;
@@ -174,8 +181,12 @@ export default function Documents() {
                     <Eye size={12} /> View Data
                   </button>
                 )}
-                <button onClick={() => handleDelete(doc)} className="text-[11px] text-[#6B6B72] hover:text-red-500 font-medium flex items-center gap-1 ml-auto">
-                  <Trash2 size={12} /> Delete
+                <button
+                  onClick={() => handleDelete(doc)}
+                  disabled={deletingId === doc.id}
+                  className="text-[11px] text-[#6B6B72] hover:text-red-500 font-medium flex items-center gap-1 ml-auto disabled:opacity-50"
+                >
+                  {deletingId === doc.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />} Delete
                 </button>
               </div>
             </div>
@@ -197,7 +208,9 @@ export default function Documents() {
               {ocrResult.document_number && <div className="flex justify-between"><span className="text-[#6B6B72]">Document No.</span><span className="font-medium">{ocrResult.document_number}</span></div>}
               {ocrResult.line_items?.length > 0 && (
                 <div className="pt-2 border-t border-[#E5E5E8]">
-                  <p className="text-[11px] text-[#6B6B72] uppercase tracking-wider mb-2">Line Items</p>
+                  <p className="text-[11px] text-[#6B6B72] uppercase tracking-wider mb-2">
+                    Transactions ({ocrResult.line_items.length})
+                  </p>
                   {ocrResult.line_items.map((item, i) => (
                     <div key={i} className="flex justify-between py-1">
                       <span>{item.description}</span>
