@@ -7,11 +7,12 @@ import ResponsiveSelect from "@/components/ResponsiveSelect";
 import PullToRefresh from "@/components/PullToRefresh";
 import {
   Search, Sparkles, Loader2, ChevronDown, ChevronUp, Brain,
-  ArrowDownLeft, ArrowUpRight, Wand2,
+  ArrowDownLeft, ArrowUpRight, Wand2, Eye,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import moment from "moment";
 import { formatRand } from "@/lib/money";
+import { buildStatementSummary } from "@/lib/bankStatementExtraction";
 
 const FILTERS = [
   { value: "all", label: "All" },
@@ -37,11 +38,24 @@ const suggestedCategory = (tx) => (isPlaceholderCategory(tx.category) ? null : t
 const categoryLabel = (tx) =>
   tx.account_name || suggestedCategory(tx) || null;
 
+/** One label/value line in a transaction's detail dialog. */
+const DetailRow = ({ label, value }) => {
+  if (value == null || value === "") return null;
+  return (
+    <div className="flex justify-between gap-4">
+      <span style={{ color: "var(--sb-muted)" }}>{label}</span>
+      <span className="text-right font-semibold" style={{ color: "var(--sb-ink)" }}>{value}</span>
+    </div>
+  );
+};
+
 export default function Transactions() {
   const { currentCompany } = useOutletContext();
   const { toast } = useToast();
   const [transactions, setTransactions] = useState([]);
   const [accounts, setAccounts] = useState([]);
+  const [statements, setStatements] = useState([]);
+  const [detailTx, setDetailTx] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -64,12 +78,17 @@ export default function Transactions() {
   const loadData = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const [txs, accts] = await Promise.all([
+      const [txs, accts, docs] = await Promise.all([
         db.entities.Transaction.filter({ company_id: currentCompany.id }, "-date", 2000),
         db.entities.Account.filter({ company_id: currentCompany.id }),
+        db.entities.Document.filter(
+          { company_id: currentCompany.id, type: "bank_statement" },
+          "-created_date"
+        ),
       ]);
       setTransactions(txs);
       setAccounts(accts);
+      setStatements(docs);
     } catch (e) {}
     if (!silent) setLoading(false);
   };
@@ -197,6 +216,22 @@ Provide a clear, professional explanation. Include:
   const moneyOut = transactions.filter((t) => t.type === "debit").reduce((s, t) => s + (t.amount || 0), 0);
   const unallocatedCount = transactions.filter((t) => t.status === "unallocated").length;
 
+  // One summary per uploaded statement: the balances and totals it printed, or — when
+  // it printed none — the same figures calculated from its imported rows.
+  const statementSummaries = statements
+    .map((doc) => {
+      let stored = {};
+      try { stored = JSON.parse(doc.extracted_data || "{}") || {}; } catch (e) { stored = {}; }
+      const rows = transactions
+        .filter((t) => t.document_id === doc.id)
+        .map((t) => ({
+          ...t,
+          amount: t.type === "credit" ? Math.abs(t.amount || 0) : -Math.abs(t.amount || 0),
+        }));
+      return { doc, rows, summary: buildStatementSummary(rows, stored) };
+    })
+    .filter((item) => item.rows.length > 0);
+
   return (
     <PullToRefresh onRefresh={loadData}>
       <div className="flex flex-col gap-5">
@@ -259,6 +294,52 @@ Provide a clear, professional explanation. Include:
             </p>
           </div>
         </div>
+
+        {/* Statement summaries */}
+        {statementSummaries.length > 0 && (
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-end justify-between gap-2">
+              <h2 className="sb-display" style={{ fontSize: 22, lineHeight: 1.1, color: "var(--sb-ink)" }}>
+                Statement summaries
+              </h2>
+              <p className="text-[12px]" style={{ color: "var(--sb-muted)" }}>
+                Opening and closing balances for each uploaded statement
+              </p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {statementSummaries.map(({ doc, rows, summary }) => (
+                <div key={doc.id} className="sb-card" style={{ padding: 20 }}>
+                  <p className="truncate text-[13px] font-semibold" style={{ color: "var(--sb-ink)" }}>{doc.name}</p>
+                  <p className="text-[11px]" style={{ color: "var(--sb-muted)" }}>
+                    {moment(doc.created_date).format("DD MMM YYYY")} · {rows.length} transactions
+                  </p>
+                  <h3 className="sb-display mt-3" style={{ fontSize: 18, color: "var(--sb-ink)" }}>Summary</h3>
+                  <div className="mt-2" style={{ borderTop: "1px solid var(--sb-border)" }}>
+                    {[
+                      { label: "Opening balance", value: summary.opening_balance },
+                      { label: "Total Credit", value: summary.total_credit },
+                      { label: "Total Debit", value: summary.total_debit },
+                      { label: "Total Fees*", value: summary.total_fees },
+                    ].map((row) => (
+                      <div
+                        key={row.label}
+                        className="flex items-center justify-between py-2 text-[12.5px]"
+                        style={{ borderBottom: "1px solid var(--sb-border)" }}
+                      >
+                        <span style={{ color: "var(--sb-muted)" }}>{row.label}</span>
+                        <span className="sb-money font-semibold" style={{ color: "var(--sb-ink)" }}>{formatRand(row.value)}</span>
+                      </div>
+                    ))}
+                    <div className="flex items-center justify-between pt-2 text-[12.5px]">
+                      <span style={{ color: "var(--sb-ink)" }}>Closing balance</span>
+                      <span className="sb-money font-semibold" style={{ color: "var(--sb-ink)" }}>{formatRand(summary.closing_balance)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Main card */}
         <div className="sb-card" style={{ padding: 0 }}>
@@ -386,14 +467,25 @@ Provide a clear, professional explanation. Include:
                           <span className={STATUS_CHIP[tx.status] || "sb-chip sb-chip-amber"}>{tx.status}</span>
                         </td>
                         <td className="px-5 py-3.5 text-right">
-                          <button
-                            type="button"
-                            onClick={() => handleAIExplain(tx)}
-                            className="text-[12px] font-semibold transition-opacity hover:opacity-70"
-                            style={{ color: "#1F6FD1", background: "transparent", border: 0, textDecoration: "none" }}
-                          >
-                            Explain
-                          </button>
+                          <div className="inline-flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setDetailTx(tx)}
+                              aria-label={`View details for ${tx.description}`}
+                              className="grid h-8 w-8 place-items-center rounded-full transition-opacity hover:opacity-70"
+                              style={{ border: "1px solid var(--sb-border)", color: "var(--sb-muted)", background: "transparent" }}
+                            >
+                              <Eye size={15} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleAIExplain(tx)}
+                              className="text-[12px] font-semibold transition-opacity hover:opacity-70"
+                              style={{ color: "#1F6FD1", background: "transparent", border: 0, textDecoration: "none" }}
+                            >
+                              Explain
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -431,6 +523,52 @@ Provide a clear, professional explanation. Include:
                 </div>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Transaction detail Dialog */}
+        <Dialog open={!!detailTx} onOpenChange={() => setDetailTx(null)}>
+          <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="sb-display flex items-center gap-2" style={{ fontSize: 24, fontWeight: 400 }}>
+                <Eye size={16} style={{ color: "var(--sb-brand-2)" }} /> Transaction details
+              </DialogTitle>
+            </DialogHeader>
+            {detailTx && (() => {
+              const statement = statements.find((doc) => doc.id === detailTx.document_id);
+              const isIn = detailTx.type === "credit";
+              return (
+                <div className="mt-2 space-y-1.5 rounded-[16px] p-4 text-[13px]" style={{ background: "var(--sb-soft)" }}>
+                  <DetailRow label="Description" value={detailTx.description} />
+                  <DetailRow label="Date" value={moment(detailTx.date).format("DD MMM YYYY")} />
+                  <DetailRow
+                    label="Amount"
+                    value={`${isIn ? "+" : "−"}${formatRand(Math.abs(detailTx.amount || 0))}`}
+                  />
+                  <DetailRow label="Type" value={isIn ? "Credit" : "Debit"} />
+                  <DetailRow label="Status" value={detailTx.status} />
+                  <DetailRow label="Category" value={categoryLabel(detailTx) || "Uncategorized"} />
+                  <DetailRow label="Account" value={detailTx.account_name} />
+                  <DetailRow label="Reference" value={detailTx.reference} />
+                  <DetailRow label="Fee" value={detailTx.fee ? formatRand(detailTx.fee) : null} />
+                  <DetailRow
+                    label="Running balance"
+                    value={detailTx.balance != null ? formatRand(detailTx.balance) : null}
+                  />
+                  <DetailRow label="Bank" value={detailTx.bank_name} />
+                  <DetailRow label="Statement" value={statement?.name} />
+                  <DetailRow label="Source" value={detailTx.source} />
+                  <DetailRow
+                    label="AI confidence"
+                    value={detailTx.ai_confidence != null ? `${detailTx.ai_confidence}%` : null}
+                  />
+                  <DetailRow
+                    label="Imported"
+                    value={detailTx.created_date ? moment(detailTx.created_date).format("DD MMM YYYY HH:mm") : null}
+                  />
+                </div>
+              );
+            })()}
           </DialogContent>
         </Dialog>
       </div>

@@ -66,7 +66,7 @@ export default function UploadStatement() {
     try {
       // Read the statement first: nothing is stored, and a locked file asks for
       // its password, before any document record is created.
-      const { transactions: txs, bank_name } = await extractBankTransactions(file, { password });
+      const { transactions: txs, bank_name, summary } = await extractBankTransactions(file, { password });
 
       if (txs.length === 0) {
         toast({
@@ -111,6 +111,8 @@ export default function UploadStatement() {
             type: cat.type,
             category: cat.category,
             vat_amount: cat.vat_amount,
+            fee: tx.fee || 0,
+            balance: tx.balance ?? null,
             reference: tx.reference || "",
             source: "bank_statement",
             status: cat.confidence > 80 ? "allocated" : "unallocated",
@@ -139,7 +141,9 @@ export default function UploadStatement() {
         await db.entities.Transaction.bulkCreate(categorized);
         await db.entities.Document.update(document.id, {
           status: "processed",
-          extracted_data: JSON.stringify({ transaction_count: categorized.length, bank_name }),
+          // Opening/closing balances and the statement's own totals live with the
+          // document, so the transaction page can summarise it as printed.
+          extracted_data: JSON.stringify({ ...summary, bank_name }),
         });
 
         setResults({ total: txs.length, imported: categorized.length, bank: bank_name });
