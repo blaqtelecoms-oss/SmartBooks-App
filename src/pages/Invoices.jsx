@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { useOutletContext } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import { db } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Trash2, Loader2, FileText } from "lucide-react";
+import { Plus, Trash2, Loader2, FileText, Paperclip } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import ProofOfPaymentDialog from "@/components/invoices/ProofOfPaymentDialog";
+import InvoiceCards from "@/components/mobile/InvoiceCards";
 
 export default function Invoices() {
   const { currentCompany } = useOutletContext();
@@ -16,6 +18,7 @@ export default function Invoices() {
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [payingInvoice, setPayingInvoice] = useState(null);
   const [form, setForm] = useState({ contact_id: "", issue_date: new Date().toISOString().split("T")[0], due_date: "", subtotal: 0, vat_amount: 0, notes: "" });
 
   useEffect(() => { if (currentCompany) loadData(); }, [currentCompany]);
@@ -65,24 +68,38 @@ export default function Invoices() {
     }
   };
 
-  const handleMarkPaid = async (invoice) => {
+  // Runs only once the proof of payment is safely stored: the invoice keeps a
+  // reference to it, and only then is the payment posted to the transactions.
+  const handleConfirmPaid = async (proofPath) => {
+    const invoice = payingInvoice;
+    if (!invoice) return;
+    await db.entities.Invoice.update(invoice.id, {
+      status: "paid",
+      proof_of_payment_url: proofPath,
+    });
+    await db.entities.Transaction.create({
+      company_id: currentCompany.id,
+      date: new Date().toISOString().split("T")[0],
+      description: `Payment received — ${invoice.invoice_number}`,
+      amount: invoice.total_amount,
+      type: "credit",
+      source: "invoice",
+      status: "allocated",
+      reference: invoice.invoice_number,
+    });
+    setPayingInvoice(null);
+    await loadData();
+    toast({ title: "Invoice marked as paid", description: "Proof of payment attached." });
+  };
+
+  const openProof = async (invoice) => {
     try {
-      await db.entities.Invoice.update(invoice.id, { status: "paid" });
-      // Post a cash-received transaction
-      await db.entities.Transaction.create({
-        company_id: currentCompany.id,
-        date: new Date().toISOString().split("T")[0],
-        description: `Payment received — ${invoice.invoice_number}`,
-        amount: invoice.total_amount,
-        type: "credit",
-        source: "invoice",
-        status: "allocated",
-        reference: invoice.invoice_number,
+      const { signed_url } = await db.integrations.Core.CreateFileSignedUrl({
+        file_uri: invoice.proof_of_payment_url,
       });
-      await loadData();
-      toast({ title: "Invoice marked as paid" });
+      window.open(signed_url, "_blank", "noopener,noreferrer");
     } catch (e) {
-      toast({ title: "Error marking as paid", description: e.message, variant: "destructive" });
+      toast({ title: "Could not open proof", description: e.message, variant: "destructive" });
     }
   };
 
@@ -118,7 +135,16 @@ export default function Invoices() {
           <p className="text-[13px] text-[#6B6B72] mt-1">Create your first customer invoice to get started</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-[#E5E5E8] overflow-hidden">
+        <>
+        <InvoiceCards
+          invoices={invoices}
+          contacts={contacts}
+          onProof={openProof}
+          onPay={setPayingInvoice}
+          onDelete={handleDelete}
+          formatR={formatR}
+        />
+        <div className="hidden overflow-hidden rounded-xl border border-[#E5E5E8] bg-white md:block">
           <div className="overflow-x-auto">
             <table className="w-full text-[13px]">
               <thead>
@@ -141,17 +167,22 @@ export default function Invoices() {
                       <td className="px-4 py-3 text-[#6B6B72]">{inv.due_date}</td>
                       <td className="px-4 py-3 text-right text-[#0F0F0F] font-medium">{formatR(inv.total_amount)}</td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                          inv.status === "paid" ? "bg-green-50 text-green-700" :
-                          inv.status === "sent" ? "bg-blue-50 text-blue-700" :
-                          inv.status === "overdue" ? "bg-red-50 text-red-600" :
-                          "bg-gray-100 text-gray-700"
-                        }`}>{inv.status}</span>
+                        <span className={
+                          inv.status === "paid" ? "sb-chip sb-chip-green" :
+                          inv.status === "sent" ? "sb-chip sb-chip-blue" :
+                          inv.status === "overdue" ? "sb-chip sb-chip-red" :
+                          "sb-chip"
+                        }>{inv.status}</span>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
+                          {inv.proof_of_payment_url && (
+                            <button onClick={() => openProof(inv)} className="inline-flex items-center gap-1 text-[12px] px-2 py-1 rounded border border-[#E5E5E8] text-[#0F0F0F] hover:bg-[#F7F7FA]" title="Open proof of payment">
+                              <Paperclip size={12} /> Proof
+                            </button>
+                          )}
                           {inv.status !== "paid" && (
-                            <button onClick={() => handleMarkPaid(inv)} className="text-[12px] px-2 py-1 rounded bg-green-600 text-white hover:bg-green-700">
+                            <button onClick={() => setPayingInvoice(inv)} className="text-[12px] px-2 py-1 rounded bg-green-600 text-white hover:bg-green-700">
                               Mark Paid
                             </button>
                           )}
@@ -167,6 +198,7 @@ export default function Invoices() {
             </table>
           </div>
         </div>
+        </>
       )}
 
       {/* Create dialog */}
@@ -180,9 +212,14 @@ export default function Invoices() {
                 <SelectTrigger className="mt-1"><SelectValue placeholder="Select customer" /></SelectTrigger>
                 <SelectContent>
                   {contacts.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                  {contacts.length === 0 && <SelectItem value="" disabled>No customers — add in Aging tab</SelectItem>}
+                  {contacts.length === 0 && <SelectItem value="" disabled>No customers yet</SelectItem>}
                 </SelectContent>
               </Select>
+              {contacts.length === 0 && (
+                <Link to="/customers" className="inline-block text-[11px] mt-1 underline text-[#0F0F0F]">
+                  Add a customer first
+                </Link>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label className="text-[12px] text-[#6B6B72]">Issue Date</Label><Input type="date" value={form.issue_date} onChange={e => setForm({ ...form, issue_date: e.target.value })} className="mt-1 text-[13px]" /></div>
@@ -200,6 +237,13 @@ export default function Invoices() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ProofOfPaymentDialog
+        invoice={payingInvoice}
+        companyId={currentCompany.id}
+        onClose={() => setPayingInvoice(null)}
+        onPaid={handleConfirmPaid}
+      />
     </div>
   );
 }

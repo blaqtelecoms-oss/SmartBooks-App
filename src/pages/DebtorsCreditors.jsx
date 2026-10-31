@@ -11,6 +11,7 @@ import {
   NoCompany,
   TotalLine,
 } from "@/components/accounting/ReportShell";
+import { MobileList, MobileCard, MobileMetricGrid, MobileMetric } from "@/components/mobile/MobileCards";
 
 const BUCKETS = [
   { key: "current", label: "Current" },
@@ -28,7 +29,31 @@ function AgingCard({ title, group, emptyText }) {
       {group.rows.length === 0 ? (
         <ReportEmpty>{emptyText}</ReportEmpty>
       ) : (
-        <div className="sb-table-scroll">
+        <>
+        <MobileList>
+          {group.rows.map((row) => (
+            <MobileCard key={row.id}>
+              <div className="flex items-start justify-between gap-3">
+                <p className="min-w-0 text-[14px] font-semibold leading-snug" style={{ color: "var(--sb-ink)", overflowWrap: "anywhere" }}>
+                  {row.name}
+                </p>
+                <span className="sb-money shrink-0 text-[14px] font-bold" style={{ color: "var(--sb-ink)" }}>
+                  {formatRand(row.buckets.total)}
+                </span>
+              </div>
+              <MobileMetricGrid>
+                {BUCKETS.map((bucket) => (
+                  <MobileMetric
+                    key={bucket.key}
+                    label={bucket.label}
+                    value={row.buckets[bucket.key] ? formatRand(row.buckets[bucket.key]) : "—"}
+                  />
+                ))}
+              </MobileMetricGrid>
+            </MobileCard>
+          ))}
+        </MobileList>
+        <div className="sb-table-scroll hidden md:block">
           <table className="w-full text-[13px]">
             <thead>
               <tr style={{ color: "var(--sb-muted)" }}>
@@ -60,6 +85,7 @@ function AgingCard({ title, group, emptyText }) {
             </tbody>
           </table>
         </div>
+        </>
       )}
     </ReportCard>
   );

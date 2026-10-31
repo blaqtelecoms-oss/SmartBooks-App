@@ -150,6 +150,8 @@ const toAppUser = async (authUser) => {
     // its onboarding is done. Null/false for accounts created before portals existed.
     portal: profile?.portal || meta.portal || null,
     onboarding_completed: profile?.onboarding_completed === true,
+    // True once the six-digit email code has been confirmed.
+    email_verified: !!profile?.email_verified_at,
     avatar_url: meta.avatar_url || null,
     // Business details edited on the profile page live in the user's metadata.
     business_name: meta.business_name || null,
@@ -233,16 +235,24 @@ const auth = {
   },
   // Session is persisted by supabase-js itself, so this is a no-op kept for call compatibility.
   setToken() {},
-  async resetPasswordRequest(email) {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    if (error) fail(error);
+  // A six-digit code is emailed through Resend (supabase/functions/send-verification-code).
+  async sendVerificationCode() {
+    return functions.invoke('send-verification-code', {});
   },
-  // Called from /reset-password after the recovery link signs the user in.
-  async resetPassword({ newPassword }) {
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    if (error) fail(error);
+  async verifyEmailCode(code) {
+    return functions.invoke('verify-email-code', { code });
+  },
+  // Emails a single-use reset link through Resend; always reports success so the
+  // page never reveals whether an account exists.
+  async resetPasswordRequest(email) {
+    return functions.invoke('request-password-reset', {
+      email,
+      app_url: window.location.origin,
+    });
+  },
+  // Called from /reset-password with the token from the emailed link.
+  async resetPassword({ newPassword, token }) {
+    return functions.invoke('reset-password', { token, new_password: newPassword });
   },
   // Profile picture lives in the auth user's metadata, so no schema change is needed.
   async updateAvatar(avatarUrl) {
@@ -341,7 +351,19 @@ const integrations = {
 const functions = {
   async invoke(name, body) {
     const { data, error } = await supabase.functions.invoke(name, { body });
-    if (error) fail(error);
+    if (error) {
+      // Edge Functions return a JSON { error } body; surface it instead of the generic non-2xx message.
+      let message = error.message;
+      try {
+        const detail = await error.context?.clone?.().json();
+        if (detail?.error) message = detail.error;
+      } catch {
+        // Keep the generic message when the body is not JSON.
+      }
+      const err = new Error(message);
+      err.status = error.context?.status;
+      throw err;
+    }
     return { data };
   },
 };

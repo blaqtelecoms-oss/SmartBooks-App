@@ -56,7 +56,8 @@ export default function PortalPicker({ value, onChange }) {
               <span className="block truncate text-[13px] font-semibold text-[#0B1F1A]">
                 {label}
               </span>
-              <span className="block truncate text-[11px] text-[#5B6B64]">
+              {/* Supporting text is hidden on small screens so nothing gets clipped */}
+              <span className="hidden truncate text-[11px] text-[#5B6B64] sm:block">
                 {description}
               </span>
             </span>

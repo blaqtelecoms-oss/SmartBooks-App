@@ -252,7 +252,7 @@ export default function AccountantOnboarding() {
               type="button"
               onClick={handleNext}
               disabled={saving}
-              className="h-11 rounded-lg bg-[var(--sb-brand)] text-[13px] font-semibold text-white hover:opacity-90 sm:order-2 sm:min-w-[180px]"
+              className="h-12 rounded-xl bg-[var(--sb-brand)] text-[13.5px] font-semibold text-white shadow-[0_14px_28px_-16px_rgba(15,81,50,0.9)] hover:opacity-90 sm:order-2 sm:h-11 sm:rounded-lg sm:text-[13px] sm:min-w-[180px]"
             >
               {saving ? (
                 <>

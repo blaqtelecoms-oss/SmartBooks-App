@@ -131,21 +131,21 @@ export default function Team() {
           {members.map((m, i) => {
             const Icon = ROLE_ICONS[m.role] || Users;
             return (
-              <div key={m.id} className={`flex items-center justify-between px-5 py-3.5 ${i < members.length - 1 ? "border-b border-[#F1F1F4]" : ""} hover:bg-[#F7F7FA] transition-colors`}>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#F1F1F4] flex items-center justify-center text-[12px] font-medium text-[#6B6B72]">
+              <div key={m.id} className={`flex items-center justify-between gap-2 px-4 py-3.5 sm:px-5 ${i < members.length - 1 ? "border-b border-[#F1F1F4]" : ""} hover:bg-[#F7F7FA] transition-colors`}>
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="w-8 h-8 shrink-0 rounded-full bg-[#F1F1F4] flex items-center justify-center text-[12px] font-medium text-[#6B6B72]">
                     {(m.user_id || "?").charAt(0).toUpperCase()}
                   </div>
-                  <div>
-                    <p className="text-[13px] font-medium text-[#0F0F0F]">{m.user_id}</p>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                      m.status === "active" ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"
-                    }`}>{m.status}</span>
+                  <div className="min-w-0">
+                    <p className="truncate text-[13px] font-medium text-[#0F0F0F]">{m.user_id}</p>
+                    <span className={m.status === "active" ? "sb-chip sb-chip-green" : "sb-chip sb-chip-amber"}>
+                      {m.status}
+                    </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex shrink-0 items-center gap-2 sm:gap-3">
                   <Select value={m.role} onValueChange={v => handleRoleChange(m.id, v)}>
-                    <SelectTrigger className="w-[140px] h-8 text-[12px] border-[#E5E5E8]">
+                    <SelectTrigger className="h-8 w-[112px] text-[12px] border-[#E5E5E8] sm:w-[140px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import { db } from "@/api/supabaseClient";
-import { extractTextFromFile, parseDocumentData } from "@/lib/documentExtraction";
+import { extractTextFromFile, isPasswordError, parseDocumentData } from "@/lib/documentExtraction";
+import DocumentPasswordDialog from "@/components/documents/DocumentPasswordDialog";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, Image, Loader2, Eye, Trash2 } from "lucide-react";
+import { FileText, Image, Loader2, Eye, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import moment from "moment";
@@ -16,6 +17,10 @@ export default function Documents() {
   const [uploading, setUploading] = useState(false);
   const [ocrResult, setOcrResult] = useState(null);
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  // A locked document stays here until its password is entered.
+  const [lockedFile, setLockedFile] = useState(null);
+  const [passwordError, setPasswordError] = useState("");
 
   useEffect(() => {
     if (currentCompany) loadDocs();
@@ -29,11 +34,15 @@ export default function Documents() {
     setLoading(false);
   };
 
-  const handleUpload = async (e, type) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const processDocument = async (file, type, password = "") => {
     setUploading(true);
+    setPasswordError("");
     try {
+      // Client-side extraction (OCR for images, text extraction for PDFs) — no AI needed.
+      // Read first, so a locked document can ask for its password before it is stored.
+      const rawText = await extractTextFromFile(file, { password });
+      const extracted = parseDocumentData(rawText, type);
+
       const { file_url } = await db.integrations.Core.UploadFile({ file, companyId: currentCompany.id, kind: type });
 
       const doc = await db.entities.Document.create({
@@ -45,10 +54,6 @@ export default function Documents() {
         status: "processing"
       });
 
-      // Client-side extraction (OCR for images, text extraction for PDFs) — no AI needed
-      const rawText = await extractTextFromFile(file);
-      const extracted = parseDocumentData(rawText, type);
-
       await db.entities.Document.update(doc.id, {
         status: "processed",
         extracted_data: JSON.stringify(extracted)
@@ -56,10 +61,33 @@ export default function Documents() {
 
       await loadDocs();
       toast({ title: `${type === "receipt" ? "Receipt" : "Invoice"} processed` });
+      return true;
     } catch (e) {
-      toast({ title: "Upload failed", variant: "destructive" });
+      if (isPasswordError(e)) {
+        setLockedFile({ file, type });
+        setPasswordError(e.message);
+      } else {
+        toast({ title: "Upload failed", description: e.message, variant: "destructive" });
+      }
+      return false;
+    } finally {
+      setUploading(false);
     }
-    setUploading(false);
+  };
+
+  const handleUpload = (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    processDocument(file, type);
+  };
+
+  const handleUnlock = async (password) => {
+    if (!lockedFile) return;
+    const ok = await processDocument(lockedFile.file, lockedFile.type, password);
+    if (ok) {
+      setLockedFile(null);
+      setPasswordError("");
+    }
   };
 
   const viewExtracted = (doc) => {
@@ -68,14 +96,20 @@ export default function Documents() {
   };
 
   const handleDelete = async (doc) => {
+    setDeletingId(doc.id);
     try {
       if (doc.file_url) {
-        await db.integrations.Core.DeleteFile({ file_uri: doc.file_url });
+        // A file that is already gone must not block removing the record.
+        await db.integrations.Core.DeleteFile({ file_uri: doc.file_url }).catch(() => {});
       }
       await db.entities.Document.delete(doc.id);
       await loadDocs();
       toast({ title: "Document deleted" });
-    } catch (e) {}
+    } catch (e) {
+      toast({ title: "Could not delete document", description: e.message, variant: "destructive" });
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const formatR = (v) => `R ${(v || 0).toLocaleString("en-ZA", { minimumFractionDigits: 2 })}`;
@@ -134,12 +168,12 @@ export default function Documents() {
                     <p className="text-[11px] text-[#6B6B72]">{moment(doc.created_date).format("DD MMM YYYY")}</p>
                   </div>
                 </div>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                  doc.status === "processed" ? "bg-green-50 text-green-700" :
-                  doc.status === "processing" ? "bg-amber-50 text-amber-700" :
-                  doc.status === "error" ? "bg-red-50 text-red-700" :
-                  "bg-gray-100 text-gray-700"
-                }`}>{doc.status}</span>
+                <span className={
+                  doc.status === "processed" ? "sb-chip sb-chip-green" :
+                  doc.status === "processing" ? "sb-chip sb-chip-amber" :
+                  doc.status === "error" ? "sb-chip sb-chip-red" :
+                  "sb-chip"
+                }>{doc.status}</span>
               </div>
               <div className="flex gap-1.5 mt-3">
                 {doc.extracted_data && (
@@ -147,8 +181,12 @@ export default function Documents() {
                     <Eye size={12} /> View Data
                   </button>
                 )}
-                <button onClick={() => handleDelete(doc)} className="text-[11px] text-[#6B6B72] hover:text-red-500 font-medium flex items-center gap-1 ml-auto">
-                  <Trash2 size={12} /> Delete
+                <button
+                  onClick={() => handleDelete(doc)}
+                  disabled={deletingId === doc.id}
+                  className="text-[11px] text-[#6B6B72] hover:text-red-500 font-medium flex items-center gap-1 ml-auto disabled:opacity-50"
+                >
+                  {deletingId === doc.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />} Delete
                 </button>
               </div>
             </div>
@@ -170,7 +208,9 @@ export default function Documents() {
               {ocrResult.document_number && <div className="flex justify-between"><span className="text-[#6B6B72]">Document No.</span><span className="font-medium">{ocrResult.document_number}</span></div>}
               {ocrResult.line_items?.length > 0 && (
                 <div className="pt-2 border-t border-[#E5E5E8]">
-                  <p className="text-[11px] text-[#6B6B72] uppercase tracking-wider mb-2">Line Items</p>
+                  <p className="text-[11px] text-[#6B6B72] uppercase tracking-wider mb-2">
+                    Transactions ({ocrResult.line_items.length})
+                  </p>
                   {ocrResult.line_items.map((item, i) => (
                     <div key={i} className="flex justify-between py-1">
                       <span>{item.description}</span>
@@ -188,6 +228,19 @@ export default function Documents() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Password for a locked receipt or invoice */}
+      <DocumentPasswordDialog
+        open={!!lockedFile}
+        fileName={lockedFile?.file?.name}
+        error={passwordError}
+        busy={uploading}
+        onSubmit={handleUnlock}
+        onClose={() => {
+          setLockedFile(null);
+          setPasswordError("");
+        }}
+      />
     </div>
   );
 }

@@ -11,17 +11,20 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
     setLoading(true);
     try {
+      // Reports success for unknown emails too, so this never reveals whether an account exists.
       await db.auth.resetPasswordRequest(email);
-    } catch {
-      // Always show success regardless
+      setSent(true);
+    } catch (err) {
+      setError(err.message || "We could not send the reset email. Please try again.");
     } finally {
       setLoading(false);
-      setSent(true);
     }
   };
 
@@ -42,6 +45,9 @@ export default function ForgotPassword() {
         </p>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="email">Email address</Label>
             <div className="relative">
@@ -59,7 +65,11 @@ export default function ForgotPassword() {
               />
             </div>
           </div>
-          <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
+          <Button
+            type="submit"
+            className="h-[52px] w-full text-[14px] font-semibold shadow-[0_16px_32px_-16px_rgba(11,31,26,0.65)] sm:h-12"
+            disabled={loading}
+          >
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />

@@ -22,10 +22,11 @@ const buttonVariants = cva(
         accent: "bg-[var(--sb-lime)] text-[#0b1f1a] hover:brightness-95",
       },
       size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 px-3 text-xs",
-        lg: "h-10 px-6",
-        icon: "h-9 w-9",
+        // Roomier touch targets on phones, the original density from sm up
+        default: "h-10 px-5 py-2 sm:h-9 sm:px-4",
+        sm: "h-9 px-3.5 text-xs sm:h-8 sm:px-3",
+        lg: "h-11 px-6 text-[13.5px] sm:h-10 sm:text-[13px]",
+        icon: "h-10 w-10 sm:h-9 sm:w-9",
       },
     },
     defaultVariants: {

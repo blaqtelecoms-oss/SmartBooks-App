@@ -11,10 +11,12 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
+import VerifyEmail from '@/pages/VerifyEmail';
 import AppLayout from '@/components/layout/AppLayout';
 import Dashboard from '@/pages/Dashboard';
 import Companies from '@/pages/Companies';
 import Transactions from '@/pages/Transactions';
+import TransactionDetail from '@/pages/TransactionDetail';
 import UploadStatement from '@/pages/UploadStatement';
 import ChartOfAccounts from '@/pages/ChartOfAccounts';
 import Reports from '@/pages/Reports';
@@ -33,6 +35,7 @@ import Inventory from '@/pages/Inventory';
 import Services from '@/pages/Services';
 import Onboarding from '@/pages/Onboarding';
 import Invoices from '@/pages/Invoices';
+import Customers from '@/pages/Customers';
 import AgingReports from '@/pages/AgingReports';
 import TrialBalance from '@/pages/TrialBalance';
 import BalanceSheet from '@/pages/BalanceSheet';
@@ -70,12 +73,14 @@ const AuthenticatedApp = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/onboarding" element={<Onboarding />} />
         <Route element={<AppLayout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/companies" element={<Companies />} />
           <Route path="/transactions" element={<Transactions />} />
+          <Route path="/transactions/:id" element={<TransactionDetail />} />
           <Route path="/upload" element={<UploadStatement />} />
           <Route path="/rules" element={<AllocationRules />} />
           <Route path="/bank-rules" element={<BankRules />} />
@@ -83,6 +88,7 @@ const AuthenticatedApp = () => {
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/services" element={<Services />} />
           <Route path="/invoices" element={<Invoices />} />
+          <Route path="/customers" element={<Customers />} />
           <Route path="/trial-balance" element={<TrialBalance />} />
           <Route path="/balance-sheet" element={<BalanceSheet />} />
           <Route path="/profit-loss" element={<ProfitLoss />} />

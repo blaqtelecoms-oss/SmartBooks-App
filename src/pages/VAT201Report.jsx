@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Download, Loader2, FileText, ChevronDown, ChevronRight } from "lucide-react";
 import { calculateVAT201, exportVAT201CSV } from "@/lib/vat201Calculator";
 import { useToast } from "@/components/ui/use-toast";
+import VatBoxCards from "@/components/mobile/VatBoxCards";
 
 export default function VAT201Report() {
   const { currentCompany } = useOutletContext();
@@ -159,9 +160,16 @@ export default function VAT201Report() {
             </div>
           </div>
 
-          {/* Box breakdown */}
-          <div className="bg-white rounded-xl border border-[#E5E5E8] overflow-hidden">
-            <table className="w-full text-[13px]">
+          {/* Box breakdown — cards on phones, the full table from tablet up */}
+          <VatBoxCards
+            boxes={report.boxes}
+            expandedBox={expandedBox}
+            onToggle={setExpandedBox}
+            formatR={formatR}
+          />
+          <div className="hidden bg-white rounded-xl border border-[#E5E5E8] overflow-hidden md:block">
+            <div className="sb-table-scroll">
+            <table className="w-full min-w-[680px] text-[13px]">
               <thead>
                 <tr className="border-b border-[#E5E5E8]">
                   <th className="text-left px-4 py-3 font-medium text-[#6B6B72] text-[11px] uppercase tracking-wider">Box</th>
@@ -208,9 +216,11 @@ export default function VAT201Report() {
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         </>
       )}
+
     </div>
   );
 }

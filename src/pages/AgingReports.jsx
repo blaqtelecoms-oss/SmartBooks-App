@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Download, Loader2, Mail, Users } from "lucide-react";
 import { calculateAging, exportAgingCSV } from "@/lib/agingCalculator";
 import { useToast } from "@/components/ui/use-toast";
+import AgingContactCards from "@/components/mobile/AgingContactCards";
 
 export default function AgingReports() {
   const { currentCompany } = useOutletContext();
@@ -133,7 +134,14 @@ export default function AgingReports() {
           <p className="text-[13px] text-[#6B6B72] mt-1">Create invoices with contacts to see aging data</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-[#E5E5E8] overflow-hidden">
+        <>
+        <AgingContactCards
+          rows={aging.contacts}
+          sending={sending}
+          onSend={sendStatement}
+          formatR={formatR}
+        />
+        <div className="hidden overflow-hidden rounded-xl border border-[#E5E5E8] bg-white md:block">
           <div className="overflow-x-auto">
             <table className="w-full text-[13px]">
               <thead>
@@ -183,6 +191,7 @@ export default function AgingReports() {
             </table>
           </div>
         </div>
+        </>
       )}
     </div>
   );

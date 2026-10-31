@@ -8,6 +8,14 @@ export const corsHeaders = {
 export const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
+// Service-role client: bypasses RLS. Only for flows that must run without a user
+// session (verification codes, password resets) — never forward this client to a caller.
+export function adminClient(): SupabaseClient {
+  return createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
 // Returns a client acting AS THE CALLER (RLS applies), so a user can only touch companies they belong to.
 export async function userClient(req: Request): Promise<{ db: SupabaseClient; userId: string } | null> {
   const authHeader = req.headers.get('Authorization');

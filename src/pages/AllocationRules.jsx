@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Sparkles, Plus, Trash2, Loader2, Brain, Zap, TrendingUp, AlertCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import AllocationRuleCards from "@/components/mobile/AllocationRuleCards";
 
 export default function AllocationRules() {
   const { currentCompany } = useOutletContext();
@@ -206,7 +207,14 @@ export default function AllocationRules() {
           </Button>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-[#E5E5E8] overflow-hidden">
+        <>
+        <AllocationRuleCards rules={rules} onDelete={handleDelete} onToggle={handleToggle} />
+        {!showForm && (
+          <Button onClick={() => setShowForm(true)} variant="outline" className="w-full text-[13px] h-10 rounded-lg md:hidden">
+            <Plus size={14} className="mr-1.5" /> Add Manual Rule
+          </Button>
+        )}
+        <div className="hidden bg-white rounded-xl border border-[#E5E5E8] overflow-hidden md:block">
           {!showForm && (
             <div className="px-4 py-3 border-b border-[#E5E5E8]">
               <Button onClick={() => setShowForm(true)} variant="outline" className="text-[13px] h-8 rounded-lg">
@@ -239,7 +247,7 @@ export default function AllocationRules() {
                     </td>
                     <td className="px-4 py-3 text-[#0F0F0F]">{rule.account_name || "—"}</td>
                     <td className="px-4 py-3">
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${rule.source === "ai_learned" ? "bg-purple-50 text-purple-700" : "bg-gray-100 text-gray-700"}`}>
+                      <span className={rule.source === "ai_learned" ? "sb-chip sb-chip-blue" : "sb-chip"}>
                         {rule.source === "ai_learned" ? "AI Learned" : "Manual"}
                       </span>
                     </td>
@@ -258,6 +266,7 @@ export default function AllocationRules() {
             </table>
           </div>
         </div>
+        </>
       )}
     </div>
   );

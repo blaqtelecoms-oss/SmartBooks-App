@@ -9,6 +9,7 @@ import {
   ReportLoading,
   NoCompany,
 } from "@/components/accounting/ReportShell";
+import { MobileList, MobileCard, MobileField } from "@/components/mobile/MobileCards";
 
 export default function Expenses() {
   const { company, rows, transactions, loading } = useCompanyLedger();
@@ -72,7 +73,34 @@ export default function Expenses() {
               {entries.length === 0 ? (
                 <ReportEmpty>Nothing allocated to expense accounts yet.</ReportEmpty>
               ) : (
-                <div className="sb-table-scroll">
+                <>
+                <MobileList>
+                  {entries.slice(0, 25).map((entry) => {
+                    const account = rows.find((r) => r.id === entry.account_id);
+                    return (
+                      <MobileCard key={entry.id}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-[13.5px] font-semibold leading-snug" style={{ color: "var(--sb-ink)", overflowWrap: "anywhere" }}>
+                              {entry.description}
+                            </p>
+                            {entry.supplier_name && (
+                              <p className="mt-0.5 text-[11.5px]" style={{ color: "var(--sb-muted)", overflowWrap: "anywhere" }}>
+                                {entry.supplier_name}
+                              </p>
+                            )}
+                          </div>
+                          <span className="sb-money shrink-0 text-[13px] font-semibold" style={{ color: "var(--sb-ink)" }}>
+                            {formatRand(entry.amount)}
+                          </span>
+                        </div>
+                        <MobileField label="Date" value={entry.date} />
+                        <MobileField label="Account" value={account?.name || entry.account_name || "—"} />
+                      </MobileCard>
+                    );
+                  })}
+                </MobileList>
+                <div className="sb-table-scroll hidden md:block">
                   <table className="w-full text-[13px]">
                     <thead>
                       <tr style={{ color: "var(--sb-muted)" }}>
@@ -112,6 +140,7 @@ export default function Expenses() {
                     </tbody>
                   </table>
                 </div>
+                </>
               )}
             </ReportCard>
           </div>

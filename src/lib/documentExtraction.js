@@ -1,74 +1,140 @@
 /**
  * Client-side document extraction without AI.
  * - Images: Tesseract.js OCR
- * - PDFs: pdfjs-dist text extraction
+ * - PDFs: pdfjs-dist text extraction (layout aware), OCR fallback for scans
  * - Parses extracted text with regex for common SA receipt/invoice fields
  * - Categorizes documents based on keyword detection
  */
 
-const AMOUNT_RE = /R?\s*([\d][\d,]*\.?\d{0,2})/;
+import { normalizeDate, parseMoneyToken, round2, stripDateTokens, tidyText } from "./amountParsing";
 
-const parseAmount = (str) => {
-  if (!str) return null;
-  const cleaned = str.replace(/[R\s]/g, "").replace(/,/g, "");
-  const n = parseFloat(cleaned);
-  return isNaN(n) ? null : n;
-};
+/** Extraction error codes for documents that need a password to be opened. */
+export const PASSWORD_REQUIRED = "PASSWORD_REQUIRED";
+export const PASSWORD_INVALID = "PASSWORD_INVALID";
+/** Extraction error code for a document no text could be read from. */
+export const UNREADABLE_DOCUMENT = "UNREADABLE_DOCUMENT";
+
+/** True when the error means "give me the document password" or "that one was wrong". */
+export const isPasswordError = (error) =>
+  error?.code === PASSWORD_REQUIRED || error?.code === PASSWORD_INVALID;
+
+const UNREADABLE_MESSAGE =
+  "We couldn't read any text from this document. Try a sharper photo, the original PDF, or a different file.";
+
+function ensureReadable(text) {
+  const value = String(text || "").trim();
+  if (value.replace(/\s/g, "").length === 0) {
+    const error = new Error(UNREADABLE_MESSAGE);
+    error.code = UNREADABLE_DOCUMENT;
+    throw error;
+  }
+  return value;
+}
 
 /**
  * Extract raw text from a file.
  * @param {File} file
+ * @param {object} [options]
+ * @param {string} [options.password] — password of a password-protected PDF
  * @returns {Promise<string>}
  */
-export async function extractTextFromFile(file) {
+export async function extractTextFromFile(file, { password } = {}) {
   const ext = file.name.split(".").pop().toLowerCase();
+  let text;
 
   if (ext === "pdf") {
-    return extractTextFromPdf(file);
+    text = await extractTextFromPdf(file, password);
+  } else if (["jpg", "jpeg", "png", "webp", "bmp", "gif", "tiff"].includes(ext)) {
+    text = await extractTextFromImage(file);
+  } else if (["txt", "csv"].includes(ext)) {
+    text = await file.text();
+  } else {
+    // Fallback: try as image
+    text = await extractTextFromImage(file);
   }
-  if (["jpg", "jpeg", "png", "webp", "bmp", "gif", "tiff"].includes(ext)) {
-    return extractTextFromImage(file);
-  }
-  if (["txt", "csv"].includes(ext)) {
-    return file.text();
-  }
-  // Fallback: try as image
-  return extractTextFromImage(file);
+
+  return ensureReadable(text);
 }
 
-async function extractTextFromPdf(file) {
+/**
+ * Rebuild text lines from pdfjs items by grouping them on their vertical
+ * position and ordering each line left to right. Statements print each column
+ * as its own item, so a naive item-by-item join mixes columns together.
+ */
+function textContentToLines(textContent, tolerance = 2.5) {
+  const items = (textContent?.items || [])
+    .filter((item) => typeof item?.str === "string" && item.str.trim() && item.transform)
+    .map((item) => ({ text: item.str, x: item.transform[4], y: item.transform[5] }));
+
+  const lines = [];
+  for (const item of items) {
+    let line = lines.find((candidate) => Math.abs(candidate.y - item.y) <= tolerance);
+    if (!line) {
+      line = { y: item.y, items: [] };
+      lines.push(line);
+    }
+    line.items.push(item);
+  }
+
+  return lines
+    .sort((a, b) => b.y - a.y)
+    .map((line) =>
+      line.items
+        .sort((a, b) => a.x - b.x)
+        .map((item) => item.text)
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim()
+    )
+    .filter(Boolean)
+    .join("\n");
+}
+
+async function extractTextFromPdf(file, password) {
   const arrayBuffer = await file.arrayBuffer();
   const pdfjsLib = await import("pdfjs-dist");
   pdfjsLib.GlobalWorkerOptions.workerSrc = (await import("pdfjs-dist/build/pdf.worker.mjs?url")).default;
 
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const pdf = await openPdf(pdfjsLib, arrayBuffer, password);
   let fullText = "";
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const textContent = await page.getTextContent();
-    // Reconstruct lines using hasEOL (pdfjs v4+) or Y-position grouping
-    let pageText = "";
-    for (const item of textContent.items) {
-      if (item.str !== undefined) {
-        pageText += item.str;
-        if (item.hasEOL) pageText += "\n";
-        else pageText += " ";
-      }
-    }
-    fullText += pageText + "\n";
+    fullText += textContentToLines(textContent) + "\n";
   }
 
   // If very little text was found, the PDF is likely scanned — fall back to OCR
   if (fullText.trim().length < 20) {
-    fullText = await ocrPdf(file, pdfjsLib);
+    fullText = await ocrPdf(file, pdfjsLib, password);
   }
 
   return fullText.trim();
 }
 
-async function ocrPdf(file, pdfjsLib) {
+/**
+ * Open a PDF, translating pdfjs password failures into actionable errors.
+ * @returns {Promise<object>} the loaded pdf document
+ */
+async function openPdf(pdfjsLib, data, password) {
+  try {
+    return await pdfjsLib.getDocument({ data, password: password || undefined }).promise;
+  } catch (error) {
+    if (error?.name !== "PasswordException") throw error;
+
+    // pdfjs uses code 1 for "no password given" and 2 for "incorrect password".
+    const invalid = error.code === 2 || /incorrect/i.test(error.message || "");
+    const message = invalid
+      ? "That password did not unlock this document. Please check it and try again."
+      : "This document is password protected. Enter its password to continue.";
+    const err = new Error(message);
+    err.code = invalid ? PASSWORD_INVALID : PASSWORD_REQUIRED;
+    throw err;
+  }
+}
+
+async function ocrPdf(file, pdfjsLib, password) {
   const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const pdf = await openPdf(pdfjsLib, arrayBuffer, password);
   const { createWorker } = await import("tesseract.js");
   const worker = await createWorker("eng");
   let fullText = "";
@@ -101,6 +167,136 @@ async function extractTextFromImage(file) {
   }
 }
 
+// ─── Receipt / invoice field parsing ───
+
+/** Lines that describe the document summary rather than a sold item. */
+const NON_ITEM_RE =
+  /^(?:sub\s*-?\s*total|subtotal|total|totals|grand\s+total|amount\s+due|balance(?:\s+due)?|change|cash|tendered?|rounding|round\s+off|discount|deposit|payment|vat|tax|invoice|receipt|date|time|cashier|server|till|slip|thanks?|thank\s+you|welcome|tel|phone|fax|email|address|registration|reg|customer|table|order|qty|quantity|price|unit|description|item)\b/i;
+
+/** Words that mark a line as a summary/payment line wherever they appear. */
+const NON_ITEM_CONTAINS_RE =
+  /\b(vat|tax\s+invoice|sub\s*-?\s*total|subtotal|total|amount\s+due|balance|change|tendered|cash|card|rounding|discount|savings|points)\b/i;
+
+/** A token counts as money only when it was written as money (decimals, R, CR/DR). */
+const isAmountToken = (token) => {
+  if (!parseMoneyToken(token)) return false;
+  return /[.,]|^R|^\(|[-+]$|(CR|DR)$/i.test(token);
+};
+
+/** The right-most money value on a line, or null. */
+function lastAmount(line, { allowWhole = true } = {}) {
+  const tokens = stripDateTokens(line).split(" ").filter(Boolean);
+  for (let i = tokens.length - 1; i >= 0; i -= 1) {
+    const money = parseMoneyToken(tokens[i], { allowWhole });
+    if (money) return money;
+  }
+  return null;
+}
+
+function findSupplierName(lines) {
+  for (const line of lines.slice(0, 10)) {
+    if (/^[\d\sR.,\-/]+$/.test(line)) continue;
+    if (/^(mon|tue|wed|thu|fri|sat|sun)/i.test(line)) continue;
+    if (/^(tax\s+invoice|invoice|receipt|tax|vat|statement|quotation|credit\s+note|slip|pro\s+forma)\b/i.test(line)) continue;
+    if (line.length < 3) continue;
+    return line;
+  }
+  return null;
+}
+
+function findVatNumber(text) {
+  const match = String(text).match(/\bVAT\s*(?:reg(?:istration)?\s*(?:no\.?|number|#)?|no\.?|number|#)?\s*[:#]?\s*(\d{10})\b/i);
+  return match ? match[1] : null;
+}
+
+function findDocumentDate(text) {
+  const patterns = [
+    /(\d{4}[\/.\-]\d{1,2}[\/.\-]\d{1,2})/,
+    /(\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4})/,
+    /(\d{1,2}[\s\-][A-Za-z]{3,9}\.?[\s\-,'’]*\d{2,4})/,
+    /([A-Za-z]{3,9}\.?\s+\d{1,2},?\s+\d{2,4})/,
+  ];
+  for (const pattern of patterns) {
+    const match = String(text).match(pattern);
+    if (match) return normalizeDate(match[1]) || tidyText(match[1]);
+  }
+  return null;
+}
+
+function findDocumentNumber(lines) {
+  const labeled =
+    /(?:tax\s+invoice|invoice|receipt|document|doc|slip|order|tax)\s*(?:no\.?|number|#|nr\.?|num)?\s*[:#]?\s*([A-Z0-9][A-Z0-9/\-]{1,24})/gi;
+  for (const line of lines) {
+    for (const match of line.matchAll(labeled)) {
+      const value = match[1].replace(/[.\s]+$/, "");
+      if (/\d/.test(value)) return value;
+    }
+  }
+  return null;
+}
+
+/** Subtotal, VAT and total, taken from the labelled summary lines of the document. */
+function findTotals(lines) {
+  let total = null;
+  let subtotal = null;
+  let vat_amount = null;
+
+  for (const line of lines) {
+    const label = tidyText(line.toLowerCase());
+    const money = lastAmount(line);
+    if (!money) continue;
+
+    if (/sub\s*-?\s*total|total\s*(?:excl|excluding)|excl(?:uding)?\s*vat|net\s*total|amount\s*excl/.test(label)) {
+      subtotal = money.value;
+      continue;
+    }
+    // "VAT No 4123456789" is not an amount — lastAmount already ignores the number.
+    const isVatLine = /^vat\b/.test(label) && !/^vat\s*(?:no|number|nr|reg|registration)\b/.test(label);
+    if (isVatLine || /\bvat\s*(?:amount|amt)\b/.test(label)) {
+      vat_amount = money.value;
+      continue;
+    }
+    if (/grand\s*total|total\s*due|amount\s*due|total\s*payable|balance\s*due|total\s*(?:incl|including)|^total\b/.test(label)) {
+      total = money.value;
+    }
+  }
+
+  if (total == null && subtotal != null && vat_amount != null) total = round2(subtotal + vat_amount);
+  if (vat_amount == null && total != null && subtotal != null) vat_amount = round2(total - subtotal);
+  if (subtotal == null && total != null && vat_amount != null) subtotal = round2(total - vat_amount);
+  if (vat_amount != null && vat_amount <= 0) vat_amount = null;
+
+  return { subtotal, vat_amount, total };
+}
+
+/** Every priced line on the document, in source order. */
+function findLineItems(lines) {
+  const items = [];
+  const seen = new Set();
+
+  for (const line of lines) {
+    const money = lastAmount(line, { allowWhole: false });
+    if (!money || money.value <= 0) continue;
+
+    const description = tidyText(
+      stripDateTokens(line)
+        .split(" ")
+        .filter((token) => token && !isAmountToken(token))
+        .join(" ")
+    );
+
+    if (!/[A-Za-z]{2}/.test(description)) continue;
+    if (NON_ITEM_RE.test(description) || NON_ITEM_CONTAINS_RE.test(description)) continue;
+
+    const key = `${description.toLowerCase()}|${money.value}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    items.push({ description, amount: money.value });
+  }
+
+  return items;
+}
+
 /**
  * Parse structured data from extracted text.
  * @param {string} text - raw text from OCR or PDF extraction
@@ -108,97 +304,24 @@ async function extractTextFromImage(file) {
  * @returns {object} { supplier_name, vat_number, date, document_number, line_items, subtotal, vat_amount, total, category }
  */
 export function parseDocumentData(text, type) {
-  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
-  const lower = text.toLowerCase();
+  const source = String(text || "");
+  const lines = source
+    .split("\n")
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
 
-  // --- Supplier name: first meaningful line (not a date/number-only line)
-  let supplier_name = null;
-  for (const line of lines.slice(0, 10)) {
-    if (/^[\d\sR.,-]+$/.test(line)) continue;
-    if (/^(mon|tue|wed|thu|fri|sat|sun)/i.test(line)) continue;
-    if (line.length < 3) continue;
-    supplier_name = line;
-    break;
-  }
-
-  // --- VAT number (10 digits, SA format)
-  let vat_number = null;
-  const vatMatch = text.match(/VAT\s*(?:No\.?|Number|#)?[:\s]*(\d{10})/i);
-  if (vatMatch) vat_number = vatMatch[1];
-
-  // --- Date (try multiple SA formats)
-  let date = null;
-  const datePatterns = [
-    /(\d{1,2}[\s\/-]\d{1,2}[\s\/-]\d{2,4})/,
-    /(\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4})/i,
-    /(\d{4}-\d{2}-\d{2})/,
-  ];
-  for (const p of datePatterns) {
-    const m = text.match(p);
-    if (m) { date = m[1]; break; }
-  }
-
-  // --- Document number
-  let document_number = null;
-  const docNoMatch = text.match(/(?:Invoice|Receipt|Doc|Tax)\s*(?:No\.?|Number|#)?[:\s]*([A-Z0-9-]{3,20})/i);
-  if (docNoMatch) document_number = docNoMatch[1];
-
-  // --- Total
-  let total = null;
-  const totalMatch = text.match(/Total[:\s]*R?\s*([\d,\s]+\.?\d{0,2})/i);
-  if (totalMatch) total = parseAmount(totalMatch[1]);
-
-  // --- Subtotal
-  let subtotal = null;
-  const subMatch = text.match(/Sub\s*-?\s*Total[:\s]*R?\s*([\d,\s]+\.?\d{0,2})/i);
-  if (subMatch) subtotal = parseAmount(subMatch[1]);
-
-  // --- VAT amount
-  let vat_amount = null;
-  const vatAmtMatch = text.match(/VAT(?:\s*Amount)?(?:\s*\(?\s*15\s*%\s*\)?)?[:\s]*R?\s*([\d,\s]+\.?\d{0,2})/i);
-  if (vatAmtMatch) vat_amount = parseAmount(vatAmtMatch[1]);
-
-  // --- Derive missing values
-  if (subtotal != null && vat_amount != null && total == null) {
-    total = +(subtotal + vat_amount).toFixed(2);
-  }
-  if (total != null && vat_amount == null && subtotal != null) {
-    vat_amount = +(total - subtotal).toFixed(2);
-  }
-  if (total != null && subtotal == null && vat_amount != null) {
-    subtotal = +(total - vat_amount).toFixed(2);
-  }
-  // If we only have total, estimate VAT (15%)
-  if (total != null && vat_amount == null && subtotal == null) {
-    subtotal = +(total / 1.15).toFixed(2);
-    vat_amount = +(total - subtotal).toFixed(2);
-  }
-
-  // --- Line items: lines with a description followed by an amount
-  const line_items = [];
-  for (const line of lines) {
-    const m = line.match(/^(.+?)\s+R?\s*([\d,]+\.\d{2})$/);
-    if (m && !/total|subtotal|vat|balance|change|cash/i.test(m[1]) && m[1].length > 2) {
-      const amount = parseAmount(m[2]);
-      if (amount != null && amount > 0) {
-        line_items.push({ description: m[1].trim(), amount });
-      }
-    }
-  }
-
-  // --- Categorize
-  const category = categorizeDocument(text, type);
+  const totals = findTotals(lines);
 
   return {
-    supplier_name,
-    vat_number,
-    date,
-    document_number,
-    line_items,
-    subtotal,
-    vat_amount,
-    total,
-    category,
+    supplier_name: findSupplierName(lines),
+    vat_number: findVatNumber(source),
+    date: findDocumentDate(source),
+    document_number: findDocumentNumber(lines),
+    line_items: findLineItems(lines),
+    subtotal: totals.subtotal,
+    vat_amount: totals.vat_amount,
+    total: totals.total,
+    category: categorizeDocument(source, type),
   };
 }
 

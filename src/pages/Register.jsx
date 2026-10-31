@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { UserPlus, Mail, Lock, Loader2, User, Check } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
-import PortalPicker from "@/components/auth/PortalPicker";
+import PortalChooser from "@/components/auth/PortalChooser";
 
 const portalCopy = {
   business: {
@@ -23,8 +23,8 @@ const portalCopy = {
 
 /**
  * Portal-first sign-up: choose Business or Accountant, then create the account.
- * No email verification — the account is usable immediately and goes straight
- * into that portal's onboarding.
+ * A six-digit verification code is emailed through Resend straight after sign-up;
+ * confirming it marks the profile verified, then onboarding starts.
  */
 export default function Register() {
   const [step, setStep] = useState("portal");
@@ -54,12 +54,14 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      await db.auth.register({ email, password, fullName, portal });
+      const data = await db.auth.register({ email, password, fullName, portal });
       storePortal(portal);
-      // Full load so the new session is picked up before the onboarding gate runs.
-      window.location.href = "/onboarding";
+      // Six-digit code emailed through Resend on the verification screen
+      // (a full load, so it survives the auth refresh the new session triggers).
+      window.location.href = data?.session ? "/verify-email" : "/onboarding";
     } catch (err) {
       setError(err.message || "Registration failed");
+    } finally {
       setLoading(false);
     }
   };
@@ -73,6 +75,7 @@ export default function Register() {
     return (
       <AuthLayout
         icon={UserPlus}
+        wide
         title="Choose your portal"
         subtitle="Pick the workspace you're joining. It decides what we ask you next."
         footer={
@@ -84,10 +87,10 @@ export default function Register() {
           </>
         }
       >
-        <PortalPicker value={portal} onChange={choosePortal} />
+        <PortalChooser value={portal} onChange={choosePortal} />
         <Button
           type="button"
-          className="mt-6 h-12 w-full font-medium"
+          className="mt-5 h-[52px] w-full text-[14px] font-semibold shadow-[0_16px_32px_-16px_rgba(11,31,26,0.65)] sm:mt-6 sm:h-12"
           onClick={() => {
             setError("");
             setStep("account");
@@ -95,7 +98,7 @@ export default function Register() {
         >
           Continue
         </Button>
-        <p className="mt-4 text-center text-[12px] text-muted-foreground">
+        <p className="mt-4 text-center text-[12px] leading-relaxed text-muted-foreground">
           You can&apos;t switch portals later — each one has its own setup.
         </p>
       </AuthLayout>
@@ -220,7 +223,11 @@ export default function Register() {
             />
           </div>
         </div>
-        <Button type="submit" className="h-12 w-full font-medium" disabled={loading}>
+        <Button
+          type="submit"
+          className="h-[52px] w-full text-[14px] font-semibold shadow-[0_16px_32px_-16px_rgba(11,31,26,0.65)] sm:h-12"
+          disabled={loading}
+        >
           {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
