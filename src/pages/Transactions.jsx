@@ -13,7 +13,6 @@ import { useToast } from "@/components/ui/use-toast";
 import moment from "moment";
 import { formatRand } from "@/lib/money";
 import { buildStatementSummary } from "@/lib/bankStatementExtraction";
-import { matchTransaction } from "@/lib/bankRuleEngine";
 
 const FILTERS = [
   { value: "all", label: "All" },
@@ -187,8 +186,8 @@ Provide a clear, professional explanation. Include:
     setAiExplaining(false);
   };
 
-  // Allocates every unallocated transaction of the selected company through its
-  // bank rules — highest priority rule wins, exactly as an import does it.
+  // Allocates every unallocated transaction through the company's allocation
+  // rules — the same engine the Rules page uses, so "Learn Rules" feeds it.
   const handleAutoAllocate = async () => {
     const pending = transactions.filter((t) => t.status !== "allocated" && t.status !== "reviewed");
     if (pending.length === 0) {
@@ -197,68 +196,18 @@ Provide a clear, professional explanation. Include:
     }
     setAllocating(true);
     try {
-      const rules = await db.entities.BankRule.filter(
-        { company_id: currentCompany.id, is_active: true },
-        "-priority"
-      );
-      if (rules.length === 0) {
-        toast({
-          title: "No bank rules yet",
-          description: "Add bank rules first, then auto allocate will apply them.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const records = pending.reduce((list, tx) => {
-        const match = matchTransaction(tx, rules);
-        if (!match?.account_id) return list;
-        const vatCode = match.vat_code || "standard";
-        const keyword = rules.find((r) => r.id === match.rule_id)?.keyword;
-        list.push({
-          id: tx.id,
-          account_id: match.account_id,
-          account_name: match.account_name,
-          vat_classification: vatCode === "none" ? "exempt" : vatCode,
-          status: "allocated",
-          ai_confidence: 85,
-          ai_reasoning: keyword ? `Auto-matched by bank rule: "${keyword}"` : "Auto-matched by bank rule",
-        });
-        return list;
-      }, []);
-
-      if (records.length === 0) {
-        toast({
-          title: "No bank rules matched",
-          description: "None of the unallocated transactions match an active bank rule.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const updated = await db.entities.Transaction.bulkUpdate(records);
-      const byId = new Map(updated.filter(Boolean).map((t) => [t.id, t]));
-      setTransactions((list) => list.map((t) => byId.get(t.id) || t));
+      const res = await db.functions.invoke("applyAllocationRules", { company_id: currentCompany.id });
+      const allocated = res.data?.allocated ?? 0;
       toast({
-        title: `${records.length} transaction${records.length === 1 ? "" : "s"} allocated by bank rules`,
+        title: res.data?.message || `${allocated} transactions auto-allocated`,
+        variant: allocated > 0 ? undefined : "destructive",
       });
+      await loadData();
     } catch (e) {
       toast({ title: "Auto allocate failed", description: e.message, variant: "destructive" });
     } finally {
       setAllocating(false);
     }
-  };
-
-  const handleBulkAllocate = async () => {
-    setAllocating(true);
-    try {
-      const res = await db.functions.invoke("applyAllocationRules", { company_id: currentCompany.id });
-      toast({ title: res.data.message || `${res.data.allocated} transactions auto-allocated` });
-      await loadData();
-    } catch (e) {
-      toast({ title: "Failed to apply rules", description: e.message, variant: "destructive" });
-    }
-    setAllocating(false);
   };
 
   const filtered = transactions
@@ -335,9 +284,6 @@ Provide a clear, professional explanation. Include:
             </button>
             <button type="button" onClick={handleLearnRules} disabled={allocating} className="sb-btn sb-btn-outline">
               <Brain size={15} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" /> Learn Rules
-            </button>
-            <button type="button" onClick={handleBulkAllocate} disabled={allocating} className="sb-btn sb-btn-outline">
-              <Sparkles size={15} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" /> Apply Rules
             </button>
           </div>
         </div>
