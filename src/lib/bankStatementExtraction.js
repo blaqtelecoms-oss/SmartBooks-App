@@ -19,6 +19,7 @@ import {
   takeLeadingDate,
   tidyText,
 } from "./amountParsing";
+import { findStatementPeriod, isInPeriod } from "./statementPeriod";
 
 // ─── Categorization rules (keyword → category) ───
 const CATEGORY_RULES = [
@@ -662,6 +663,16 @@ function parseCsvRows(text) {
   return rows;
 }
 
+/** The period printed above a table's rows ("Statement period … "). */
+const headerPeriod = (rows) =>
+  findStatementPeriod(
+    (rows || [])
+      .slice(0, 30)
+      .map((cells) =>
+        (cells || []).map((cell) => String(cell ?? "").trim()).filter(Boolean).join(" ")
+      )
+  );
+
 function parseCsvText(text, fileName) {
   const rows = parseCsvRows(text);
   let parsed = parseTableDocument(rows);
@@ -672,6 +683,7 @@ function parseCsvText(text, fileName) {
     ...parsed,
     bank_name: detectBankName(fileName),
     account_number: detectAccountNumber(text),
+    period: headerPeriod(rows),
   };
 }
 
@@ -684,6 +696,7 @@ async function parseExcel(file) {
     transactions: [],
     opening_balance: null,
     closing_balance: null,
+    period: null,
     bank_name: detectBankName(file.name),
     account_number: "",
   };
@@ -708,6 +721,7 @@ async function parseExcel(file) {
       result.transactions = parsed.transactions;
       result.opening_balance = parsed.opening_balance;
       result.closing_balance = parsed.closing_balance;
+      result.period = headerPeriod(rows);
     }
   }
 
@@ -752,22 +766,57 @@ export function buildStatementSummary(transactions = [], overrides = {}) {
 
 // ─── Public API ───
 
+/** Error code for a statement that does not print the period it covers. */
+export const STATEMENT_PERIOD_MISSING = "STATEMENT_PERIOD_MISSING";
+
 /**
- * Extract transactions from a bank statement file.
+ * Keeps only the rows inside the period the statement prints for itself — rows
+ * outside it are never imported — and attaches the summary the transactions
+ * page shows.
+ */
+function finalize(parsed) {
+  if (!parsed.period) {
+    const error = new Error(
+      'This statement does not say which period it covers. It needs its start and end dates printed on it (for example "Statement period: 01 April 2026 to 31 August 2026"), so that only the transactions from that period are imported.'
+    );
+    error.code = STATEMENT_PERIOD_MISSING;
+    throw error;
+  }
+
+  const { period } = parsed;
+  const rows = parsed.transactions.filter((transaction) => isInPeriod(transaction.date, period));
+
+  return {
+    ...parsed,
+    transactions: rows,
+    excluded_outside_period: parsed.transactions.length - rows.length,
+    summary: buildStatementSummary(rows, {
+      opening_balance: parsed.opening_balance,
+      closing_balance: parsed.closing_balance,
+      total_credit: parsed.total_credit,
+      total_debit: parsed.total_debit,
+      total_fees: parsed.total_fees,
+    }),
+  };
+}
+
+/**
+ * Extract transactions from a bank statement file. Only rows dated inside the
+ * period the statement prints are returned.
  * @param {File} file
  * @param {object} [options]
  * @param {string} [options.password] — password of a password-protected statement
- * @returns {Promise<{ transactions: array, summary: object, bank_name: string, account_number: string }>}
+ * @returns {Promise<{ transactions: array, summary: object, period: {start: string, end: string}, excluded_outside_period: number, bank_name: string, account_number: string }>}
  */
 export async function extractBankTransactions(file, { password } = {}) {
   const extension = (file.name.split(".").pop() || "").toLowerCase();
 
   if (extension === "csv" || extension === "tsv" || extension === "txt") {
-    return withSummary(parseCsvText(await file.text(), file.name));
+    return finalize(parseCsvText(await file.text(), file.name));
   }
 
   if (extension === "xlsx" || extension === "xls") {
-    return withSummary(await parseExcel(file));
+    return finalize(await parseExcel(file));
   }
 
   const text = await extractTextFromFile(file, { password });
@@ -779,25 +828,12 @@ export async function extractBankTransactions(file, { password } = {}) {
     throw error;
   }
 
-  return withSummary({
+  return finalize({
     ...parseStatementDocument(text),
     bank_name: detectBankName(file.name),
     account_number: detectAccountNumber(text),
+    period: findStatementPeriod(text.split(/\r?\n/)),
   });
-}
-
-/** Attaches the statement summary the transactions page shows. */
-function withSummary(parsed) {
-  return {
-    ...parsed,
-    summary: buildStatementSummary(parsed.transactions, {
-      opening_balance: parsed.opening_balance,
-      closing_balance: parsed.closing_balance,
-      total_credit: parsed.total_credit,
-      total_debit: parsed.total_debit,
-      total_fees: parsed.total_fees,
-    }),
-  };
 }
 
 // ─── Helpers ───

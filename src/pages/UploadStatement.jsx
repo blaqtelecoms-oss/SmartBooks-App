@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { db } from "@/api/supabaseClient";
-import { extractBankTransactions, categorizeTransaction } from "@/lib/bankStatementExtraction";
+import { extractBankTransactions, categorizeTransaction, STATEMENT_PERIOD_MISSING } from "@/lib/bankStatementExtraction";
 import { isPasswordError } from "@/lib/documentExtraction";
 import { autoAllocate } from "@/lib/bankRuleEngine";
 import FilePasswordField from "@/components/documents/FilePasswordField";
@@ -66,13 +66,15 @@ export default function UploadStatement() {
     try {
       // Read the statement first: nothing is stored, and a locked file asks for
       // its password, before any document record is created.
-      const { transactions: txs, bank_name, summary } = await extractBankTransactions(file, { password });
+      const { transactions: txs, bank_name, summary, period, excluded_outside_period } =
+        await extractBankTransactions(file, { password });
 
       if (txs.length === 0) {
         toast({
-          title: "No transactions found",
-          description:
-            "We couldn't find any transaction rows in this statement. Try the original PDF, CSV or Excel file, or check that each row shows a date and an amount.",
+          title: "No transactions in this period",
+          description: excluded_outside_period > 0
+            ? `All ${excluded_outside_period} rows on this statement fall outside its period (${period.start} to ${period.end}).`
+            : "We couldn't find any transaction rows in this statement. Try the original PDF, CSV or Excel file, or check that each row shows a date and an amount.",
           variant: "destructive",
         });
         return;
@@ -146,7 +148,13 @@ export default function UploadStatement() {
           extracted_data: JSON.stringify({ ...summary, bank_name }),
         });
 
-        setResults({ total: txs.length, imported: categorized.length, bank: bank_name });
+        setResults({
+          total: txs.length,
+          imported: categorized.length,
+          bank: bank_name,
+          period,
+          excluded: excluded_outside_period || 0,
+        });
         toast({ title: `${categorized.length} transactions imported and categorized` });
         setFile(null);
         setPassword("");
@@ -157,7 +165,11 @@ export default function UploadStatement() {
       }
     } catch (e) {
       toast({
-        title: isPasswordError(e) ? "Statement locked" : "Statement import failed",
+        title: isPasswordError(e)
+          ? "Statement locked"
+          : e.code === STATEMENT_PERIOD_MISSING
+            ? "Statement period not found"
+            : "Statement import failed",
         description: e.message,
         variant: "destructive",
       });
@@ -202,7 +214,7 @@ export default function UploadStatement() {
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
         <h1 className="text-[24px] font-medium text-[#0F0F0F] tracking-tight">Upload Bank Statement</h1>
-        <p className="text-[13px] text-[#6B6B72] mt-1">Upload PDF, CSV, or Excel bank statements to import every transaction and categorize it</p>
+        <p className="text-[13px] text-[#6B6B72] mt-1">Upload PDF, CSV, or Excel bank statements — only the transactions in the period the statement covers are imported and categorized</p>
       </div>
 
       {/* Drop zone */}
@@ -261,7 +273,19 @@ export default function UploadStatement() {
               <p className="text-[14px] font-medium text-[#0F0F0F]">Statement processed successfully</p>
               <div className="text-[12px] text-[#6B6B72] mt-1 space-y-0.5">
                 {results.bank && <p>Bank: {results.bank}</p>}
+                {results.period && (
+                  <p>
+                    Period: {moment(results.period.start).format("DD MMM YYYY")} –{" "}
+                    {moment(results.period.end).format("DD MMM YYYY")}
+                  </p>
+                )}
                 <p>{results.total} transactions found, {results.imported} imported and categorized</p>
+                {results.excluded > 0 && (
+                  <p>
+                    {results.excluded} row{results.excluded === 1 ? "" : "s"} outside the statement
+                    period skipped
+                  </p>
+                )}
               </div>
             </div>
           </div>
