@@ -240,7 +240,7 @@ export default function ScanReceipt() {
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {doc.submitted ? (
-                    <span className="flex items-center gap-1 text-[11px] font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                    <span className="sb-chip sb-chip-green">
                       <CheckCircle2 size={12} /> Submitted
                     </span>
                   ) : doc.status === "processed" ? (
@@ -252,9 +252,9 @@ export default function ScanReceipt() {
                       <Send size={12} className="mr-1" /> Submit
                     </Button>
                   ) : doc.status === "processing" ? (
-                    <span className="text-[11px] text-amber-600 bg-amber-50 px-2 py-1 rounded-full font-medium">Processing</span>
+                    <span className="sb-chip sb-chip-amber">Processing</span>
                   ) : (
-                    <span className="text-[11px] text-[#5C7263] bg-gray-100 px-2 py-1 rounded-full font-medium">{doc.status}</span>
+                    <span className="sb-chip">{doc.status}</span>
                   )}
                   {doc.extracted_data && (
                     <button onClick={() => viewExtracted(doc)} className="p-1.5 rounded-lg hover:bg-[#EFF4F0] text-[#5C7263] hover:text-[#2D5A43]">

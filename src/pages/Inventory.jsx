@@ -258,7 +258,7 @@ export default function Inventory() {
                         <td className="px-4 py-3 font-medium text-[#0F0F0F]">{wh.name}</td>
                         <td className="px-4 py-3 text-[#6B6B72]">{wh.location || "—"}</td>
                         <td className="px-4 py-3 text-right text-[#6B6B72]">{itemCount}</td>
-                        <td className="px-4 py-3 text-center"><span className={`text-[10px] px-2 py-0.5 rounded-full ${wh.is_active ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-600"}`}>{wh.is_active ? "Active" : "Inactive"}</span></td>
+                        <td className="px-4 py-3 text-center"><span className={wh.is_active ? "sb-chip sb-chip-green" : "sb-chip"}>{wh.is_active ? "Active" : "Inactive"}</span></td>
                       </tr>
                     );
                   })}

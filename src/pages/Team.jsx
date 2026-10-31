@@ -138,9 +138,9 @@ export default function Team() {
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-[13px] font-medium text-[#0F0F0F]">{m.user_id}</p>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                      m.status === "active" ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"
-                    }`}>{m.status}</span>
+                    <span className={m.status === "active" ? "sb-chip sb-chip-green" : "sb-chip sb-chip-amber"}>
+                      {m.status}
+                    </span>
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-2 sm:gap-3">

@@ -168,12 +168,12 @@ export default function Documents() {
                     <p className="text-[11px] text-[#6B6B72]">{moment(doc.created_date).format("DD MMM YYYY")}</p>
                   </div>
                 </div>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                  doc.status === "processed" ? "bg-green-50 text-green-700" :
-                  doc.status === "processing" ? "bg-amber-50 text-amber-700" :
-                  doc.status === "error" ? "bg-red-50 text-red-700" :
-                  "bg-gray-100 text-gray-700"
-                }`}>{doc.status}</span>
+                <span className={
+                  doc.status === "processed" ? "sb-chip sb-chip-green" :
+                  doc.status === "processing" ? "sb-chip sb-chip-amber" :
+                  doc.status === "error" ? "sb-chip sb-chip-red" :
+                  "sb-chip"
+                }>{doc.status}</span>
               </div>
               <div className="flex gap-1.5 mt-3">
                 {doc.extracted_data && (

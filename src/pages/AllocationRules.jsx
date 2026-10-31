@@ -247,7 +247,7 @@ export default function AllocationRules() {
                     </td>
                     <td className="px-4 py-3 text-[#0F0F0F]">{rule.account_name || "—"}</td>
                     <td className="px-4 py-3">
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${rule.source === "ai_learned" ? "bg-purple-50 text-purple-700" : "bg-gray-100 text-gray-700"}`}>
+                      <span className={rule.source === "ai_learned" ? "sb-chip sb-chip-blue" : "sb-chip"}>
                         {rule.source === "ai_learned" ? "AI Learned" : "Manual"}
                       </span>
                     </td>

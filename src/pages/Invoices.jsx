@@ -167,12 +167,12 @@ export default function Invoices() {
                       <td className="px-4 py-3 text-[#6B6B72]">{inv.due_date}</td>
                       <td className="px-4 py-3 text-right text-[#0F0F0F] font-medium">{formatR(inv.total_amount)}</td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                          inv.status === "paid" ? "bg-green-50 text-green-700" :
-                          inv.status === "sent" ? "bg-blue-50 text-blue-700" :
-                          inv.status === "overdue" ? "bg-red-50 text-red-600" :
-                          "bg-gray-100 text-gray-700"
-                        }`}>{inv.status}</span>
+                        <span className={
+                          inv.status === "paid" ? "sb-chip sb-chip-green" :
+                          inv.status === "sent" ? "sb-chip sb-chip-blue" :
+                          inv.status === "overdue" ? "sb-chip sb-chip-red" :
+                          "sb-chip"
+                        }>{inv.status}</span>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">

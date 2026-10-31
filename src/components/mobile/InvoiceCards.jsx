@@ -2,11 +2,11 @@ import React from "react";
 import { Trash2, Paperclip } from "lucide-react";
 import { MobileList, MobileCard, MobileField, MobileActions, mobileActionClass } from "./MobileCards";
 
-const statusStyle = (status) => {
-  if (status === "paid") return { background: "var(--sb-green-bg)", color: "var(--sb-green-ink)" };
-  if (status === "sent") return { background: "#E8F0FB", color: "#1F4E8C" };
-  if (status === "overdue") return { background: "#FBE9E7", color: "#B3261E" };
-  return { background: "var(--sb-soft)", color: "var(--sb-muted)" };
+const statusChip = (status) => {
+  if (status === "paid") return "sb-chip sb-chip-green";
+  if (status === "sent") return "sb-chip sb-chip-blue";
+  if (status === "overdue") return "sb-chip sb-chip-red";
+  return "sb-chip";
 };
 
 /** Phone view of the invoice register. */
@@ -26,10 +26,7 @@ export default function InvoiceCards({ invoices, contacts, onProof, onPay, onDel
                   {contact?.name || "—"}
                 </p>
               </div>
-              <span
-                className="shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
-                style={statusStyle(inv.status)}
-              >
+              <span className={`shrink-0 ${statusChip(inv.status)}`}>
                 {inv.status}
               </span>
             </div>
