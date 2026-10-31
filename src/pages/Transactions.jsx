@@ -27,6 +27,16 @@ const STATUS_CHIP = {
   locked: "sb-chip sb-chip-red",
 };
 
+// Statements import "Uncategorized" when no keyword matches; that value must never
+// mask the account the user actually picked for the transaction.
+const isPlaceholderCategory = (category) =>
+  !category || category.trim().toLowerCase() === "uncategorized";
+
+const suggestedCategory = (tx) => (isPlaceholderCategory(tx.category) ? null : tx.category);
+
+const categoryLabel = (tx) =>
+  tx.account_name || suggestedCategory(tx) || null;
+
 export default function Transactions() {
   const { currentCompany } = useOutletContext();
   const { toast } = useToast();
@@ -43,20 +53,25 @@ export default function Transactions() {
   const [sortDir, setSortDir] = useState("desc");
 
   useEffect(() => {
-    if (currentCompany) loadData();
+    if (!currentCompany) return undefined;
+    loadData();
+    // Coming back to the tab catches up with imports and edits made elsewhere.
+    const refresh = () => loadData(true);
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
   }, [currentCompany]);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const [txs, accts] = await Promise.all([
-        db.entities.Transaction.filter({ company_id: currentCompany.id }, "-date", 50),
+        db.entities.Transaction.filter({ company_id: currentCompany.id }, "-date", 2000),
         db.entities.Account.filter({ company_id: currentCompany.id }),
       ]);
       setTransactions(txs);
       setAccounts(accts);
     } catch (e) {}
-    setLoading(false);
+    if (!silent) setLoading(false);
   };
 
   const handleAllocate = async (txId, accountId) => {
@@ -64,11 +79,14 @@ export default function Transactions() {
     if (!account) return;
     setAllocating(true);
     try {
-      await db.entities.Transaction.update(txId, {
+      const updated = await db.entities.Transaction.update(txId, {
         account_id: accountId,
         account_name: account.name,
         status: "allocated",
       });
+
+      // The row updates in place — no reload, so the list never refreshes or flickers.
+      setTransactions((list) => list.map((t) => (t.id === txId ? { ...t, ...updated } : t)));
 
       // Learn from this manual allocation — create a rule for future matching
       const tx = transactions.find((t) => t.id === txId);
@@ -91,7 +109,6 @@ export default function Transactions() {
         }
       }
 
-      await loadData();
       toast({ title: "Transaction allocated", description: "Rule learned for future transactions" });
     } catch (e) {
       toast({ title: "Error allocating", variant: "destructive" });
@@ -306,7 +323,8 @@ Provide a clear, professional explanation. Include:
                 <tbody>
                   {filtered.map((tx) => {
                     const isIn = tx.type === "credit";
-                    const hasSuggestion = tx.status === "unallocated" && tx.category && tx.ai_confidence;
+                    const suggested = suggestedCategory(tx);
+                    const hasSuggestion = tx.status === "unallocated" && suggested && tx.ai_confidence;
                     return (
                       <tr
                         key={tx.id}
@@ -346,20 +364,21 @@ Provide a clear, professional explanation. Include:
                           {tx.status === "unallocated" && accounts.length > 0 ? (
                             <div className="w-[210px]">
                               <ResponsiveSelect
+                                value={tx.account_id || undefined}
                                 onValueChange={(v) => handleAllocate(tx.id, v)}
-                                placeholder={tx.category || "Allocate..."}
+                                placeholder={suggested || "Allocate..."}
                                 triggerClassName="h-9 text-[12px] w-full"
                                 options={accounts.map((a) => ({ value: a.id, label: `${a.code} – ${a.name}` }))}
                               />
                               {hasSuggestion && (
                                 <p className="mt-1 flex items-center gap-1 text-[10.5px]" style={{ color: "var(--sb-brand-2)" }}>
-                                  <Sparkles size={10} strokeWidth={2} /> AI suggests {tx.category} · {tx.ai_confidence}%
+                                  <Sparkles size={10} strokeWidth={2} /> AI suggests {suggested} · {tx.ai_confidence}%
                                 </p>
                               )}
                             </div>
                           ) : (
                             <span className="text-[12px] font-semibold" style={{ color: "var(--sb-ink)" }}>
-                              {tx.category || tx.account_name || "—"}
+                              {categoryLabel(tx) || "—"}
                             </span>
                           )}
                         </td>
@@ -398,7 +417,7 @@ Provide a clear, professional explanation. Include:
                 <div className="space-y-1.5 rounded-[16px] p-4 text-[13px]" style={{ background: "var(--sb-soft)" }}>
                   <div className="flex justify-between gap-4"><span style={{ color: "var(--sb-muted)" }}>Description</span><span className="font-semibold" style={{ color: "var(--sb-ink)" }}>{selectedTx.description}</span></div>
                   <div className="flex justify-between gap-4"><span style={{ color: "var(--sb-muted)" }}>Amount</span><span className="sb-money font-semibold" style={{ color: "var(--sb-ink)" }}>{formatRand(selectedTx.amount)}</span></div>
-                  <div className="flex justify-between gap-4"><span style={{ color: "var(--sb-muted)" }}>Category</span><span style={{ color: "var(--sb-ink)" }}>{selectedTx.category || "Unallocated"}</span></div>
+                  <div className="flex justify-between gap-4"><span style={{ color: "var(--sb-muted)" }}>Category</span><span style={{ color: "var(--sb-ink)" }}>{categoryLabel(selectedTx) || "Unallocated"}</span></div>
                   <div className="flex justify-between gap-4"><span style={{ color: "var(--sb-muted)" }}>Confidence</span><span style={{ color: "var(--sb-ink)" }}>{selectedTx.ai_confidence || 0}%</span></div>
                 </div>
                 <div>

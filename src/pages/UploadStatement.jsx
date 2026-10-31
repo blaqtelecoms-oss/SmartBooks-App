@@ -102,6 +102,9 @@ export default function UploadStatement() {
           const cat = categorizeTransaction(tx.description, tx.amount);
           return {
             company_id: currentCompany.id,
+            // Keeps the import tied to its statement, so removing the statement
+            // removes these transactions with it.
+            document_id: document.id,
             date: tx.date || new Date().toISOString().split("T")[0],
             description: tx.description || "Unknown",
             amount: Math.abs(tx.amount || 0),
@@ -163,13 +166,18 @@ export default function UploadStatement() {
   const handleDelete = async (doc) => {
     setDeletingId(doc.id);
     try {
+      // Counted before the delete: the statement's own transactions go with it.
+      const removed = await db.entities.Transaction.count({ document_id: doc.id }).catch(() => 0);
       if (doc.file_url) {
         // Missing storage objects must not block removing the record.
         await db.integrations.Core.DeleteFile({ file_uri: doc.file_url }).catch(() => {});
       }
       await db.entities.Document.delete(doc.id);
       setDocuments((list) => list.filter((item) => item.id !== doc.id));
-      toast({ title: "Statement removed" });
+      toast({
+        title: "Statement removed",
+        description: removed > 0 ? `${removed} imported transaction${removed === 1 ? "" : "s"} removed` : undefined,
+      });
     } catch (e) {
       toast({ title: "Could not remove statement", description: e.message, variant: "destructive" });
     } finally {
@@ -261,7 +269,7 @@ export default function UploadStatement() {
         <div>
           <h2 className="text-[15px] font-medium text-[#0F0F0F]">Uploaded statements</h2>
           <p className="text-[12px] text-[#6B6B72] mt-0.5">
-            Removing a statement deletes the stored file and its record. Transactions already imported stay in your books.
+            Removing a statement deletes the stored file, its record, and the transactions it imported.
           </p>
         </div>
 
