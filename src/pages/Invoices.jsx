@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Plus, Trash2, Loader2, FileText, Paperclip } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import ProofOfPaymentDialog from "@/components/invoices/ProofOfPaymentDialog";
+import InvoiceCards from "@/components/mobile/InvoiceCards";
 
 export default function Invoices() {
   const { currentCompany } = useOutletContext();
@@ -134,7 +135,16 @@ export default function Invoices() {
           <p className="text-[13px] text-[#6B6B72] mt-1">Create your first customer invoice to get started</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-[#E5E5E8] overflow-hidden">
+        <>
+        <InvoiceCards
+          invoices={invoices}
+          contacts={contacts}
+          onProof={openProof}
+          onPay={setPayingInvoice}
+          onDelete={handleDelete}
+          formatR={formatR}
+        />
+        <div className="hidden overflow-hidden rounded-xl border border-[#E5E5E8] bg-white md:block">
           <div className="overflow-x-auto">
             <table className="w-full text-[13px]">
               <thead>
@@ -188,6 +198,7 @@ export default function Invoices() {
             </table>
           </div>
         </div>
+        </>
       )}
 
       {/* Create dialog */}

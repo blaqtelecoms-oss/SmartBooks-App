@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Trash2, Loader2, Contact } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import CustomerCards from "@/components/mobile/CustomerCards";
 
 const EMPTY_FORM = { name: "", email: "", phone: "", address: "", vat_number: "" };
 
@@ -117,7 +118,9 @@ export default function Customers() {
           <p className="text-[13px] text-[#6B6B72] mt-1">Add a customer so invoices can be assigned to them</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-[#E5E5E8] overflow-hidden">
+        <>
+        <CustomerCards customers={customers} onEdit={handleEdit} onDelete={handleDelete} />
+        <div className="hidden overflow-hidden rounded-xl border border-[#E5E5E8] bg-white md:block">
           <div className="overflow-x-auto">
             <table className="w-full text-[13px]">
               <thead>
@@ -148,6 +151,7 @@ export default function Customers() {
             </table>
           </div>
         </div>
+        </>
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

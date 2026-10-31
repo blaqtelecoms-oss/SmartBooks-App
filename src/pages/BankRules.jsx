@@ -10,6 +10,8 @@ import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2, Loader2, Zap, Search } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { testRule } from "@/lib/bankRuleEngine";
+import ResponsiveSelect from "@/components/ResponsiveSelect";
+import BankRuleCards from "@/components/mobile/BankRuleCards";
 
 export default function BankRules() {
   const { currentCompany } = useOutletContext();
@@ -133,7 +135,14 @@ export default function BankRules() {
           <p className="text-[13px] text-[#6B6B72] mt-1">Create keyword rules to auto-allocate transactions on upload</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-[#E5E5E8] overflow-hidden">
+        <>
+          <BankRuleCards
+            rules={rules}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onToggle={handleToggle}
+          />
+          <div className="hidden overflow-hidden rounded-xl border border-[#E5E5E8] bg-white md:block">
           <div className="overflow-x-auto">
             <table className="w-full text-[13px]">
               <thead>
@@ -175,7 +184,8 @@ export default function BankRules() {
               </tbody>
             </table>
           </div>
-        </div>
+          </div>
+        </>
       )}
 
       {/* Create/Edit dialog */}
@@ -191,12 +201,14 @@ export default function BankRules() {
             </div>
             <div>
               <Label className="text-[12px] text-[#6B6B72]">Target Ledger Account</Label>
-              <Select value={form.target_ledger_account_id} onValueChange={v => setForm({ ...form, target_ledger_account_id: v })}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Select account" /></SelectTrigger>
-                <SelectContent>
-                  {accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.code} – {a.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <ResponsiveSelect
+                value={form.target_ledger_account_id}
+                onValueChange={v => setForm({ ...form, target_ledger_account_id: v })}
+                placeholder="Select account"
+                searchable
+                options={accounts.map(a => ({ value: a.id, label: `${a.code} – ${a.name}` }))}
+                triggerClassName="mt-1 h-10 w-full"
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Plus, Pencil, Trash2, BookOpen, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { defaultAccountsFor } from "@/lib/defaultChartOfAccounts";
+import ResponsiveSelect from "@/components/ResponsiveSelect";
+import AccountCards from "@/components/mobile/AccountCards";
 
 const accountTypes = [
   { value: "asset", label: "Assets", normalSide: "debit" },
@@ -72,6 +74,19 @@ export default function ChartOfAccounts() {
     }
   };
 
+  const handleEdit = (acct) => {
+    setForm({
+      code: acct.code,
+      name: acct.name,
+      type: acct.type,
+      sub_type: acct.sub_type || "",
+      description: acct.description || "",
+      normal_side: acct.normal_side || "debit",
+    });
+    setEditingId(acct.id);
+    setDialogOpen(true);
+  };
+
   const handleDelete = async (id) => {
     if (!confirm("Delete this account?")) return;
     try {
@@ -109,8 +124,18 @@ export default function ChartOfAccounts() {
         </div>
       </div>
 
-      {/* Type filter */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1">
+      {/* Type filter — a searchable dropdown on phones, chips from tablet up */}
+      <div className="md:hidden">
+        <ResponsiveSelect
+          value={activeType}
+          onValueChange={setActiveType}
+          placeholder="Filter by category"
+          searchable
+          triggerClassName="h-11 w-full"
+          options={[{ value: "all", label: "All accounts" }, ...accountTypes.map(t => ({ value: t.value, label: t.label }))]}
+        />
+      </div>
+      <div className="hidden gap-1.5 overflow-x-auto pb-1 md:flex">
         <button onClick={() => setActiveType("all")}
           className={`px-3 py-1.5 rounded-lg text-[12px] font-medium whitespace-nowrap transition-colors ${activeType === "all" ? "bg-[#0F0F0F] text-white" : "bg-white border border-[#E5E5E8] text-[#6B6B72] hover:text-[#0F0F0F]"}`}>All</button>
         {accountTypes.map(t => (
@@ -128,7 +153,9 @@ export default function ChartOfAccounts() {
           <p className="text-[13px] text-[#6B6B72] mt-1">Create a standard SA chart of accounts with one click</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <>
+        <AccountCards accounts={filtered} onEdit={handleEdit} onDelete={handleDelete} />
+        <div className="hidden space-y-4 md:block">
           {grouped.map(group => (
             <div key={group.value} className="bg-white rounded-xl border border-[#E5E5E8] overflow-hidden">
               <div className="px-4 py-3 border-b border-[#F1F1F4] bg-[#FAFAFA]">
@@ -144,7 +171,7 @@ export default function ChartOfAccounts() {
                     </div>
                     <div className="flex shrink-0 items-center gap-2 sm:gap-3">
                       <span className="whitespace-nowrap text-[12px] font-medium text-[#0F0F0F]">R {(acct.balance || 0).toLocaleString("en-ZA", { minimumFractionDigits: 2 })}</span>
-                      <button onClick={() => { setForm({ code: acct.code, name: acct.name, type: acct.type, sub_type: acct.sub_type || "", description: acct.description || "", normal_side: acct.normal_side || "debit" }); setEditingId(acct.id); setDialogOpen(true); }}
+                      <button onClick={() => handleEdit(acct)}
                         className="p-1 rounded hover:bg-[#F1F1F4] text-[#6B6B72]"><Pencil size={13} /></button>
                       {!acct.is_system && (
                         <button onClick={() => handleDelete(acct.id)} className="p-1 rounded hover:bg-red-50 text-[#6B6B72] hover:text-red-500"><Trash2 size={13} /></button>
@@ -156,6 +183,7 @@ export default function ChartOfAccounts() {
             </div>
           ))}
         </div>
+        </>
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
