@@ -12,7 +12,8 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import moment from "moment";
 import { formatRand } from "@/lib/money";
-import { buildStatementSummary, categorizeTransaction } from "@/lib/bankStatementExtraction";
+import { buildStatementSummary } from "@/lib/bankStatementExtraction";
+import { matchTransaction } from "@/lib/bankRuleEngine";
 
 const FILTERS = [
   { value: "all", label: "All" },
@@ -186,8 +187,8 @@ Provide a clear, professional explanation. Include:
     setAiExplaining(false);
   };
 
-  // Categorises every unallocated transaction with the same keyword rules an
-  // import uses, then saves the results in one go.
+  // Allocates every unallocated transaction of the selected company through its
+  // bank rules — highest priority rule wins, exactly as an import does it.
   const handleAutoAllocate = async () => {
     const pending = transactions.filter((t) => t.status !== "allocated" && t.status !== "reviewed");
     if (pending.length === 0) {
@@ -196,25 +197,40 @@ Provide a clear, professional explanation. Include:
     }
     setAllocating(true);
     try {
+      const rules = await db.entities.BankRule.filter(
+        { company_id: currentCompany.id, is_active: true },
+        "-priority"
+      );
+      if (rules.length === 0) {
+        toast({
+          title: "No bank rules yet",
+          description: "Add bank rules first, then auto allocate will apply them.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const records = pending.reduce((list, tx) => {
-        const signed = tx.type === "credit" ? Math.abs(tx.amount || 0) : -Math.abs(tx.amount || 0);
-        const cat = categorizeTransaction(tx.description, signed);
-        if (isPlaceholderCategory(cat.category)) return list;
+        const match = matchTransaction(tx, rules);
+        if (!match?.account_id) return list;
+        const vatCode = match.vat_code || "standard";
+        const keyword = rules.find((r) => r.id === match.rule_id)?.keyword;
         list.push({
           id: tx.id,
-          category: cat.category,
-          vat_amount: cat.vat_amount,
+          account_id: match.account_id,
+          account_name: match.account_name,
+          vat_classification: vatCode === "none" ? "exempt" : vatCode,
           status: "allocated",
-          ai_confidence: cat.confidence,
-          ai_reasoning: `Auto-categorized from "${tx.description}"`,
+          ai_confidence: 85,
+          ai_reasoning: keyword ? `Auto-matched by bank rule: "${keyword}"` : "Auto-matched by bank rule",
         });
         return list;
       }, []);
 
       if (records.length === 0) {
         toast({
-          title: "No categories matched",
-          description: "None of the descriptions matched an existing category.",
+          title: "No bank rules matched",
+          description: "None of the unallocated transactions match an active bank rule.",
           variant: "destructive",
         });
         return;
@@ -223,7 +239,9 @@ Provide a clear, professional explanation. Include:
       const updated = await db.entities.Transaction.bulkUpdate(records);
       const byId = new Map(updated.filter(Boolean).map((t) => [t.id, t]));
       setTransactions((list) => list.map((t) => byId.get(t.id) || t));
-      toast({ title: `${records.length} transaction${records.length === 1 ? "" : "s"} auto-allocated` });
+      toast({
+        title: `${records.length} transaction${records.length === 1 ? "" : "s"} allocated by bank rules`,
+      });
     } catch (e) {
       toast({ title: "Auto allocate failed", description: e.message, variant: "destructive" });
     } finally {
