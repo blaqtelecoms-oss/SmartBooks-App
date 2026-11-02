@@ -162,7 +162,7 @@ export default function AccountantOnboarding() {
           ))}
         </div>
 
-        <div className="mt-6 rounded-[22px] p-5 sm:p-7" style={{ background: "var(--sb-card)", border: "1px solid var(--sb-border)", boxShadow: "var(--sb-shadow)" }}>
+        <div className="sb-card mt-6">
           <h1 className="text-[26px] leading-tight sm:text-[32px]" style={{ fontFamily: "var(--font-display)" }}>
             {current.title}
           </h1>

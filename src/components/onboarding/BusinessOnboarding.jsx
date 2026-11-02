@@ -235,7 +235,7 @@ export default function BusinessOnboarding() {
           ))}
         </div>
 
-        <div className="mt-6 rounded-[22px] p-5 sm:p-7" style={{ background: "var(--sb-card)", border: "1px solid var(--sb-border)", boxShadow: "var(--sb-shadow)" }}>
+        <div className="sb-card mt-6">
           <h1 className="text-[26px] leading-tight sm:text-[32px]" style={{ fontFamily: "var(--font-display)" }}>
             {current.title}
           </h1>
@@ -367,10 +367,15 @@ export default function BusinessOnboarding() {
                       type="button"
                       onClick={() => update("offering_type", choice.value)}
                       aria-pressed={active}
-                      className="flex w-full items-start gap-3.5 rounded-[16px] p-4 text-left transition-colors"
+                      className="sb-choice flex w-full items-start gap-3.5 rounded-[18px] p-4 text-left"
                       style={{
-                        background: active ? "var(--sb-soft)" : "transparent",
+                        background: active
+                          ? "color-mix(in srgb, var(--sb-brand-2) 10%, var(--sb-card))"
+                          : "var(--sb-card)",
                         border: `1px solid ${active ? "var(--sb-brand)" : "var(--sb-border)"}`,
+                        boxShadow: active
+                          ? "0 0 0 3px color-mix(in srgb, var(--sb-brand-2) 15%, transparent), var(--sb-card-shadow)"
+                          : "var(--sb-card-shadow)",
                       }}
                     >
                       <span
@@ -469,7 +474,7 @@ function Field({ label, error, children }) {
 function ReviewGroup({ title, rows }) {
   const filled = rows.filter(([, value]) => value);
   return (
-    <div className="rounded-[16px] p-4" style={{ border: "1px solid var(--sb-border)" }}>
+    <div className="rounded-[18px] p-4" style={{ background: "var(--sb-soft)", border: "1px solid var(--sb-border)" }}>
       <p className="text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--sb-muted)" }}>{title}</p>
       <dl className="mt-2 space-y-1.5">
         {filled.length === 0 && <p className="text-[13px]" style={{ color: "var(--sb-muted)" }}>Not provided</p>}

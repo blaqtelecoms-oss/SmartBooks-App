@@ -53,6 +53,14 @@
     --sb-red-ink: #8e2218;
     --sb-shadow: 0 1px 2px rgba(11, 31, 26, 0.04), 0 8px 24px -12px rgba(11, 31, 26, 0.12);
 
+    /* Card surfaces: one depth scale shared by every page */
+    --sb-card-radius: 26px;
+    --sb-card-sheen: rgba(255, 255, 255, 0.9);
+    --sb-card-shadow: 0 1px 2px rgba(11, 31, 26, 0.06), 0 10px 20px -12px rgba(11, 31, 26, 0.16),
+      0 30px 56px -34px rgba(11, 31, 26, 0.42);
+    --sb-card-shadow-hover: 0 2px 4px rgba(11, 31, 26, 0.07), 0 16px 30px -14px rgba(11, 31, 26, 0.2),
+      0 40px 70px -36px rgba(11, 31, 26, 0.46);
+
     --font-heading: 'Manrope', ui-sans-serif, system-ui, sans-serif;
     --font-body: 'Manrope', ui-sans-serif, system-ui, sans-serif;
     --font-display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
@@ -100,6 +108,12 @@
     --sb-red-bg: #3a1b18;
     --sb-red-ink: #f2a79c;
     --sb-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+
+    --sb-card-sheen: rgba(255, 255, 255, 0.05);
+    --sb-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 10px 22px -12px rgba(0, 0, 0, 0.6),
+      0 30px 56px -34px rgba(0, 0, 0, 0.9);
+    --sb-card-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.5), 0 16px 30px -14px rgba(0, 0, 0, 0.65),
+      0 40px 70px -36px rgba(0, 0, 0, 0.95);
   }
 }
 
@@ -155,11 +169,37 @@
    SmartBooks premium fintech utilities
    ========================================================= */
 .sb-card {
-  background: var(--sb-card);
-  border: 1px solid var(--sb-border);
-  border-radius: 26px;
+  position: relative;
+  background:
+    linear-gradient(180deg, var(--sb-card-sheen) 0%, transparent 30%),
+    linear-gradient(
+      150deg,
+      var(--sb-card) 0%,
+      color-mix(in srgb, var(--sb-brand-2) 4%, var(--sb-card)) 58%,
+      color-mix(in srgb, var(--sb-brand-2) 13%, var(--sb-soft)) 100%
+    );
+  border: 1px solid color-mix(in srgb, var(--sb-brand-2) 8%, var(--sb-border));
+  border-radius: var(--sb-card-radius);
   padding: 24px;
-  box-shadow: var(--sb-shadow);
+  box-shadow:
+    inset 0 1px 0 var(--sb-card-sheen),
+    var(--sb-card-shadow);
+  transition: box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+/* Selectable card (onboarding choices, pickers) */
+.sb-choice {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.sb-choice:hover {
+  transform: translateY(-1px);
+}
+
+.sb-card:hover {
+  border-color: color-mix(in srgb, var(--sb-brand-2) 18%, var(--sb-border));
+  box-shadow:
+    inset 0 1px 0 var(--sb-card-sheen),
+    var(--sb-card-shadow-hover);
 }
 
 .sb-label {
@@ -1092,9 +1132,9 @@
    receipt, service, company and team screens
    ========================================================= */
 :root {
-  --sb-tile-radius: 22px;
-  --sb-tile-shadow: 0 1px 2px rgba(11, 31, 26, 0.05), 0 18px 34px -26px rgba(11, 31, 26, 0.45);
-  --sb-tile-shadow-hover: 0 2px 4px rgba(11, 31, 26, 0.06), 0 26px 46px -26px rgba(11, 31, 26, 0.5);
+  --sb-tile-radius: var(--sb-card-radius);
+  --sb-tile-shadow: var(--sb-card-shadow);
+  --sb-tile-shadow-hover: var(--sb-card-shadow-hover);
   --sb-tile-tint-a: #f2f8e6;
   --sb-tile-tint-b: #e2efe6;
   --sb-tile-sheen: rgba(255, 255, 255, 0.9);
@@ -1104,8 +1144,8 @@
 }
 
 .dark {
-  --sb-tile-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 18px 34px -26px rgba(0, 0, 0, 0.75);
-  --sb-tile-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.4), 0 26px 46px -26px rgba(0, 0, 0, 0.8);
+  --sb-tile-shadow: var(--sb-card-shadow);
+  --sb-tile-shadow-hover: var(--sb-card-shadow-hover);
   --sb-tile-tint-a: #223c1c;
   --sb-tile-tint-b: #14332a;
   --sb-tile-sheen: rgba(255, 255, 255, 0.1);
@@ -1117,14 +1157,19 @@
 /* Base tile: hairline ring, soft layered shadow, gentle lift on hover */
 .sb-tile {
   position: relative;
-  background: linear-gradient(
-    180deg,
-    var(--sb-card) 0%,
-    color-mix(in srgb, var(--sb-soft) 45%, var(--sb-card)) 100%
-  );
-  border: 1px solid var(--sb-border);
-  border-radius: var(--sb-tile-radius);
-  box-shadow: var(--sb-tile-shadow);
+  background:
+    linear-gradient(180deg, var(--sb-card-sheen) 0%, transparent 32%),
+    linear-gradient(
+      150deg,
+      var(--sb-card) 0%,
+      color-mix(in srgb, var(--sb-brand-2) 4%, var(--sb-card)) 58%,
+      color-mix(in srgb, var(--sb-brand-2) 13%, var(--sb-soft)) 100%
+    );
+  border: 1px solid color-mix(in srgb, var(--sb-brand-2) 8%, var(--sb-border));
+  border-radius: var(--sb-card-radius);
+  box-shadow:
+    inset 0 1px 0 var(--sb-card-sheen),
+    var(--sb-card-shadow);
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
