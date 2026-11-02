@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { Camera, LogOut, Trash2, Loader2 } from "lucide-react";
 import { db } from "@/api/supabaseClient";
-import { initialOf, roleLabelOf, toAvatarDataUrl } from "@/lib/avatar";
+import { initialOf, roleLabelOf, toAvatarBlob } from "@/lib/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
@@ -71,7 +71,7 @@ export default function Profile() {
     setBusy(true);
     setError("");
     try {
-      await saveAvatar(await toAvatarDataUrl(file));
+      await saveAvatar(await toAvatarBlob(file));
     } catch (err) {
       setError(err.message || "Could not read that image");
       setBusy(false);
