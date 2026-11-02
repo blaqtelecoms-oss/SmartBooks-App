@@ -196,7 +196,7 @@ export default function AppLayout() {
             aria-label="Open menu"
             aria-expanded={mobileNavOpen}
           >
-            <Menu size={18} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+            <Menu size={19} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
           </button>
 
           <p className="sb-label truncate min-w-0" aria-label="Current page">
