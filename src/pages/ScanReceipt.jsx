@@ -162,10 +162,12 @@ export default function ScanReceipt() {
         <button
           onClick={() => cameraInputRef.current?.click()}
           disabled={uploading}
-          className="flex flex-col items-center justify-center gap-3 bg-[#2D5A43] text-white rounded-2xl p-8 hover:bg-[#1F4030] transition-colors disabled:opacity-50"
+          className="sb-action-card sb-action-card--brand disabled:opacity-60"
         >
-          {uploading ? <Loader2 size={32} className="animate-spin" /> : <Camera size={32} strokeWidth={1.5} />}
-          <span className="text-[15px] font-medium">{uploading ? "Processing..." : "Take Photo"}</span>
+          <span className="sb-action-icon sb-action-icon--brand">
+            {uploading ? <Loader2 size={26} className="animate-spin" /> : <Camera size={26} strokeWidth={1.6} />}
+          </span>
+          <span className="text-[15px] font-semibold tracking-tight">{uploading ? "Processing..." : "Take Photo"}</span>
           <span className="text-[12px] text-white/70">Use camera to scan a slip</span>
         </button>
 
@@ -177,9 +179,11 @@ export default function ScanReceipt() {
             accept="image/*,.pdf"
             onChange={handleCamera}
           />
-          <div className="flex flex-col items-center justify-center gap-3 bg-white border-2 border-[#DDE6DF] rounded-2xl p-8 hover:border-[#2D5A43] transition-colors h-full">
-            <Upload size={32} className="text-[#2D5A43]" strokeWidth={1.5} />
-            <span className="text-[15px] font-medium text-[#1A2E22]">Upload File</span>
+          <div className="sb-action-card sb-action-card--outline h-full">
+            <span className="sb-action-icon sb-action-icon--outline">
+              <Upload size={26} strokeWidth={1.6} />
+            </span>
+            <span className="text-[15px] font-semibold tracking-tight text-[#1A2E22]">Upload File</span>
             <span className="text-[12px] text-[#5C7263]">Choose an image or PDF</span>
           </div>
         </label>
@@ -215,10 +219,10 @@ export default function ScanReceipt() {
       {loading ? (
         <div className="text-center py-12"><Loader2 size={24} className="animate-spin text-[#5C7263] mx-auto" /></div>
       ) : documents.length === 0 ? (
-        <div className="bg-white rounded-xl border border-[#DDE6DF] p-12 text-center">
-          <Receipt size={32} className="text-[#5C7263] mx-auto mb-3" strokeWidth={1} />
-          <p className="text-[15px] font-medium text-[#1A2E22]">No receipts scanned yet</p>
-          <p className="text-[13px] text-[#5C7263] mt-1">Take a photo or upload a file to get started</p>
+        <div className="sb-empty p-12">
+          <div className="sb-empty-icon"><Receipt size={24} strokeWidth={1.4} /></div>
+          <p className="text-[15px] font-semibold text-[#1A2E22]">No receipts scanned yet</p>
+          <p className="mt-1 text-[13px] text-[#5C7263]">Take a photo or upload a file to get started</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -227,9 +231,9 @@ export default function ScanReceipt() {
             const total = getOcrField(doc, "total");
             const date = getOcrField(doc, "date");
             return (
-              <div key={doc.id} className="bg-white rounded-xl border border-[#DDE6DF] p-4 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-lg bg-[#EFF4F0] flex items-center justify-center flex-shrink-0">
-                  <Receipt size={20} className="text-[#2D5A43]" strokeWidth={1.5} />
+              <div key={doc.id} className="sb-tile flex items-center gap-3.5 p-4">
+                <div className="sb-tile-icon" aria-hidden="true">
+                  <Receipt size={19} strokeWidth={1.6} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[14px] font-medium text-[#1A2E22] truncate">{supplier || doc.name}</p>
@@ -257,14 +261,15 @@ export default function ScanReceipt() {
                     <span className="sb-chip">{doc.status}</span>
                   )}
                   {doc.extracted_data && (
-                    <button onClick={() => viewExtracted(doc)} className="p-1.5 rounded-lg hover:bg-[#EFF4F0] text-[#5C7263] hover:text-[#2D5A43]">
+                    <button onClick={() => viewExtracted(doc)} aria-label="View extracted data" className="sb-tile-action">
                       <Eye size={14} />
                     </button>
                   )}
                   <button
                     onClick={() => handleDelete(doc)}
                     disabled={deletingId === doc.id}
-                    className="p-1.5 rounded-lg hover:bg-red-50 text-[#5C7263] hover:text-red-500 disabled:opacity-50"
+                    aria-label="Delete receipt"
+                    className="sb-tile-action sb-tile-action--danger disabled:opacity-50"
                   >
                     {deletingId === doc.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                   </button>

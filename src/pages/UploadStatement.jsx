@@ -222,22 +222,21 @@ export default function UploadStatement() {
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={(e) => { e.preventDefault(); setDragOver(false); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); }}
-        className={`bg-white rounded-xl border-2 border-dashed p-12 text-center transition-colors cursor-pointer ${
-        dragOver ? "border-[#2D5A43] bg-[#4A7C5E]/5" : "border-[#DDE6DF] hover:border-[#4A7C5E] hover:bg-[#EFF4F0]/50"
-        }`}
+        className="sb-drop p-12 text-center"
+        data-dragover={dragOver ? "true" : "false"}
         onClick={() => document.getElementById("file-input").click()}
       >
         <input id="file-input" type="file" accept=".pdf,.csv,.xlsx,.xls" className="hidden" onChange={e => { if (e.target.files[0]) handleFile(e.target.files[0]); }} />
-        <div className="w-14 h-14 rounded-2xl bg-[#EFF4F0] flex items-center justify-center mx-auto mb-3">
-          <Upload size={28} className="text-[#2D5A43]" strokeWidth={1.5} />
+        <div className="sb-drop-medallion">
+          <Upload size={26} className="text-[#2D5A43]" strokeWidth={1.6} />
         </div>
-        <p className="text-[14px] font-medium text-[#0F0F0F]">Drop your bank statement here</p>
+        <p className="text-[14.5px] font-semibold tracking-tight text-[#0F0F0F]">Drop your bank statement here</p>
         <p className="text-[12px] text-[#6B6B72] mt-1">or click to browse — PDF, CSV, Excel supported</p>
       </div>
 
       {/* Selected file */}
       {file && (
-        <div className="bg-white rounded-xl border border-[#E5E5E8] p-4 space-y-4">
+        <div className="sb-tile space-y-4 p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <FileText size={20} className="shrink-0 text-[#2D5A43]" />
@@ -295,7 +294,10 @@ export default function UploadStatement() {
       {/* Uploaded statements */}
       <div className="space-y-3">
         <div>
-          <h2 className="text-[15px] font-medium text-[#0F0F0F]">Uploaded statements</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-[15px] font-semibold text-[#0F0F0F]">Uploaded statements</h2>
+            {documents.length > 0 && <span className="sb-chip">{documents.length}</span>}
+          </div>
           <p className="text-[12px] text-[#6B6B72] mt-0.5">
             Removing a statement deletes the stored file, its record, and the transactions it imported.
           </p>
@@ -304,15 +306,15 @@ export default function UploadStatement() {
         {loadingDocuments ? (
           <div className="text-center py-8"><Loader2 size={20} className="animate-spin text-[#6B6B72] mx-auto" /></div>
         ) : documents.length === 0 ? (
-          <div className="bg-white rounded-xl border border-[#E5E5E8] p-6 text-center">
+          <div className="sb-empty p-6">
             <p className="text-[13px] text-[#6B6B72]">No statements uploaded yet</p>
           </div>
         ) : (
           <div className="space-y-2">
             {documents.map((doc) => (
-              <div key={doc.id} className="bg-white rounded-xl border border-[#E5E5E8] p-3.5 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-[#EFF4F0] flex items-center justify-center flex-shrink-0">
-                  <FileText size={16} className="text-[#2D5A43]" />
+              <div key={doc.id} className="sb-tile flex items-center gap-3 p-3.5">
+                <div className="sb-tile-icon sb-tile-icon--sm" aria-hidden="true">
+                  <FileText size={16} strokeWidth={1.7} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-medium text-[#0F0F0F] truncate">{doc.name}</p>
@@ -325,7 +327,7 @@ export default function UploadStatement() {
                   onClick={() => handleDelete(doc)}
                   disabled={deletingId === doc.id}
                   aria-label={`Remove ${doc.name}`}
-                  className="p-1.5 rounded-lg text-[#6B6B72] hover:text-red-500 hover:bg-red-50 disabled:opacity-50"
+                  className="sb-tile-action sb-tile-action--danger disabled:opacity-50"
                 >
                   {deletingId === doc.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                 </button>

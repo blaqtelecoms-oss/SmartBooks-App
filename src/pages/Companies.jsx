@@ -4,7 +4,6 @@ import { db } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ResponsiveSelect from "@/components/ResponsiveSelect";
 import { Building2, Plus, Pencil, Trash2 } from "lucide-react";
@@ -14,6 +13,14 @@ const months = ["January","February","March","April","May","June","July","August
 const industries = ["Retail","Manufacturing","Services","Technology","Construction","Agriculture","Mining","Finance","Healthcare","Education","Transport","Hospitality","Other"];
 
 const emptyForm = { name:"", registration_number:"", vat_number:"", paye_number:"", uif_number:"", sdl_number:"", tax_number:"", financial_year_end:"February", industry:"", address:"", contact_email:"", contact_phone:"" };
+
+const initialsOf = (name) =>
+  (name || "?")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0].toUpperCase())
+    .join("");
 
 export default function Companies() {
   const { refreshCompanies } = useOutletContext();
@@ -96,34 +103,48 @@ export default function Companies() {
 
       {loading ? (
         <div className="space-y-3">
-          {[1,2,3].map(i => <div key={i} className="bg-white rounded-xl border border-[#E5E5E8] p-6 animate-pulse"><div className="h-5 bg-[#F1F1F4] rounded w-40" /></div>)}
+          {[1,2,3].map(i => <div key={i} className="sb-tile p-6 animate-pulse"><div className="h-5 bg-[#F1F1F4] rounded w-40" /></div>)}
         </div>
       ) : companies.length === 0 ? (
-        <div className="bg-white rounded-xl border border-[#E5E5E8] p-12 text-center">
-          <Building2 size={32} className="text-[#6B6B72] mx-auto mb-3" strokeWidth={1} />
-          <p className="text-[15px] font-medium text-[#0F0F0F]">No companies yet</p>
+        <div className="sb-empty p-12">
+          <div className="sb-empty-icon"><Building2 size={24} strokeWidth={1.5} /></div>
+          <p className="text-[15px] font-semibold text-[#0F0F0F]">No companies yet</p>
           <p className="text-[13px] text-[#6B6B72] mt-1">Add your first company to get started</p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {companies.map(c => (
-            <div key={c.id} className="bg-white rounded-xl border border-[#E5E5E8] p-5 hover:border-[#D0D0D4] transition-colors">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="text-[15px] font-medium text-[#0F0F0F]">{c.name}</h3>
-                  {c.industry && <span className="text-[11px] text-[#6B6B72] bg-[#F7F7FA] px-2 py-0.5 rounded-full mt-1 inline-block">{c.industry}</span>}
+            <div key={c.id} className="sb-tile flex flex-col p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-start gap-3">
+                  <div className="sb-monogram" aria-hidden="true">{initialsOf(c.name)}</div>
+                  <div className="min-w-0">
+                    <h3 className="truncate text-[15px] font-semibold tracking-tight text-[#0F0F0F]">{c.name}</h3>
+                    {c.industry && (
+                      <span className="mt-2 inline-flex items-center rounded-full bg-[#EFF4F0] px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[#2D5A43] ring-1 ring-inset ring-[#DCE7DE]">
+                        {c.industry}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="flex gap-1">
-                  <button onClick={() => handleEdit(c)} className="p-1.5 rounded-lg hover:bg-[#F1F1F4] text-[#6B6B72]"><Pencil size={14} /></button>
-                  <button onClick={() => handleDelete(c.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-[#6B6B72] hover:text-red-500"><Trash2 size={14} /></button>
+                <div className="flex flex-none gap-1">
+                  <button onClick={() => handleEdit(c)} aria-label={`Edit ${c.name}`} className="sb-tile-action"><Pencil size={14} /></button>
+                  <button onClick={() => handleDelete(c.id)} aria-label={`Delete ${c.name}`} className="sb-tile-action sb-tile-action--danger"><Trash2 size={14} /></button>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-4 text-[12px]">
-                {c.registration_number && <div><span className="text-[#6B6B72]">Reg:</span> <span className="text-[#0F0F0F]">{c.registration_number}</span></div>}
-                {c.vat_number && <div><span className="text-[#6B6B72]">VAT:</span> <span className="text-[#0F0F0F]">{c.vat_number}</span></div>}
-                {c.tax_number && <div><span className="text-[#6B6B72]">Tax:</span> <span className="text-[#0F0F0F]">{c.tax_number}</span></div>}
-                {c.paye_number && <div><span className="text-[#6B6B72]">PAYE:</span> <span className="text-[#0F0F0F]">{c.paye_number}</span></div>}
-                {c.financial_year_end && <div><span className="text-[#6B6B72]">FYE:</span> <span className="text-[#0F0F0F]">{c.financial_year_end}</span></div>}
+              <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-[#EDF1ED] pt-4">
+                {[
+                  ["Reg", c.registration_number],
+                  ["VAT", c.vat_number],
+                  ["Tax", c.tax_number],
+                  ["PAYE", c.paye_number],
+                  ["FYE", c.financial_year_end],
+                ].filter(([, value]) => !!value).map(([label, value]) => (
+                  <div key={label} className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.09em] text-[#93A096]">{label}</p>
+                    <p className="mt-0.5 truncate text-[12.5px] font-medium text-[#0F0F0F]">{value}</p>
+                  </div>
+                ))}
               </div>
             </div>
           ))}

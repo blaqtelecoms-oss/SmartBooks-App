@@ -1087,6 +1087,286 @@
 .sb-submit-btn:hover { background: #0F5132 !important; box-shadow: 0 4px 12px rgba(15,81,50,.25); }
 .sb-submit-btn:disabled { opacity: .7; }
 
+/* =========================================================
+   Card surfaces — one modern tile used by the statement,
+   receipt, service, company and team screens
+   ========================================================= */
+:root {
+  --sb-tile-radius: 22px;
+  --sb-tile-shadow: 0 1px 2px rgba(11, 31, 26, 0.05), 0 18px 34px -26px rgba(11, 31, 26, 0.45);
+  --sb-tile-shadow-hover: 0 2px 4px rgba(11, 31, 26, 0.06), 0 26px 46px -26px rgba(11, 31, 26, 0.5);
+  --sb-tile-tint-a: #f2f8e6;
+  --sb-tile-tint-b: #e2efe6;
+  --sb-tile-sheen: rgba(255, 255, 255, 0.9);
+  --sb-tile-icon-ring: rgba(27, 122, 77, 0.16);
+  --sb-tile-divider: #edf1ed;
+  --sb-drop-line: #cfdcd3;
+}
+
+.dark {
+  --sb-tile-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 18px 34px -26px rgba(0, 0, 0, 0.75);
+  --sb-tile-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.4), 0 26px 46px -26px rgba(0, 0, 0, 0.8);
+  --sb-tile-tint-a: #223c1c;
+  --sb-tile-tint-b: #14332a;
+  --sb-tile-sheen: rgba(255, 255, 255, 0.1);
+  --sb-tile-icon-ring: rgba(182, 238, 143, 0.2);
+  --sb-tile-divider: #1c2f27;
+  --sb-drop-line: #2a443a;
+}
+
+/* Base tile: hairline ring, soft layered shadow, gentle lift on hover */
+.sb-tile {
+  position: relative;
+  background: linear-gradient(
+    180deg,
+    var(--sb-card) 0%,
+    color-mix(in srgb, var(--sb-soft) 45%, var(--sb-card)) 100%
+  );
+  border: 1px solid var(--sb-border);
+  border-radius: var(--sb-tile-radius);
+  box-shadow: var(--sb-tile-shadow);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.sb-tile:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--sb-brand-2) 30%, var(--sb-border));
+  box-shadow: var(--sb-tile-shadow-hover);
+}
+
+/* Small square/medallion that carries a single icon */
+.sb-tile-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  color: var(--sb-brand);
+  background: linear-gradient(155deg, var(--sb-tile-tint-a) 0%, var(--sb-tile-tint-b) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--sb-tile-sheen),
+    inset 0 0 0 1px var(--sb-tile-icon-ring),
+    0 3px 8px -4px rgba(11, 31, 26, 0.4);
+}
+
+.sb-tile-icon--sm {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+}
+
+/* Brand-gradient monogram used where a card represents an entity */
+.sb-monogram {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 15px;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  color: #f7fbf3;
+  background: linear-gradient(155deg, var(--sb-brand-2) 0%, var(--sb-brand) 58%, var(--sb-ink) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 8px 16px -10px rgba(11, 31, 26, 0.85);
+}
+
+.sb-monogram--sm {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  font-size: 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 4px 10px -6px rgba(11, 31, 26, 0.8);
+}
+
+/* Round, quiet icon action inside a card */
+.sb-tile-action {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sb-muted);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.sb-tile-action:hover {
+  background: var(--sb-soft);
+  border-color: var(--sb-border);
+  color: var(--sb-ink);
+}
+.sb-tile-action--danger:hover {
+  background: var(--sb-red-bg);
+  border-color: color-mix(in srgb, var(--sb-red-ink) 24%, transparent);
+  color: var(--sb-red-ink);
+}
+
+/* Stat tile: uppercase label above an editorial serif figure */
+.sb-stat {
+  padding: 16px 18px;
+  border-radius: 20px;
+}
+.sb-stat-label {
+  font-weight: 700;
+  font-size: 10.5px;
+  line-height: 1.2;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sb-muted);
+}
+.sb-stat-value {
+  margin-top: 6px;
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--sb-ink);
+  font-variant-numeric: tabular-nums;
+}
+.sb-stat-value--sm { font-size: 25px; }
+
+/* Dashed upload dropzone with a soft brand wash */
+.sb-drop {
+  position: relative;
+  border: 1.5px dashed var(--sb-drop-line);
+  border-radius: 24px;
+  background: linear-gradient(
+    180deg,
+    var(--sb-card) 0%,
+    color-mix(in srgb, var(--sb-tile-tint-b) 55%, var(--sb-card)) 100%
+  );
+  box-shadow: var(--sb-tile-shadow);
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+.sb-drop:hover {
+  border-color: var(--sb-brand-2);
+  box-shadow: var(--sb-tile-shadow-hover);
+}
+.sb-drop[data-dragover="true"] {
+  border-color: var(--sb-brand-2);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--sb-brand-2) 16%, transparent),
+    var(--sb-tile-shadow-hover);
+}
+.sb-drop-medallion {
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  margin: 0 auto 14px;
+  border-radius: 22px;
+  color: var(--sb-brand);
+  background: linear-gradient(155deg, var(--sb-tile-tint-a) 0%, var(--sb-card) 100%);
+  box-shadow:
+    inset 0 0 0 1px var(--sb-tile-icon-ring),
+    0 12px 24px -16px rgba(11, 31, 26, 0.7);
+  transition: transform 0.18s ease;
+}
+.sb-drop:hover .sb-drop-medallion,
+.sb-drop[data-dragover="true"] .sb-drop-medallion {
+  transform: translateY(-2px) scale(1.03);
+}
+
+/* Empty state: dashed frame with a soft medallion */
+.sb-empty {
+  border: 1px dashed color-mix(in srgb, var(--sb-border) 70%, var(--sb-brand-2));
+  border-radius: var(--sb-tile-radius);
+  background: linear-gradient(
+    180deg,
+    var(--sb-card) 0%,
+    color-mix(in srgb, var(--sb-soft) 65%, var(--sb-card)) 100%
+  );
+  text-align: center;
+}
+.sb-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 12px;
+  border-radius: 18px;
+  color: var(--sb-brand);
+  background: linear-gradient(155deg, var(--sb-tile-tint-a) 0%, var(--sb-tile-tint-b) 100%);
+  box-shadow: inset 0 0 0 1px var(--sb-tile-icon-ring);
+}
+
+/* Large tappable action card (scan receipt / upload) */
+.sb-action-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 24px;
+  padding: 28px 22px;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.sb-action-card:hover { transform: translateY(-2px); }
+.sb-action-card > * {
+  position: relative;
+  z-index: 1;
+}
+.sb-action-card--brand {
+  color: #f6fbf8;
+  border: 1px solid rgba(11, 31, 26, 0.5);
+  background: radial-gradient(125% 120% at 50% 0%, #2d7d57 0%, #15573a 46%, #0b1f1a 100%);
+  box-shadow: 0 1px 2px rgba(11, 31, 26, 0.22), 0 24px 42px -26px rgba(11, 31, 26, 0.95);
+}
+.sb-action-card--brand::after {
+  content: "";
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  bottom: -58%;
+  height: 70%;
+  background: radial-gradient(closest-side, rgba(200, 241, 105, 0.24), transparent 72%);
+  pointer-events: none;
+}
+.sb-action-card--outline {
+  background: linear-gradient(
+    180deg,
+    var(--sb-card) 0%,
+    color-mix(in srgb, var(--sb-soft) 55%, var(--sb-card)) 100%
+  );
+  border: 1px solid var(--sb-border);
+  box-shadow: var(--sb-tile-shadow);
+}
+.sb-action-card--outline:hover {
+  border-color: color-mix(in srgb, var(--sb-brand-2) 35%, var(--sb-border));
+  box-shadow: var(--sb-tile-shadow-hover);
+}
+.sb-action-icon {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 6px;
+  border-radius: 18px;
+}
+.sb-action-icon--brand {
+  color: var(--sb-lime);
+  background: rgba(200, 241, 105, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(200, 241, 105, 0.3);
+}
+.sb-action-icon--outline {
+  color: var(--sb-brand);
+  background: linear-gradient(155deg, var(--sb-tile-tint-a) 0%, var(--sb-tile-tint-b) 100%);
+  box-shadow: inset 0 0 0 1px var(--sb-tile-icon-ring);
+}
+
 /* Scrollbars */
 .sb-content-scroll {
   scrollbar-width: thin;
