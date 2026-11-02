@@ -769,25 +769,40 @@ export function buildStatementSummary(transactions = [], overrides = {}) {
 /** Error code for a statement that does not print the period it covers. */
 export const STATEMENT_PERIOD_MISSING = "STATEMENT_PERIOD_MISSING";
 
+/** The span its own dated rows cover — used when the statement prints no period. */
+function periodFromRows(transactions) {
+  const dates = (transactions || [])
+    .map((transaction) => String(transaction?.date || ""))
+    .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
+    .sort();
+  return dates.length ? { start: dates[0], end: dates[dates.length - 1] } : null;
+}
+
 /**
  * Keeps only the rows inside the period the statement prints for itself — rows
  * outside it are never imported — and attaches the summary the transactions
- * page shows.
+ * page shows. A statement that prints no period covers the span of its own
+ * dated rows, so its rows are all imported rather than the upload failing.
  */
 function finalize(parsed) {
-  if (!parsed.period) {
+  const printed = Boolean(parsed.period);
+  const period = parsed.period || periodFromRows(parsed.transactions);
+
+  if (!period) {
     const error = new Error(
-      'This statement does not say which period it covers. It needs its start and end dates printed on it (for example "Statement period: 01 April 2026 to 31 August 2026"), so that only the transactions from that period are imported.'
+      "This statement does not print the dates it covers, and none of its rows show a date we can read. Try the original PDF, CSV or Excel export."
     );
     error.code = STATEMENT_PERIOD_MISSING;
     throw error;
   }
 
-  const { period } = parsed;
-  const rows = parsed.transactions.filter((transaction) => isInPeriod(transaction.date, period));
+  const rows = printed
+    ? parsed.transactions.filter((transaction) => isInPeriod(transaction.date, period))
+    : parsed.transactions;
 
   return {
     ...parsed,
+    period,
     transactions: rows,
     excluded_outside_period: parsed.transactions.length - rows.length,
     summary: buildStatementSummary(rows, {
