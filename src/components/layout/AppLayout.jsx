@@ -6,7 +6,7 @@ import MobileNav from "./MobileNav";
 import BottomNav from "./BottomNav";
 import ProfileAvatar from "./ProfileAvatar";
 import { accountPortal, resolvePortal } from "@/lib/portal";
-import { Bell, Mail, Menu, Search } from "lucide-react";
+import { Bell, Menu, Search } from "lucide-react";
 
 const PAGE_TITLES = {
   "/": "Dashboard",
@@ -273,12 +273,15 @@ export default function AppLayout() {
 
           {/* Icon buttons + avatar */}
           <div className="sb-topbar-actions flex items-center gap-2 flex-none">
-            <button type="button" className="sb-icon-btn" aria-label="Notifications">
+            <button
+              type="button"
+              className="sb-icon-btn sb-notify-btn"
+              onClick={() => navigate("/audit")}
+              aria-label="Notifications"
+              title="Notifications"
+            >
               <Bell size={17} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
-              <span className="absolute right-2.5 top-2.5 h-[7px] w-[7px] rounded-full" style={{ background: "#D14343", boxShadow: "0 0 0 2px var(--sb-card)" }} />
-            </button>
-            <button type="button" className="sb-icon-btn sb-icon-btn--mail" aria-label="Messages">
-              <Mail size={17} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
+              <span className="sb-notify-dot" />
             </button>
             <div className="ml-1 hidden items-center gap-2.5 md:flex">
               <ProfileAvatar user={user} />
