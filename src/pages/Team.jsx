@@ -105,14 +105,14 @@ export default function Team() {
         {ROLE_OPTIONS.map(r => {
           const Icon = ROLE_ICONS[r.value] || Users;
           return (
-            <div key={r.value} className="bg-white rounded-xl border border-[#E5E5E8] p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg bg-[#F7F7FA] grid place-items-center">
-                  <Icon size={16} className="text-[#6B6B72]" />
+            <div key={r.value} className="sb-tile p-4">
+              <div className="flex items-center gap-3">
+                <div className="sb-tile-icon sb-tile-icon--sm" aria-hidden="true">
+                  <Icon size={17} strokeWidth={1.7} />
                 </div>
-                <span className="text-[14px] font-medium text-[#0F0F0F]">{r.label}</span>
+                <span className="text-[14px] font-semibold tracking-tight text-[#0F0F0F]">{r.label}</span>
               </div>
-              <p className="text-[12px] text-[#6B6B72]">{ROLE_DESCRIPTIONS[r.value] || ""}</p>
+              <p className="mt-2.5 text-[12px] leading-relaxed text-[#6B6B72]">{ROLE_DESCRIPTIONS[r.value] || ""}</p>
             </div>
           );
         })}
@@ -121,23 +121,23 @@ export default function Team() {
       {loading ? (
         <div className="text-center py-12"><Loader2 size={24} className="animate-spin text-[#6B6B72] mx-auto" /></div>
       ) : members.length === 0 ? (
-        <div className="bg-white rounded-xl border border-[#E5E5E8] p-12 text-center">
-          <Users size={32} className="text-[#6B6B72] mx-auto mb-3" strokeWidth={1} />
-          <p className="text-[15px] font-medium text-[#0F0F0F]">No team members yet</p>
-          <p className="text-[13px] text-[#6B6B72] mt-1">Invite accountants, bookkeepers, and auditors by email</p>
+        <div className="sb-empty p-12">
+          <div className="sb-empty-icon"><Users size={24} strokeWidth={1.5} /></div>
+          <p className="text-[15px] font-semibold text-[#0F0F0F]">No team members yet</p>
+          <p className="mt-1 text-[13px] text-[#6B6B72]">Invite accountants, bookkeepers, and auditors by email</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-[#E5E5E8] overflow-hidden">
+        <div className="sb-tile overflow-hidden">
           {members.map((m, i) => {
             const Icon = ROLE_ICONS[m.role] || Users;
             return (
-              <div key={m.id} className={`flex items-center justify-between gap-2 px-4 py-3.5 sm:px-5 ${i < members.length - 1 ? "border-b border-[#F1F1F4]" : ""} hover:bg-[#F7F7FA] transition-colors`}>
+              <div key={m.id} className={`flex items-center justify-between gap-2 px-4 py-3.5 sm:px-5 ${i < members.length - 1 ? "border-b border-[#EDF1ED]" : ""} hover:bg-[#F7FAF7] transition-colors`}>
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="w-8 h-8 shrink-0 rounded-full bg-[#F1F1F4] flex items-center justify-center text-[12px] font-medium text-[#6B6B72]">
+                  <div className="sb-monogram sb-monogram--sm" aria-hidden="true">
                     {(m.user_id || "?").charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate text-[13px] font-medium text-[#0F0F0F]">{m.user_id}</p>
+                    <p className="truncate text-[13px] font-semibold text-[#0F0F0F]">{m.user_id}</p>
                     <span className={m.status === "active" ? "sb-chip sb-chip-green" : "sb-chip sb-chip-amber"}>
                       {m.status}
                     </span>

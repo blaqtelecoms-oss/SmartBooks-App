@@ -131,49 +131,52 @@ export default function Services() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-[#E5E5E8] bg-white p-4">
-          <p className="text-[11px] uppercase tracking-wider text-[#6B6B72]">Services</p>
-          <p className="mt-1 text-[20px] font-semibold text-[#0F0F0F]">{services.length}</p>
+        <div className="sb-tile sb-stat">
+          <p className="sb-stat-label">Services</p>
+          <p className="sb-stat-value">{services.length}</p>
         </div>
-        <div className="rounded-xl border border-[#E5E5E8] bg-white p-4">
-          <p className="text-[11px] uppercase tracking-wider text-[#6B6B72]">Active</p>
-          <p className="mt-1 text-[20px] font-semibold text-[#0F0F0F]">{activeServices.length}</p>
+        <div className="sb-tile sb-stat">
+          <p className="sb-stat-label">Active</p>
+          <p className="sb-stat-value">{activeServices.length}</p>
         </div>
-        <div className="col-span-2 rounded-xl border border-[#E5E5E8] bg-white p-4 sm:col-span-1">
-          <p className="text-[11px] uppercase tracking-wider text-[#6B6B72]">Average rate</p>
-          <p className="mt-1 text-[20px] font-semibold text-[#0F0F0F]">{formatMoney(averageRate)}</p>
+        <div className="sb-tile sb-stat col-span-2 sm:col-span-1">
+          <p className="sb-stat-label">Average rate</p>
+          <p className="sb-stat-value sb-stat-value--sm">{formatMoney(averageRate)}</p>
         </div>
       </div>
 
       {loading ? (
         <div className="py-12 text-center"><Loader2 size={24} className="mx-auto animate-spin text-[#6B6B72]" /></div>
       ) : services.length === 0 ? (
-        <div className="rounded-xl border border-[#E5E5E8] bg-white p-10 text-center">
-          <Wrench size={30} className="mx-auto mb-3 text-[#6B6B72]" strokeWidth={1} />
-          <p className="text-[15px] font-medium text-[#0F0F0F]">No services yet</p>
-          <p className="mt-1 text-[13px] text-[#6B6B72]">Add the services you charge for so you can bill them on invoices</p>
+        <div className="sb-empty p-10">
+          <div className="sb-empty-icon"><Wrench size={24} strokeWidth={1.5} /></div>
+          <p className="text-[15px] font-semibold text-[#0F0F0F]">No services yet</p>
+          <p className="mx-auto mt-1 max-w-sm text-[13px] text-[#6B6B72]">Add the services you charge for so you can bill them on invoices</p>
         </div>
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {services.map((service) => (
-            <div key={service.id} className="rounded-xl border border-[#E5E5E8] bg-white p-4">
+            <div key={service.id} className="sb-tile flex flex-col p-5">
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h3 className="text-[14px] font-medium text-[#0F0F0F]">{service.name}</h3>
-                  <p className="mt-1 text-[11px] uppercase tracking-wider text-[#6B6B72]">
-                    {rateUnits.find((u) => u.value === service.rate_unit)?.label || "Rate"}
-                    {service.is_active === false ? " · Inactive" : ""}
-                  </p>
+                <div className="flex min-w-0 items-start gap-3">
+                  <div className="sb-tile-icon" aria-hidden="true"><Wrench size={18} strokeWidth={1.6} /></div>
+                  <div className="min-w-0">
+                    <h3 className="truncate text-[14.5px] font-semibold tracking-tight text-[#0F0F0F]">{service.name}</h3>
+                    <p className="mt-1 text-[10.5px] font-bold uppercase tracking-[0.09em] text-[#6B6B72]">
+                      {rateUnits.find((u) => u.value === service.rate_unit)?.label || "Rate"}
+                      {service.is_active === false ? " · Inactive" : ""}
+                    </p>
+                  </div>
                 </div>
                 <div className="flex flex-none gap-1">
-                  <button onClick={() => handleEdit(service)} aria-label="Edit service" className="rounded-lg p-1.5 text-[#6B6B72] hover:bg-[#F1F1F4]"><Pencil size={14} /></button>
-                  <button onClick={() => handleDelete(service.id)} aria-label="Delete service" className="rounded-lg p-1.5 text-[#6B6B72] hover:bg-red-50 hover:text-red-500"><Trash2 size={14} /></button>
+                  <button onClick={() => handleEdit(service)} aria-label="Edit service" className="sb-tile-action"><Pencil size={14} /></button>
+                  <button onClick={() => handleDelete(service.id)} aria-label="Delete service" className="sb-tile-action sb-tile-action--danger"><Trash2 size={14} /></button>
                 </div>
               </div>
-              {service.description && <p className="mt-2 text-[12px] text-[#6B6B72]">{service.description}</p>}
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-[#6B6B72]">
-                <span className="text-[14px] font-semibold text-[#0F0F0F]">{formatMoney(service.rate)}</span>
-                <span>{vatCodes.find((c) => c.value === service.vat_code)?.label || "Standard (15%)"}</span>
+              {service.description && <p className="mt-3 text-[12.5px] leading-relaxed text-[#6B6B72]">{service.description}</p>}
+              <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-[#EDF1ED] pt-3.5">
+                <span className="sb-money font-display text-[21px] leading-none text-[#0F0F0F]">{formatMoney(service.rate)}</span>
+                <span className="sb-chip">{vatCodes.find((c) => c.value === service.vat_code)?.label || "Standard (15%)"}</span>
               </div>
             </div>
           ))}
