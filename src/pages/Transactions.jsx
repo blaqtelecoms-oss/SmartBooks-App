@@ -9,7 +9,7 @@ import TransactionListMobile from "@/components/transactions/TransactionListMobi
 import TransactionDetailSheet from "@/components/transactions/TransactionDetailSheet";
 import {
   Search, Sparkles, Loader2, ChevronDown, ChevronUp, Brain,
-  ArrowDownLeft, ArrowUpRight, Wand2, Eye, Zap,
+  ArrowDownLeft, ArrowUpRight, Eye, Zap,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import moment from "moment";
@@ -265,15 +265,20 @@ export default function Transactions() {
           </div>
 
           <div className="sb-card" style={{ padding: 20, background: "var(--sb-brand)", borderColor: "transparent", color: "#fff" }}>
-            <div className="flex items-center justify-between gap-3">
-              <p className="sb-label" style={{ color: "rgba(255,255,255,0.72)" }}>AI suggestions ready</p>
-              <span className="grid h-9 w-9 place-items-center rounded-full" style={{ background: "rgba(200,241,105,0.18)", color: "var(--sb-lime)" }}>
-                <Wand2 size={17} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
-              </span>
-            </div>
-            <p className="sb-display sb-money mt-3" style={{ fontSize: 34, lineHeight: 1.05, color: "#fff" }}>
+            <p className="sb-label" style={{ color: "rgba(255,255,255,0.72)" }}>AI suggestions ready</p>
+            <p className="sb-display sb-money mt-3 flex items-baseline gap-2" style={{ fontSize: 34, lineHeight: 1.05, color: "#fff" }}>
               {unallocatedCount}
-              <span className="ml-2 text-[13px] font-semibold" style={{ color: "rgba(255,255,255,0.72)" }}>to review</span>
+              <span
+                className="text-[16px] font-semibold"
+                style={{
+                  fontFamily: "'Manrope', ui-sans-serif, system-ui, sans-serif",
+                  color: "#ffffff",
+                  letterSpacing: 0,
+                  WebkitFontSmoothing: "auto",
+                }}
+              >
+                to review
+              </span>
             </p>
           </div>
         </div>
