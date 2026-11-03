@@ -199,9 +199,9 @@ export default function AppLayout() {
             <Menu size={19} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
           </button>
 
-          <p className="sb-label truncate min-w-0" aria-label="Current page">
+          <p className="sb-label sb-topbar-crumb truncate min-w-0" aria-label="Current page">
             <span className="sb-topbar-brand">SmartBooks</span>
-            <span style={{ opacity: 0.5 }}> / </span>
+            <span className="sb-topbar-sep" style={{ opacity: 0.5 }}> / </span>
             {pageTitle}
           </p>
 

@@ -853,9 +853,9 @@
   }
   .sb-topbar {
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
     row-gap: 10px;
-    padding: 8px 0 12px;
+    padding: 6px 0 10px;
     position: sticky;
     top: 0;
     z-index: 25;
@@ -863,9 +863,23 @@
     -webkit-backdrop-filter: blur(14px);
     backdrop-filter: blur(14px);
   }
-  .sb-topbar-actions { margin-left: auto; gap: 10px; }
+  .sb-topbar-actions { margin-left: auto; gap: 8px; }
   .sb-search-wrap { order: 3; flex-basis: 100%; max-width: none; margin-left: 0; }
-  .sb-search { padding: 11px 14px; }
+  .sb-search { padding: 10px 14px; }
+  /* The 44px global input floor would inflate the pill and the whole bar;
+     the pill itself is the touch target, so let it size to its content. */
+  .sb-search input { min-height: 0; }
+
+  /* Phones: the page name alone reads cleaner than app-name + page name
+     squeezed between the menu button and the actions. */
+  .sb-topbar-crumb {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 11.5px;
+    letter-spacing: 0.07em;
+  }
+  .sb-topbar-brand,
+  .sb-topbar-sep { display: none; }
 
   /* Roomier touch surfaces, calmer cards */
   .sb-card { border-radius: 20px; padding: 18px; }
