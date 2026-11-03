@@ -243,7 +243,7 @@ export default function Transactions() {
           <div className="sb-card" style={{ padding: 20 }}>
             <div className="flex items-center justify-between gap-3">
               <p className="sb-label">Money in</p>
-              <span className="grid h-9 w-9 place-items-center rounded-full" style={{ background: "var(--sb-green-bg)", color: "var(--sb-green-ink)" }}>
+              <span className="sb-flow-icon grid h-9 w-9 place-items-center" style={{ backgroundColor: "var(--sb-green-bg)", color: "var(--sb-green-ink)" }}>
                 <ArrowDownLeft size={17} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
               </span>
             </div>
@@ -255,7 +255,7 @@ export default function Transactions() {
           <div className="sb-card" style={{ padding: 20 }}>
             <div className="flex items-center justify-between gap-3">
               <p className="sb-label">Money out</p>
-              <span className="grid h-9 w-9 place-items-center rounded-full" style={{ background: "var(--sb-soft)", color: "var(--sb-muted)" }}>
+              <span className="sb-flow-icon grid h-9 w-9 place-items-center" style={{ backgroundColor: "var(--sb-soft)", color: "var(--sb-muted)" }}>
                 <ArrowUpRight size={17} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
               </span>
             </div>

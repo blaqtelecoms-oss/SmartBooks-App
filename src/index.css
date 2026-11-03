@@ -56,6 +56,8 @@
     /* Card surfaces: one depth scale shared by every page */
     --sb-card-radius: 26px;
     --sb-card-sheen: rgba(255, 255, 255, 0.9);
+    /* Top-light sheen for small pills and round glyphs */
+    --sb-sheen: rgba(255, 255, 255, 0.55);
     --sb-card-shadow: 0 1px 2px rgba(11, 31, 26, 0.06), 0 10px 20px -12px rgba(11, 31, 26, 0.16),
       0 30px 56px -34px rgba(11, 31, 26, 0.42);
     --sb-card-shadow-hover: 0 2px 4px rgba(11, 31, 26, 0.07), 0 16px 30px -14px rgba(11, 31, 26, 0.2),
@@ -110,6 +112,7 @@
     --sb-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
 
     --sb-card-sheen: rgba(255, 255, 255, 0.05);
+    --sb-sheen: rgba(255, 255, 255, 0.06);
     --sb-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 10px 22px -12px rgba(0, 0, 0, 0.6),
       0 30px 56px -34px rgba(0, 0, 0, 0.9);
     --sb-card-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.5), 0 16px 30px -14px rgba(0, 0, 0, 0.65),
@@ -303,7 +306,8 @@
 .sb-btn-lime { background: var(--sb-lime); color: #0b1f1a; }
 .sb-btn-lime:hover { filter: brightness(0.96); }
 
-/* Status chips — tone dot plus a hairline ring so state reads at a glance */
+/* Status chips — a quiet tinted pill: soft top light, one hairline ring and a
+   single dot whose halo carries the tone, so direction and state read instantly. */
 .sb-chip {
   display: inline-flex;
   align-items: center;
@@ -311,45 +315,65 @@
   border-radius: 999px;
   font-weight: 700;
   font-size: 10.5px;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.035em;
   line-height: 1;
-  padding: 6px 10px;
+  padding: 5px 10px 5px 8px;
   white-space: nowrap;
-  background: var(--sb-soft);
+  background-color: var(--sb-soft);
+  background-image: linear-gradient(180deg, var(--sb-sheen), rgba(255, 255, 255, 0));
   color: var(--sb-muted);
-  box-shadow: inset 0 0 0 1px var(--sb-border);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sb-muted) 20%, transparent);
+}
+/* Money in / money out in a feed get slightly more presence than a status tag */
+.sb-chip-flow {
+  font-size: 11px;
+  letter-spacing: 0.015em;
+  padding: 5.5px 11px 5.5px 9px;
 }
 .sb-chip-green {
-  background: var(--sb-green-bg);
+  background-color: var(--sb-green-bg);
   color: var(--sb-green-ink);
-  box-shadow: inset 0 0 0 1px rgba(30, 90, 18, 0.24), 0 1px 2px rgba(30, 90, 18, 0.14);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sb-green-ink) 22%, transparent),
+    0 1px 2px color-mix(in srgb, var(--sb-green-ink) 10%, transparent);
 }
 .sb-chip-amber {
-  background: var(--sb-amber-bg);
+  background-color: var(--sb-amber-bg);
   color: var(--sb-amber-ink);
-  box-shadow: inset 0 0 0 1px rgba(122, 75, 0, 0.24), 0 1px 2px rgba(122, 75, 0, 0.14);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sb-amber-ink) 22%, transparent),
+    0 1px 2px color-mix(in srgb, var(--sb-amber-ink) 10%, transparent);
 }
 .sb-chip-red {
-  background: var(--sb-red-bg);
+  background-color: var(--sb-red-bg);
   color: var(--sb-red-ink);
-  box-shadow: inset 0 0 0 1px rgba(142, 34, 24, 0.24), 0 1px 2px rgba(142, 34, 24, 0.14);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sb-red-ink) 22%, transparent),
+    0 1px 2px color-mix(in srgb, var(--sb-red-ink) 10%, transparent);
 }
 .sb-chip-blue {
-  background: #e8f0fb;
+  background-color: #e8f0fb;
   color: #1f4e8c;
-  box-shadow: inset 0 0 0 1px rgba(31, 78, 140, 0.24), 0 1px 2px rgba(31, 78, 140, 0.14);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #1f4e8c 22%, transparent),
+    0 1px 2px color-mix(in srgb, #1f4e8c 10%, transparent);
 }
 .sb-chip-green::before,
 .sb-chip-amber::before,
 .sb-chip-red::before,
 .sb-chip-blue::before {
   content: "";
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   flex: none;
   border-radius: 999px;
   background: currentColor;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 0 2.5px color-mix(in srgb, currentColor 16%, transparent);
+}
+
+/* The round direction glyph beside a money movement: flat tint lifted by a
+   soft top light and a hairline ring, the way a banking feed draws it. */
+.sb-flow-icon {
+  border-radius: 999px;
+  background-image: linear-gradient(160deg, var(--sb-sheen), rgba(255, 255, 255, 0) 72%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 16%, transparent),
+    0 1px 2px rgba(11, 31, 26, 0.07);
 }
 
 /* App shell grid */

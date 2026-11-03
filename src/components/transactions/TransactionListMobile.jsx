@@ -23,9 +23,9 @@ export default function TransactionListMobile({ transactions, onOpen }) {
               className="flex w-full items-start gap-3 px-4 py-3.5 text-left transition-colors active:bg-[var(--sb-soft)]"
             >
               <span
-                className="mt-0.5 grid h-11 w-11 flex-none place-items-center rounded-full"
+                className="sb-flow-icon mt-0.5 grid h-11 w-11 flex-none place-items-center"
                 style={{
-                  background: isIn ? "var(--sb-green-bg)" : "var(--sb-soft)",
+                  backgroundColor: isIn ? "var(--sb-green-bg)" : "var(--sb-soft)",
                   color: isIn ? "var(--sb-green-ink)" : "var(--sb-muted)",
                 }}
                 aria-hidden="true"
@@ -47,7 +47,7 @@ export default function TransactionListMobile({ transactions, onOpen }) {
                   {tx.reference ? <><span aria-hidden="true">·</span><span className="min-w-0 truncate">{tx.reference}</span></> : null}
                 </span>
                 <span className="mt-1.5 flex items-center gap-1.5">
-                  <span className={isIn ? "sb-chip sb-chip-green" : "sb-chip sb-chip-amber"}>
+                  <span className={isIn ? "sb-chip sb-chip-flow sb-chip-green" : "sb-chip sb-chip-flow sb-chip-amber"}>
                     {isIn ? "Money in" : "Money out"}
                   </span>
                   <span
