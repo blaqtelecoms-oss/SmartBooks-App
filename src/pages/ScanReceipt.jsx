@@ -5,7 +5,7 @@ import { extractTextFromFile, isPasswordError, parseDocumentData } from "@/lib/d
 import DocumentPasswordDialog from "@/components/documents/DocumentPasswordDialog";
 import { Button } from "@/components/ui/button";
 import { Camera, Upload, Loader2, Send, CheckCircle2, Eye, Trash2, Receipt } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import ExtractedDataSheet from "@/components/documents/ExtractedDataSheet";
 import { useToast } from "@/components/ui/use-toast";
 import moment from "moment";
 
@@ -280,40 +280,12 @@ export default function ScanReceipt() {
         </div>
       )}
 
-      {/* OCR Result Dialog */}
-      <Dialog open={!!selectedDoc} onOpenChange={() => setSelectedDoc(null)}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-[16px]">Extracted Data — {selectedDoc?.name}</DialogTitle>
-          </DialogHeader>
-          {ocrResult && (
-            <div className="space-y-3 mt-2 text-[13px]">
-              {ocrResult.supplier_name && <div className="flex justify-between"><span className="text-[#5C7263]">Supplier</span><span className="font-medium">{ocrResult.supplier_name}</span></div>}
-              {ocrResult.vat_number && <div className="flex justify-between"><span className="text-[#5C7263]">VAT Number</span><span className="font-medium">{ocrResult.vat_number}</span></div>}
-              {ocrResult.date && <div className="flex justify-between"><span className="text-[#5C7263]">Date</span><span className="font-medium">{ocrResult.date}</span></div>}
-              {ocrResult.document_number && <div className="flex justify-between"><span className="text-[#5C7263]">Receipt No.</span><span className="font-medium">{ocrResult.document_number}</span></div>}
-              {ocrResult.line_items?.length > 0 && (
-                <div className="pt-2 border-t border-[#E5E5E8]">
-                  <p className="text-[11px] text-[#5C7263] uppercase tracking-wider mb-2">
-                    Transactions ({ocrResult.line_items.length})
-                  </p>
-                  {ocrResult.line_items.map((item, i) => (
-                    <div key={i} className="flex justify-between py-1">
-                      <span>{item.description}</span>
-                      <span className="font-mono">{formatR(item.amount)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="pt-2 border-t border-[#E5E5E8] space-y-1">
-                {ocrResult.subtotal != null && <div className="flex justify-between"><span className="text-[#5C7263]">Subtotal</span><span className="font-mono">{formatR(ocrResult.subtotal)}</span></div>}
-                {ocrResult.vat_amount != null && <div className="flex justify-between"><span className="text-[#5C7263]">VAT (15%)</span><span className="font-mono">{formatR(ocrResult.vat_amount)}</span></div>}
-                {ocrResult.total != null && <div className="flex justify-between font-semibold text-[14px]"><span>Total</span><span className="font-mono">{formatR(ocrResult.total)}</span></div>}
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Extracted data — full-screen on phones */}
+      <ExtractedDataSheet
+        doc={selectedDoc}
+        data={ocrResult}
+        onClose={() => setSelectedDoc(null)}
+      />
 
       {/* Password for a locked receipt */}
       <DocumentPasswordDialog
