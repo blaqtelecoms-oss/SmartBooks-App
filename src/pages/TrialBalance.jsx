@@ -10,6 +10,7 @@ import {
   ReportLoading,
   NoCompany,
 } from "@/components/accounting/ReportShell";
+import { MobileList, MobileCard, MobileField } from "@/components/mobile/MobileCards";
 
 export default function TrialBalance() {
   const { company, rows, loading } = useCompanyLedger();
@@ -41,11 +42,11 @@ export default function TrialBalance() {
             </span>
           }
           footer={
-            <div className="flex items-baseline justify-between gap-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
               <span className="text-[12px] font-bold uppercase tracking-[0.08em]" style={{ color: "var(--sb-muted)" }}>
                 Totals
               </span>
-              <div className="flex gap-10 sb-money text-[15px] font-bold" style={{ color: "var(--sb-ink)" }}>
+              <div className="flex gap-6 sb-money text-[15px] font-bold sm:gap-10" style={{ color: "var(--sb-ink)" }}>
                 <span>{formatRand(totals.debit)}</span>
                 <span>{formatRand(totals.credit)}</span>
               </div>
@@ -55,7 +56,21 @@ export default function TrialBalance() {
           {withBalance.length === 0 ? (
             <ReportEmpty>No account balances yet — allocate some transactions first.</ReportEmpty>
           ) : (
-            <div className="sb-table-scroll">
+            <>
+              <MobileList>
+                {withBalance.map((row) => (
+                  <MobileCard key={row.id}>
+                    <p className="text-[13.5px] font-semibold leading-snug" style={{ color: "var(--sb-ink)", overflowWrap: "anywhere" }}>
+                      <span className="sb-money mr-1.5 text-[11px]" style={{ color: "var(--sb-muted)" }}>{row.code}</span>
+                      {row.name}
+                    </p>
+                    <p className="mt-1 text-[11.5px] capitalize" style={{ color: "var(--sb-muted)" }}>{row.type}</p>
+                    <MobileField label="Debit" value={row.debit ? formatRand(row.debit) : "—"} />
+                    <MobileField label="Credit" value={row.credit ? formatRand(row.credit) : "—"} />
+                  </MobileCard>
+                ))}
+              </MobileList>
+              <div className="sb-table-scroll hidden md:block">
               <table className="w-full text-[13px]">
                 <thead>
                   <tr style={{ color: "var(--sb-muted)" }}>
@@ -88,7 +103,8 @@ export default function TrialBalance() {
                   ))}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </>
           )}
         </ReportCard>
       )}

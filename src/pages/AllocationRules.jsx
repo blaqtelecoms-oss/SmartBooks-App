@@ -119,13 +119,13 @@ export default function AllocationRules() {
           <h1 className="text-[24px] font-medium text-[#0F0F0F] tracking-tight">Allocation Rules</h1>
           <p className="text-[13px] text-[#6B6B72] mt-1">{rules.length} rules · {totalApplied} total applications</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Button onClick={handleLearn} disabled={learning}
-            className="bg-white border border-[#E5E5E8] text-[#0F0F0F] hover:bg-[#F7F7FA] rounded-lg text-[13px] h-9">
+            className="w-full bg-white border border-[#E5E5E8] text-[#0F0F0F] hover:bg-[#F7F7FA] rounded-lg text-[13px] h-9 sm:w-auto">
             {learning ? <><Loader2 size={14} className="mr-1.5 animate-spin" /> Learning...</> : <><Brain size={14} className="mr-1.5" /> Learn from History</>}
           </Button>
           <Button onClick={handleApply} disabled={applying}
-            className="bg-[#0F0F0F] hover:bg-[#2D2D2D] text-white rounded-lg text-[13px] h-9">
+            className="w-full bg-[#0F0F0F] hover:bg-[#2D2D2D] text-white rounded-lg text-[13px] h-9 sm:w-auto">
             {applying ? <><Loader2 size={14} className="mr-1.5 animate-spin" /> Applying...</> : <><Zap size={14} className="mr-1.5" /> Apply to Unallocated</>}
           </Button>
         </div>
