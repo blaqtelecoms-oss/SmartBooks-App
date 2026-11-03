@@ -398,10 +398,36 @@
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 .sb-icon-btn:hover { color: var(--sb-ink); border-color: var(--sb-ink); }
+.sb-icon-btn:active { transform: scale(0.94); }
+/* Bell: same circular footprint and soft ring as the profile avatar, and it
+   can never be squeezed into an oval by the flex row it sits in. */
+.sb-icon-btn.sb-notify-btn {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  flex: 0 0 36px;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sb-brand) 18%, transparent);
+}
+.sb-notify-btn .sb-notify-dot { top: 1px; right: 1px; }
+.sb-notify-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #D14343;
+  box-shadow: 0 0 0 2px var(--sb-card);
+}
 
 .sb-avatar {
   width: 36px;
   height: 36px;
+  flex: none;
   border-radius: 999px;
   display: grid;
   place-items: center;
@@ -777,18 +803,26 @@
   .sb-main { padding: 8px 14px calc(104px + env(safe-area-inset-bottom)); }
   .sb-page { min-width: 0; }
 
-  /* Top bar */
+  /* Top bar menu button: same box, radius and padding as a bottom-nav icon
+     tile (see the shared .sb-bottomnav-icon rule below). */
   .sb-menu-btn {
     display: grid;
     place-items: center;
-    width: 40px;
-    height: 40px;
-    flex: none;
-    border-radius: 13px;
-    background: var(--sb-card);
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    min-height: 34px;
+    padding: 0;
+    flex: 0 0 34px;
     border: 1px solid var(--sb-border);
+    border-radius: 12px;
     color: var(--sb-ink);
     cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .sb-menu-btn:active {
+    transform: translateY(1px) scale(0.96);
+    box-shadow: inset 0 2px 4px rgba(11, 31, 26, 0.24), inset 0 -1px 0 rgba(255, 255, 255, 0.55);
   }
   .sb-topbar {
     flex-wrap: wrap;
@@ -802,7 +836,7 @@
     -webkit-backdrop-filter: blur(14px);
     backdrop-filter: blur(14px);
   }
-  .sb-topbar-actions { margin-left: auto; }
+  .sb-topbar-actions { margin-left: auto; gap: 10px; }
   .sb-search-wrap { order: 3; flex-basis: 100%; max-width: none; margin-left: 0; }
   .sb-search { padding: 11px 14px; }
 
@@ -815,7 +849,6 @@
     font-size: 13.5px;
     box-shadow: 0 10px 22px -16px rgba(11, 31, 26, 0.55);
   }
-  .sb-icon-btn { width: 42px; height: 42px; }
   .sb-seg { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
   .sb-seg::-webkit-scrollbar { display: none; }
 
@@ -1025,8 +1058,10 @@
     color: var(--sb-muted);
     transition: color 0.15s ease;
   }
-  /* Embossed tiles mirror the raised 3D surface used by the sidebar icons */
-  .sb-bottomnav-icon {
+  /* Embossed tiles mirror the raised 3D surface used by the sidebar icons.
+     The top-bar menu button shares the exact same tile. */
+  .sb-bottomnav-icon,
+  .sb-menu-btn {
     display: grid;
     place-items: center;
     width: 34px;
@@ -1100,7 +1135,6 @@
   .sb-main h1.sb-display { font-size: 26px !important; }
   .sb-hero-number { font-size: 42px !important; }
   .sb-card { border-radius: 18px; padding: 16px; }
-  .sb-topbar .sb-icon-btn--mail { display: none; }
   .sb-main .grid.grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 

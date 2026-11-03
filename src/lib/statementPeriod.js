@@ -1,7 +1,8 @@
 /**
  * Reads the period a statement says it covers — "Statement period: 01 April
  * 2026 to 31 August 2026" — so an import only picks up the rows that belong to
- * that period. Nothing is inferred from the transaction rows themselves.
+ * that period. The span of the dated rows is only used when the statement prints
+ * no period at all, so such a statement still imports instead of being refused.
  */
 
 import { normalizeDate } from "./amountParsing";

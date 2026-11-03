@@ -1,7 +1,13 @@
 const MAX_SIDE = 256;
 
-/** Centre-crops the chosen image to a square and returns a small data URL. */
-export const toAvatarDataUrl = (file) =>
+/**
+ * Centre-crops the chosen image to a square and returns it as a small JPEG blob.
+ *
+ * The photo is deliberately not returned as a data URL: user_metadata travels
+ * inside every session token, so a base64 photo there inflates the token until
+ * the Storage gateway rejects authenticated requests.
+ */
+export const toAvatarBlob = (file) =>
   new Promise((resolve, reject) => {
     if (!file.type.startsWith("image/")) {
       reject(new Error("Please choose an image file"));
@@ -20,7 +26,11 @@ export const toAvatarDataUrl = (file) =>
         canvas
           .getContext("2d")
           .drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, MAX_SIDE, MAX_SIDE);
-        resolve(canvas.toDataURL("image/jpeg", 0.85));
+        canvas.toBlob(
+          (blob) => (blob ? resolve(blob) : reject(new Error("Could not read that image"))),
+          "image/jpeg",
+          0.85
+        );
       };
       img.src = reader.result;
     };

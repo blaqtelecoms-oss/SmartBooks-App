@@ -13,6 +13,27 @@ export const supabase = createClient(supabaseUrl || 'http://localhost', supabase
 
 export const UPLOAD_BUCKET = 'uploads';
 
+// Profile photos live in the public "media" bucket and the account only keeps the
+// URL. user_metadata is embedded in every session token, so an image stored there
+// made the token tens of kilobytes and Storage rejected the request with "HTTP 400 error".
+export const AVATAR_BUCKET = 'media';
+
+const avatarPath = (userId) => `${userId}/avatar.jpg`;
+
+const avatarPublicUrl = (path) =>
+  `${(supabaseUrl || '').replace(/\/+$/, '')}/storage/v1/object/public/${AVATAR_BUCKET}/${path}`;
+
+const uploadAvatar = async (userId, image) => {
+  const path = avatarPath(userId);
+  const { error } = await supabase.storage.from(AVATAR_BUCKET).upload(path, image, {
+    contentType: image.type || 'image/jpeg',
+    upsert: true,
+  });
+  if (error) fail(error);
+  // The object path never changes, so a version marker keeps browsers from showing the old photo.
+  return `${avatarPublicUrl(path)}?v=${Date.now()}`;
+};
+
 // Entity name -> table name.
 const TABLES = {
   Account: 'accounts',
@@ -168,6 +189,39 @@ const toAppUser = async (authUser) => {
   };
 };
 
+// Photos used to be saved as base64 data URLs in user_metadata, which put the whole
+// image inside the session token and made Storage answer every request with a 400.
+// Move such a photo into the bucket once, keeping only its URL in the metadata.
+let avatarMigration = null;
+
+const migrateLegacyAvatar = (user) => {
+  if (!user?.avatar_url?.startsWith('data:')) return user;
+  avatarMigration =
+    avatarMigration ||
+    (async () => {
+      const url = avatarPublicUrl(avatarPath(user.id));
+      try {
+        // Shrink the token first: Storage cannot be reached until the image is out of it.
+        const { error } = await supabase.auth.updateUser({ data: { avatar_url: url } });
+        if (error) throw error;
+        await supabase.auth.refreshSession();
+        const image = await (await fetch(user.avatar_url)).blob();
+        const { error: uploadError } = await supabase.storage
+          .from(AVATAR_BUCKET)
+          .upload(avatarPath(user.id), image, { contentType: 'image/jpeg', upsert: true });
+        if (uploadError) throw uploadError;
+        return { ...user, avatar_url: url };
+      } catch (e) {
+        // Better a missing photo than a token that blocks every Storage request.
+        await supabase.auth.updateUser({ data: { avatar_url: null } }).catch(() => {});
+        return { ...user, avatar_url: null };
+      } finally {
+        avatarMigration = null;
+      }
+    })();
+  return avatarMigration;
+};
+
 const auth = {
   async me() {
     const { data, error } = await supabase.auth.getUser();
@@ -176,7 +230,7 @@ const auth = {
       err.status = 401;
       throw err;
     }
-    return toAppUser(data.user);
+    return migrateLegacyAvatar(await toAppUser(data.user));
   },
   async isAuthenticated() {
     const { data } = await supabase.auth.getSession();
@@ -254,11 +308,15 @@ const auth = {
   async resetPassword({ newPassword, token }) {
     return functions.invoke('reset-password', { token, new_password: newPassword });
   },
-  // Profile picture lives in the auth user's metadata, so no schema change is needed.
-  async updateAvatar(avatarUrl) {
-    const { data, error } = await supabase.auth.updateUser({ data: { avatar_url: avatarUrl } });
+  // `image` is a JPEG blob (or null to remove the photo). The file goes to Storage and
+  // only its URL is kept on the account, so the session token stays small.
+  async updateAvatar(image) {
+    const { data: current, error: userError } = await supabase.auth.getUser();
+    if (userError || !current?.user) fail(userError || { message: 'Not authenticated', status: 401 });
+    const avatar_url = image ? await uploadAvatar(current.user.id, image) : null;
+    const { error } = await supabase.auth.updateUser({ data: { avatar_url } });
     if (error) fail(error);
-    return data?.user?.user_metadata?.avatar_url || null;
+    return avatar_url;
   },
   // Editable profile + business details (no schema change: stored on the auth user).
   async updateProfile(patch) {
