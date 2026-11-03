@@ -4,7 +4,7 @@ import { db } from "@/api/supabaseClient";
 import { extractTextFromFile, isPasswordError, parseDocumentData } from "@/lib/documentExtraction";
 import DocumentPasswordDialog from "@/components/documents/DocumentPasswordDialog";
 import { Button } from "@/components/ui/button";
-import { Camera, Upload, Loader2, Send, CheckCircle2, Eye, Trash2, Receipt } from "lucide-react";
+import { Camera, Upload, Loader2, Send, Check, Eye, Trash2, Receipt } from "lucide-react";
 import ExtractedDataSheet from "@/components/documents/ExtractedDataSheet";
 import { useToast } from "@/components/ui/use-toast";
 import moment from "moment";
@@ -244,8 +244,11 @@ export default function ScanReceipt() {
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {doc.submitted ? (
-                    <span className="sb-chip sb-chip-green">
-                      <CheckCircle2 size={12} /> Submitted
+                    <span className="sb-chip sb-chip-green sb-chip--icon">
+                      <span className="sb-chip-disc" aria-hidden="true">
+                        <Check size={9} strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round" />
+                      </span>
+                      Submitted
                     </span>
                   ) : doc.status === "processed" ? (
                     <Button

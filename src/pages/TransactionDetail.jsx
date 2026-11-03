@@ -215,8 +215,8 @@ export default function TransactionDetail() {
           <span className={tx.status === "unallocated" ? "sb-chip sb-chip-amber" : "sb-chip sb-chip-green"}>
             {tx.status}
           </span>
-          <span className={isIn ? "sb-flow-badge sb-flow-badge-in" : "sb-flow-badge sb-flow-badge-out"}>
-            <span className="sb-flow-disc" aria-hidden="true">
+          <span className={isIn ? "sb-chip sb-chip-green sb-chip--icon sb-chip-flow" : "sb-chip sb-chip-amber sb-chip--icon sb-chip-flow"}>
+            <span className="sb-chip-disc" aria-hidden="true">
               {isIn
                 ? <ArrowDownLeft size={10} strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round" />
                 : <ArrowUpRight size={10} strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round" />}
