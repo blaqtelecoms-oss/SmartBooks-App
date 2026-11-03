@@ -37,7 +37,7 @@ export default function TransactionListMobile({ transactions, onOpen }) {
 
               <span className="min-w-0 flex-1">
                 <span
-                  className="block text-[13.5px] font-semibold leading-snug"
+                  className="sb-clamp-2 text-[13.5px] font-semibold leading-snug"
                   style={{ color: "var(--sb-ink)", overflowWrap: "anywhere" }}
                 >
                   {tx.description}

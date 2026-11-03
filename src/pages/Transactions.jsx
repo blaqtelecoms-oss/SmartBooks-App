@@ -291,7 +291,7 @@ export default function Transactions() {
             </div>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {statementSummaries.map(({ doc, rows, summary }) => (
-                <div key={doc.id} className="sb-card" style={{ padding: 20 }}>
+                <div key={doc.id} className="sb-card min-w-0" style={{ padding: 20 }}>
                   <p className="truncate text-[13px] font-semibold" style={{ color: "var(--sb-ink)" }}>{doc.name}</p>
                   <p className="text-[11px]" style={{ color: "var(--sb-muted)" }}>
                     {moment(doc.created_date).format("DD MMM YYYY")} · {rows.length} transactions
@@ -327,7 +327,7 @@ export default function Transactions() {
         {/* Main card */}
         <div className="sb-card" style={{ padding: 0 }}>
           <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between" style={{ borderBottom: "1px solid var(--sb-border)" }}>
-            <div className="sb-seg" role="group" aria-label="Filter transactions by status">
+            <div className="sb-seg sb-seg-wrap" role="group" aria-label="Filter transactions by status">
               {FILTERS.map((f) => (
                 <button
                   key={f.value}

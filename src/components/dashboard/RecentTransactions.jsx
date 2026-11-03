@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import moment from "moment";
-import { ArrowDownLeft, ArrowUpRight, ArrowRight, Eye } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Eye } from "lucide-react";
 import { formatRand } from "@/lib/money";
 import { categoryLabel } from "@/lib/transactionDetail";
 import TransactionListMobile from "@/components/transactions/TransactionListMobile";
@@ -45,24 +45,19 @@ export default function RecentTransactions({ transactions, loading }) {
             {transactions.length} transactions · {unallocatedCount} unallocated
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="sb-seg" role="group" aria-label="Filter recent transactions by status">
-            {FILTERS.map((f) => (
-              <button
-                key={f.value}
-                type="button"
-                onClick={() => setStatusFilter(f.value)}
-                className="sb-seg-item"
-                data-active={statusFilter === f.value ? "true" : "false"}
-                aria-pressed={statusFilter === f.value}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-          <Link to="/transactions" className="sb-btn sb-btn-outline">
-            View all <ArrowRight size={14} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
-          </Link>
+        <div className="sb-seg sb-seg-wrap" role="group" aria-label="Filter recent transactions by status">
+          {FILTERS.map((f) => (
+            <button
+              key={f.value}
+              type="button"
+              onClick={() => setStatusFilter(f.value)}
+              className="sb-seg-item"
+              data-active={statusFilter === f.value ? "true" : "false"}
+              aria-pressed={statusFilter === f.value}
+            >
+              {f.label}
+            </button>
+          ))}
         </div>
       </div>
 

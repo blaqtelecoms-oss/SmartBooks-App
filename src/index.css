@@ -267,6 +267,14 @@
   color: var(--sb-card);
 }
 
+/* Two-line clamp so a bank's boilerplate description cannot stretch a feed row */
+.sb-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* Pills */
 .sb-btn {
   display: inline-flex;
@@ -1453,6 +1461,26 @@
 }
 .sb-content-scroll::-webkit-scrollbar { width: 6px; }
 .sb-content-scroll::-webkit-scrollbar-thumb { background: #d0d8d2; border-radius: 99px; }
+
+/* Status filters (All / Unallocated / Allocated / Reviewed): four options that
+   must fit a phone screen, so they stack into a two-column control instead of
+   scrolling sideways. */
+@media (max-width: 480px) {
+  .sb-seg.sb-seg-wrap {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3px;
+    width: 100%;
+    padding: 4px;
+    border-radius: 20px;
+    overflow: visible;
+  }
+  .sb-seg.sb-seg-wrap .sb-seg-item {
+    padding: 9px 10px;
+    border-radius: 16px;
+    text-align: center;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *,
