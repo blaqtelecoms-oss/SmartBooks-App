@@ -21,17 +21,11 @@ export default function BalanceSheet() {
   const liabilities = rows.filter((r) => ["liability", "vat", "paye"].includes(r.type) && Math.abs(r.signed) > 0.004);
   const equityRows = rows.filter((r) => r.type === "equity" && Math.abs(r.signed) > 0.004);
   const summary = balanceSheet(rows);
-  const balanced = Math.abs(summary.assets - summary.netWorth) < 0.01;
 
   return (
     <ReportShell
       title="Balance Sheet"
       subtitle={`What ${company.name} owns and owes, as at today`}
-      actions={
-        <span className={`sb-chip ${balanced ? "sb-chip-green" : "sb-chip-amber"}`}>
-          {balanced ? "In balance" : "Review balances"}
-        </span>
-      }
     >
       {loading ? (
         <ReportLoading />

@@ -19,14 +19,6 @@ export default function TrialBalance() {
 
   const withBalance = rows.filter((row) => Math.abs(row.signed) > 0.004);
   const totals = trialBalanceTotals(withBalance);
-  const balanced = Math.abs(totals.difference) < 0.01;
-
-  const balanceChip = (
-    <span className={`sb-chip ${balanced ? "sb-chip-green" : "sb-chip-amber"}`}>
-      {balanced ? "Balanced" : `Out by ${formatRand(totals.difference)}`}
-    </span>
-  );
-
   return (
     <ReportShell
       title="Trial Balance"
@@ -40,16 +32,15 @@ export default function TrialBalance() {
       {loading ? (
         <ReportLoading />
       ) : withBalance.length === 0 ? (
-        <ReportCard title="Accounts" meta={balanceChip}>
+        <ReportCard title="Accounts">
           <ReportEmpty>No account balances yet — allocate some transactions first.</ReportEmpty>
         </ReportCard>
       ) : (
         <>
           {/* Phones: one card per account, so nothing scrolls sideways */}
           <div className="md:hidden">
-            <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="mb-3">
               <p className="sb-label">Accounts</p>
-              {balanceChip}
             </div>
             <TrialBalanceCards rows={withBalance} totals={totals} />
           </div>
@@ -57,7 +48,6 @@ export default function TrialBalance() {
           <div className="hidden md:block">
             <ReportCard
               title="Accounts"
-              meta={balanceChip}
               footer={
                 <div className="flex items-baseline justify-between gap-4">
                   <span className="text-[12px] font-bold uppercase tracking-[0.08em]" style={{ color: "var(--sb-muted)" }}>
