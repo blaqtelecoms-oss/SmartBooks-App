@@ -47,7 +47,12 @@ export default function TransactionListMobile({ transactions, onOpen }) {
                   {tx.reference ? <><span aria-hidden="true">·</span><span className="min-w-0 truncate">{tx.reference}</span></> : null}
                 </span>
                 <span className="mt-1.5 flex items-center gap-1.5">
-                  <span className={isIn ? "sb-chip sb-chip-flow sb-chip-green" : "sb-chip sb-chip-flow sb-chip-amber"}>
+                  <span className={isIn ? "sb-flow-badge sb-flow-badge-in" : "sb-flow-badge sb-flow-badge-out"}>
+                    <span className="sb-flow-disc" aria-hidden="true">
+                      {isIn
+                        ? <ArrowDownLeft size={10} strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round" />
+                        : <ArrowUpRight size={10} strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round" />}
+                    </span>
                     {isIn ? "Money in" : "Money out"}
                   </span>
                   <span

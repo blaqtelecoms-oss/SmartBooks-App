@@ -324,12 +324,41 @@
   color: var(--sb-muted);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sb-muted) 20%, transparent);
 }
-/* Money in / money out in a feed get slightly more presence than a status tag */
-.sb-chip-flow {
-  font-size: 11px;
-  letter-spacing: 0.015em;
-  padding: 5.5px 11px 5.5px 9px;
+/* Direction badge — a tinted capsule led by a solid tone disc holding the
+   direction glyph, with the words set small, wide and uppercase so the sign
+   lands before the text does. Distinct from the flat status chips. */
+.sb-flow-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 3px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+  background-image: linear-gradient(
+    100deg,
+    color-mix(in srgb, currentColor 15%, transparent),
+    color-mix(in srgb, currentColor 3%, transparent)
+  );
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 22%, transparent);
 }
+.sb-flow-badge-in { color: var(--sb-green-ink); }
+.sb-flow-badge-out { color: var(--sb-amber-ink); }
+.sb-flow-disc {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: 999px;
+  color: var(--sb-card);
+}
+.sb-flow-badge-in .sb-flow-disc { background: var(--sb-green-ink); }
+.sb-flow-badge-out .sb-flow-disc { background: var(--sb-amber-ink); }
 .sb-chip-green {
   background-color: var(--sb-green-bg);
   color: var(--sb-green-ink);
@@ -367,13 +396,17 @@
   box-shadow: 0 0 0 2.5px color-mix(in srgb, currentColor 16%, transparent);
 }
 
-/* The round direction glyph beside a money movement: flat tint lifted by a
-   soft top light and a hairline ring, the way a banking feed draws it. */
+/* The round direction glyph beside a money movement: tinted glass, a hairline
+   ring in its own tone and a soft coloured lift underneath. */
 .sb-flow-icon {
   border-radius: 999px;
-  background-image: linear-gradient(160deg, var(--sb-sheen), rgba(255, 255, 255, 0) 72%);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 16%, transparent),
-    0 1px 2px rgba(11, 31, 26, 0.07);
+  background-image: radial-gradient(
+    120% 120% at 28% 12%,
+    color-mix(in srgb, currentColor 24%, transparent),
+    transparent 72%
+  );
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 18%, transparent),
+    0 8px 16px -12px color-mix(in srgb, currentColor 95%, transparent);
 }
 
 /* App shell grid */
