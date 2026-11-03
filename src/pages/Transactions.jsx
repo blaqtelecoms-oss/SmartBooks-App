@@ -9,7 +9,7 @@ import TransactionListMobile from "@/components/transactions/TransactionListMobi
 import TransactionDetailSheet from "@/components/transactions/TransactionDetailSheet";
 import {
   Search, Sparkles, Loader2, ChevronDown, ChevronUp, Brain,
-  ArrowDownLeft, ArrowUpRight, Wand2, Eye, Zap,
+  ArrowDownLeft, ArrowUpRight, Eye, Zap,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import moment from "moment";
@@ -243,7 +243,7 @@ export default function Transactions() {
           <div className="sb-card" style={{ padding: 20 }}>
             <div className="flex items-center justify-between gap-3">
               <p className="sb-label">Money in</p>
-              <span className="grid h-9 w-9 place-items-center rounded-full" style={{ background: "var(--sb-green-bg)", color: "var(--sb-green-ink)" }}>
+              <span className="sb-flow-icon grid h-9 w-9 place-items-center" style={{ backgroundColor: "var(--sb-green-bg)", color: "var(--sb-green-ink)" }}>
                 <ArrowDownLeft size={17} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
               </span>
             </div>
@@ -255,7 +255,7 @@ export default function Transactions() {
           <div className="sb-card" style={{ padding: 20 }}>
             <div className="flex items-center justify-between gap-3">
               <p className="sb-label">Money out</p>
-              <span className="grid h-9 w-9 place-items-center rounded-full" style={{ background: "var(--sb-soft)", color: "var(--sb-muted)" }}>
+              <span className="sb-flow-icon grid h-9 w-9 place-items-center" style={{ backgroundColor: "var(--sb-soft)", color: "var(--sb-muted)" }}>
                 <ArrowUpRight size={17} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
               </span>
             </div>
@@ -265,15 +265,20 @@ export default function Transactions() {
           </div>
 
           <div className="sb-card" style={{ padding: 20, background: "var(--sb-brand)", borderColor: "transparent", color: "#fff" }}>
-            <div className="flex items-center justify-between gap-3">
-              <p className="sb-label" style={{ color: "rgba(255,255,255,0.72)" }}>AI suggestions ready</p>
-              <span className="grid h-9 w-9 place-items-center rounded-full" style={{ background: "rgba(200,241,105,0.18)", color: "var(--sb-lime)" }}>
-                <Wand2 size={17} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
-              </span>
-            </div>
-            <p className="sb-display sb-money mt-3" style={{ fontSize: 34, lineHeight: 1.05, color: "#fff" }}>
+            <p className="sb-label" style={{ color: "rgba(255,255,255,0.72)" }}>AI suggestions ready</p>
+            <p className="sb-display sb-money mt-3 flex items-baseline gap-2" style={{ fontSize: 34, lineHeight: 1.05, color: "#fff" }}>
               {unallocatedCount}
-              <span className="ml-2 text-[13px] font-semibold" style={{ color: "rgba(255,255,255,0.72)" }}>to review</span>
+              <span
+                className="text-[16px] font-semibold"
+                style={{
+                  fontFamily: "'Manrope', ui-sans-serif, system-ui, sans-serif",
+                  color: "#ffffff",
+                  letterSpacing: 0,
+                  WebkitFontSmoothing: "auto",
+                }}
+              >
+                to review
+              </span>
             </p>
           </div>
         </div>
@@ -291,7 +296,7 @@ export default function Transactions() {
             </div>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {statementSummaries.map(({ doc, rows, summary }) => (
-                <div key={doc.id} className="sb-card" style={{ padding: 20 }}>
+                <div key={doc.id} className="sb-card min-w-0" style={{ padding: 20 }}>
                   <p className="truncate text-[13px] font-semibold" style={{ color: "var(--sb-ink)" }}>{doc.name}</p>
                   <p className="text-[11px]" style={{ color: "var(--sb-muted)" }}>
                     {moment(doc.created_date).format("DD MMM YYYY")} · {rows.length} transactions
@@ -327,7 +332,7 @@ export default function Transactions() {
         {/* Main card */}
         <div className="sb-card" style={{ padding: 0 }}>
           <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between" style={{ borderBottom: "1px solid var(--sb-border)" }}>
-            <div className="sb-seg" role="group" aria-label="Filter transactions by status">
+            <div className="sb-seg sb-seg-wrap" role="group" aria-label="Filter transactions by status">
               {FILTERS.map((f) => (
                 <button
                   key={f.value}

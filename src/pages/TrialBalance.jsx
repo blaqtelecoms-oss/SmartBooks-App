@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useCompanyLedger } from "@/hooks/useCompanyLedger";
 import { trialBalanceTotals } from "@/lib/ledger";
 import { formatRand } from "@/lib/money";
+import TrialBalanceCards from "@/components/mobile/TrialBalanceCards";
 import {
   ReportShell,
   ReportCard,
@@ -18,8 +19,6 @@ export default function TrialBalance() {
 
   const withBalance = rows.filter((row) => Math.abs(row.signed) > 0.004);
   const totals = trialBalanceTotals(withBalance);
-  const balanced = Math.abs(totals.difference) < 0.01;
-
   return (
     <ReportShell
       title="Trial Balance"
@@ -32,30 +31,35 @@ export default function TrialBalance() {
     >
       {loading ? (
         <ReportLoading />
+      ) : withBalance.length === 0 ? (
+        <ReportCard title="Accounts">
+          <ReportEmpty>No account balances yet — allocate some transactions first.</ReportEmpty>
+        </ReportCard>
       ) : (
-        <ReportCard
-          title="Accounts"
-          meta={
-            <span className={`sb-chip ${balanced ? "sb-chip-green" : "sb-chip-amber"}`}>
-              {balanced ? "Balanced" : `Out by ${formatRand(totals.difference)}`}
-            </span>
-          }
-          footer={
-            <div className="flex items-baseline justify-between gap-4">
-              <span className="text-[12px] font-bold uppercase tracking-[0.08em]" style={{ color: "var(--sb-muted)" }}>
-                Totals
-              </span>
-              <div className="flex gap-10 sb-money text-[15px] font-bold" style={{ color: "var(--sb-ink)" }}>
-                <span>{formatRand(totals.debit)}</span>
-                <span>{formatRand(totals.credit)}</span>
-              </div>
+        <>
+          {/* Phones: one card per account, so nothing scrolls sideways */}
+          <div className="md:hidden">
+            <div className="mb-3">
+              <p className="sb-label">Accounts</p>
             </div>
-          }
-        >
-          {withBalance.length === 0 ? (
-            <ReportEmpty>No account balances yet — allocate some transactions first.</ReportEmpty>
-          ) : (
-            <div className="sb-table-scroll">
+            <TrialBalanceCards rows={withBalance} totals={totals} />
+          </div>
+
+          <div className="hidden md:block">
+            <ReportCard
+              title="Accounts"
+              footer={
+                <div className="flex items-baseline justify-between gap-4">
+                  <span className="text-[12px] font-bold uppercase tracking-[0.08em]" style={{ color: "var(--sb-muted)" }}>
+                    Totals
+                  </span>
+                  <div className="flex gap-10 sb-money text-[15px] font-bold" style={{ color: "var(--sb-ink)" }}>
+                    <span>{formatRand(totals.debit)}</span>
+                    <span>{formatRand(totals.credit)}</span>
+                  </div>
+                </div>
+              }
+            >
               <table className="w-full text-[13px]">
                 <thead>
                   <tr style={{ color: "var(--sb-muted)" }}>
@@ -88,9 +92,9 @@ export default function TrialBalance() {
                   ))}
                 </tbody>
               </table>
-            </div>
-          )}
-        </ReportCard>
+            </ReportCard>
+          </div>
+        </>
       )}
     </ReportShell>
   );

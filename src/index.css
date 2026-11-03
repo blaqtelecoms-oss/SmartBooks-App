@@ -56,6 +56,8 @@
     /* Card surfaces: one depth scale shared by every page */
     --sb-card-radius: 26px;
     --sb-card-sheen: rgba(255, 255, 255, 0.9);
+    /* Top-light sheen for small pills and round glyphs */
+    --sb-sheen: rgba(255, 255, 255, 0.55);
     --sb-card-shadow: 0 1px 2px rgba(11, 31, 26, 0.06), 0 10px 20px -12px rgba(11, 31, 26, 0.16),
       0 30px 56px -34px rgba(11, 31, 26, 0.42);
     --sb-card-shadow-hover: 0 2px 4px rgba(11, 31, 26, 0.07), 0 16px 30px -14px rgba(11, 31, 26, 0.2),
@@ -110,6 +112,7 @@
     --sb-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
 
     --sb-card-sheen: rgba(255, 255, 255, 0.05);
+    --sb-sheen: rgba(255, 255, 255, 0.06);
     --sb-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 10px 22px -12px rgba(0, 0, 0, 0.6),
       0 30px 56px -34px rgba(0, 0, 0, 0.9);
     --sb-card-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.5), 0 16px 30px -14px rgba(0, 0, 0, 0.65),
@@ -267,6 +270,14 @@
   color: var(--sb-card);
 }
 
+/* Two-line clamp so a bank's boilerplate description cannot stretch a feed row */
+.sb-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* Pills */
 .sb-btn {
   display: inline-flex;
@@ -295,53 +306,69 @@
 .sb-btn-lime { background: var(--sb-lime); color: #0b1f1a; }
 .sb-btn-lime:hover { filter: brightness(0.96); }
 
-/* Status chips — tone dot plus a hairline ring so state reads at a glance */
+/* Status tags — one quiet label: a hairline, the barest wash of its own tone,
+   a single small dot and the words set tight. Flat on purpose (no nested
+   discs, no gradients, no candy fill), so it reads as product chrome. */
 .sb-chip {
+  --chip-tone: var(--sb-muted);
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  border-radius: 999px;
-  font-weight: 700;
+  gap: 5px;
+  padding: 2px 7px;
+  border-radius: 6px;
   font-size: 10.5px;
-  letter-spacing: 0.02em;
-  line-height: 1;
-  padding: 6px 10px;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  line-height: 1.5;
   white-space: nowrap;
-  background: var(--sb-soft);
-  color: var(--sb-muted);
-  box-shadow: inset 0 0 0 1px var(--sb-border);
+  color: var(--chip-tone);
+  background-color: color-mix(in srgb, var(--chip-tone) 9%, var(--sb-card));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chip-tone) 18%, transparent);
 }
-.sb-chip-green {
-  background: var(--sb-green-bg);
-  color: var(--sb-green-ink);
-  box-shadow: inset 0 0 0 1px rgba(30, 90, 18, 0.24), 0 1px 2px rgba(30, 90, 18, 0.14);
-}
-.sb-chip-amber {
-  background: var(--sb-amber-bg);
-  color: var(--sb-amber-ink);
-  box-shadow: inset 0 0 0 1px rgba(122, 75, 0, 0.24), 0 1px 2px rgba(122, 75, 0, 0.14);
-}
-.sb-chip-red {
-  background: var(--sb-red-bg);
-  color: var(--sb-red-ink);
-  box-shadow: inset 0 0 0 1px rgba(142, 34, 24, 0.24), 0 1px 2px rgba(142, 34, 24, 0.14);
-}
-.sb-chip-blue {
-  background: #e8f0fb;
-  color: #1f4e8c;
-  box-shadow: inset 0 0 0 1px rgba(31, 78, 140, 0.24), 0 1px 2px rgba(31, 78, 140, 0.14);
-}
-.sb-chip-green::before,
-.sb-chip-amber::before,
-.sb-chip-red::before,
-.sb-chip-blue::before {
+.sb-chip::before {
   content: "";
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   flex: none;
   border-radius: 999px;
-  background: currentColor;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6);
+  background: var(--chip-tone);
+}
+.sb-chip-green { --chip-tone: var(--sb-green-ink); }
+.sb-chip-amber { --chip-tone: var(--sb-amber-ink); }
+.sb-chip-red { --chip-tone: var(--sb-red-ink); }
+.sb-chip-blue { --chip-tone: #1f4e8c; }
+
+/* Tags that carry a glyph swap the dot for that glyph, set in the same tone */
+.sb-chip--icon { padding-left: 6px; }
+.sb-chip--icon::before { display: none; }
+.sb-chip-disc {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  color: inherit;
+}
+
+/* Money in / money out: the same tag, set in caps for a feed */
+.sb-chip-flow {
+  gap: 4px;
+  padding: 2px 6px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+/* The round direction glyph beside a money movement: tinted glass, a hairline
+   ring in its own tone and a soft coloured lift underneath. */
+.sb-flow-icon {
+  border-radius: 999px;
+  background-image: radial-gradient(
+    120% 120% at 28% 12%,
+    color-mix(in srgb, currentColor 24%, transparent),
+    transparent 72%
+  );
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 18%, transparent),
+    0 8px 16px -12px color-mix(in srgb, currentColor 95%, transparent);
 }
 
 /* App shell grid */
@@ -826,9 +853,9 @@
   }
   .sb-topbar {
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
     row-gap: 10px;
-    padding: 8px 0 12px;
+    padding: 6px 0 10px;
     position: sticky;
     top: 0;
     z-index: 25;
@@ -836,9 +863,23 @@
     -webkit-backdrop-filter: blur(14px);
     backdrop-filter: blur(14px);
   }
-  .sb-topbar-actions { margin-left: auto; gap: 10px; }
+  .sb-topbar-actions { margin-left: auto; gap: 8px; }
   .sb-search-wrap { order: 3; flex-basis: 100%; max-width: none; margin-left: 0; }
-  .sb-search { padding: 11px 14px; }
+  .sb-search { padding: 10px 14px; }
+  /* The 44px global input floor would inflate the pill and the whole bar;
+     the pill itself is the touch target, so let it size to its content. */
+  .sb-search input { min-height: 0; }
+
+  /* Phones: the page name alone reads cleaner than app-name + page name
+     squeezed between the menu button and the actions. */
+  .sb-topbar-crumb {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 11.5px;
+    letter-spacing: 0.07em;
+  }
+  .sb-topbar-brand,
+  .sb-topbar-sep { display: none; }
 
   /* Roomier touch surfaces, calmer cards */
   .sb-card { border-radius: 20px; padding: 18px; }
@@ -1453,6 +1494,26 @@
 }
 .sb-content-scroll::-webkit-scrollbar { width: 6px; }
 .sb-content-scroll::-webkit-scrollbar-thumb { background: #d0d8d2; border-radius: 99px; }
+
+/* Status filters (All / Unallocated / Allocated / Reviewed): four options that
+   must fit a phone screen, so they stack into a two-column control instead of
+   scrolling sideways. */
+@media (max-width: 480px) {
+  .sb-seg.sb-seg-wrap {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3px;
+    width: 100%;
+    padding: 4px;
+    border-radius: 20px;
+    overflow: visible;
+  }
+  .sb-seg.sb-seg-wrap .sb-seg-item {
+    padding: 9px 10px;
+    border-radius: 16px;
+    text-align: center;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *,

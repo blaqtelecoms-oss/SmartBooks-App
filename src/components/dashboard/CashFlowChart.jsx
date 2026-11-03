@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { TrendingUp, TrendingDown } from "lucide-react";
 import { formatRand, formatPct } from "@/lib/money";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -56,7 +57,14 @@ export default function CashFlowChart({ data, total, max, pct = 0, loading }) {
             <span className="sb-display sb-money" style={{ fontSize: 40, lineHeight: 1, color: "var(--sb-ink)" }}>
               {formatRand(total)}
             </span>
-            <span className="sb-chip sb-chip-green">{formatPct(pct)}</span>
+            <span className="sb-chip sb-chip-green sb-chip--icon">
+              <span className="sb-chip-disc" aria-hidden="true">
+                {pct >= 0
+                  ? <TrendingUp size={11} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
+                  : <TrendingDown size={11} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />}
+              </span>
+              {formatPct(pct)}
+            </span>
           </div>
         </div>
         <div className="relative">

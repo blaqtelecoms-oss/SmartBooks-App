@@ -51,9 +51,9 @@ export default function TransactionDetailSheet({
           <DialogTitle className="sr-only">Transaction details</DialogTitle>
           <div className="flex items-start gap-3 pr-6 text-left">
             <span
-              className="grid h-11 w-11 flex-none place-items-center rounded-full"
+              className="sb-flow-icon grid h-11 w-11 flex-none place-items-center"
               style={{
-                background: isIn ? "var(--sb-green-bg)" : "var(--sb-soft)",
+                backgroundColor: isIn ? "var(--sb-green-bg)" : "var(--sb-soft)",
                 color: isIn ? "var(--sb-green-ink)" : "var(--sb-muted)",
               }}
               aria-hidden="true"

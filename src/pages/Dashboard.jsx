@@ -244,7 +244,7 @@ export default function Dashboard() {
             {formatRand(bankBalance)}
           </p>
           <div className="relative mt-4 flex items-center gap-2 flex-wrap">
-            <span className="sb-chip" style={{ background: "var(--sb-lime)", color: "#0B1F1A" }}>
+            <span className="sb-chip" style={{ "--chip-tone": "#0B1F1A", background: "var(--sb-lime)" }}>
               {formatPct(bankPct)}
             </span>
             <span className="text-[12px]" style={{ color: "rgba(255,255,255,0.7)" }}>vs last week</span>

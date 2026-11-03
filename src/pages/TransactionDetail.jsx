@@ -173,9 +173,9 @@ export default function TransactionDetail() {
       <section className="sb-card" style={{ padding: 20 }}>
         <div className="flex items-start gap-3">
           <span
-            className="grid h-12 w-12 flex-none place-items-center rounded-full"
+            className="sb-flow-icon grid h-12 w-12 flex-none place-items-center"
             style={{
-              background: isIn ? "var(--sb-green-bg)" : "var(--sb-soft)",
+              backgroundColor: isIn ? "var(--sb-green-bg)" : "var(--sb-soft)",
               color: isIn ? "var(--sb-green-ink)" : "var(--sb-muted)",
             }}
             aria-hidden="true"
@@ -215,7 +215,12 @@ export default function TransactionDetail() {
           <span className={tx.status === "unallocated" ? "sb-chip sb-chip-amber" : "sb-chip sb-chip-green"}>
             {tx.status}
           </span>
-          <span className="text-[11.5px] font-semibold" style={{ color: "var(--sb-muted)" }}>
+          <span className={isIn ? "sb-chip sb-chip-green sb-chip--icon sb-chip-flow" : "sb-chip sb-chip-amber sb-chip--icon sb-chip-flow"}>
+            <span className="sb-chip-disc" aria-hidden="true">
+              {isIn
+                ? <ArrowDownLeft size={11} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
+                : <ArrowUpRight size={11} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />}
+            </span>
             {isIn ? "Money in" : "Money out"}
           </span>
         </div>

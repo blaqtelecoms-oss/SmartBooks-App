@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle2 } from "lucide-react";
+import { Check } from "lucide-react";
 
 export default function AllocationProgress({ allocated, total, pct, loading }) {
   if (loading) {
@@ -19,8 +19,11 @@ export default function AllocationProgress({ allocated, total, pct, loading }) {
         <h3 className="sb-display" style={{ fontSize: 28, lineHeight: 1.1, color: "var(--sb-ink)" }}>
           Allocation progress
         </h3>
-        <span className="sb-chip sb-chip-green">
-          <CheckCircle2 size={12} strokeWidth={2} /> On track
+        <span className="sb-chip sb-chip-green sb-chip--icon">
+          <span className="sb-chip-disc" aria-hidden="true">
+            <Check size={11} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />
+          </span>
+          On track
         </span>
       </div>
 

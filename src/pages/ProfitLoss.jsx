@@ -20,17 +20,11 @@ export default function ProfitLoss() {
   const income = rows.filter((r) => r.type === "income" && Math.abs(r.signed) > 0.004);
   const expenses = rows.filter((r) => r.type === "expense" && Math.abs(r.signed) > 0.004);
   const summary = profitAndLoss(rows);
-  const margin = summary.income > 0 ? (summary.net / summary.income) * 100 : 0;
 
   return (
     <ReportShell
       title="Profit and Loss"
       subtitle={`Income and expenses for ${company.name}`}
-      actions={
-        <span className={`sb-chip ${summary.net >= 0 ? "sb-chip-green" : "sb-chip-red"}`}>
-          {summary.net >= 0 ? "Profit" : "Loss"} · {margin.toFixed(1)}% margin
-        </span>
-      }
     >
       {loading ? (
         <ReportLoading />

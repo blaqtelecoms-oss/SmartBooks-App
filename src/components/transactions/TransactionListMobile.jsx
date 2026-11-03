@@ -23,9 +23,9 @@ export default function TransactionListMobile({ transactions, onOpen }) {
               className="flex w-full items-start gap-3 px-4 py-3.5 text-left transition-colors active:bg-[var(--sb-soft)]"
             >
               <span
-                className="mt-0.5 grid h-11 w-11 flex-none place-items-center rounded-full"
+                className="sb-flow-icon mt-0.5 grid h-11 w-11 flex-none place-items-center"
                 style={{
-                  background: isIn ? "var(--sb-green-bg)" : "var(--sb-soft)",
+                  backgroundColor: isIn ? "var(--sb-green-bg)" : "var(--sb-soft)",
                   color: isIn ? "var(--sb-green-ink)" : "var(--sb-muted)",
                 }}
                 aria-hidden="true"
@@ -37,7 +37,7 @@ export default function TransactionListMobile({ transactions, onOpen }) {
 
               <span className="min-w-0 flex-1">
                 <span
-                  className="block text-[13.5px] font-semibold leading-snug"
+                  className="sb-clamp-2 text-[13.5px] font-semibold leading-snug"
                   style={{ color: "var(--sb-ink)", overflowWrap: "anywhere" }}
                 >
                   {tx.description}
@@ -47,7 +47,12 @@ export default function TransactionListMobile({ transactions, onOpen }) {
                   {tx.reference ? <><span aria-hidden="true">·</span><span className="min-w-0 truncate">{tx.reference}</span></> : null}
                 </span>
                 <span className="mt-1.5 flex items-center gap-1.5">
-                  <span className={isIn ? "sb-chip sb-chip-green" : "sb-chip sb-chip-amber"}>
+                  <span className={isIn ? "sb-chip sb-chip-green sb-chip--icon sb-chip-flow" : "sb-chip sb-chip-amber sb-chip--icon sb-chip-flow"}>
+                    <span className="sb-chip-disc" aria-hidden="true">
+                      {isIn
+                        ? <ArrowDownLeft size={11} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
+                        : <ArrowUpRight size={11} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />}
+                    </span>
                     {isIn ? "Money in" : "Money out"}
                   </span>
                   <span
