@@ -21,7 +21,7 @@ export default function AllocationProgress({ allocated, total, pct, loading }) {
         </h3>
         <span className="sb-chip sb-chip-green sb-chip--icon">
           <span className="sb-chip-disc" aria-hidden="true">
-            <Check size={9} strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round" />
+            <Check size={11} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />
           </span>
           On track
         </span>

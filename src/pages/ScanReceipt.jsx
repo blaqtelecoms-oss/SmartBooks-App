@@ -246,7 +246,7 @@ export default function ScanReceipt() {
                   {doc.submitted ? (
                     <span className="sb-chip sb-chip-green sb-chip--icon">
                       <span className="sb-chip-disc" aria-hidden="true">
-                        <Check size={9} strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round" />
+                        <Check size={11} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />
                       </span>
                       Submitted
                     </span>

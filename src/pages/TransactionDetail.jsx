@@ -218,8 +218,8 @@ export default function TransactionDetail() {
           <span className={isIn ? "sb-chip sb-chip-green sb-chip--icon sb-chip-flow" : "sb-chip sb-chip-amber sb-chip--icon sb-chip-flow"}>
             <span className="sb-chip-disc" aria-hidden="true">
               {isIn
-                ? <ArrowDownLeft size={10} strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round" />
-                : <ArrowUpRight size={10} strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round" />}
+                ? <ArrowDownLeft size={11} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
+                : <ArrowUpRight size={11} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />}
             </span>
             {isIn ? "Money in" : "Money out"}
           </span>

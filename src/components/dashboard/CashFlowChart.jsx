@@ -60,8 +60,8 @@ export default function CashFlowChart({ data, total, max, pct = 0, loading }) {
             <span className="sb-chip sb-chip-green sb-chip--icon">
               <span className="sb-chip-disc" aria-hidden="true">
                 {pct >= 0
-                  ? <TrendingUp size={9} strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" />
-                  : <TrendingDown size={9} strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" />}
+                  ? <TrendingUp size={11} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
+                  : <TrendingDown size={11} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />}
               </span>
               {formatPct(pct)}
             </span>
